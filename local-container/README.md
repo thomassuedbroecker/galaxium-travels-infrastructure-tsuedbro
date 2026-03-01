@@ -160,7 +160,7 @@ The booking REST API now validates bearer tokens when `AUTH_ENABLED=true`.
 
 For a full non-compose setup guide (including Keycloak realm/client setup and required environment variables for both services), see:
 
-- [`../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
+- [`../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
 
 Important:
 

@@ -50,6 +50,7 @@ Important:
 
 1. `AUTH_ENABLED` and `OAUTH2_ENABLED` are explicit feature toggles.
 2. Outside Docker Compose, you must set both toggles to `true` to match the compose behavior.
+3. `OAUTH2_ENABLED=true` secures web-app -> booking API calls with client credentials, but it does not enforce browser-user login in the UI.
 
 ### Booking API (`booking_system_rest`)
 

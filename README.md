@@ -69,7 +69,7 @@ galaxium-travels-infrastructure/
 - **[Error Handling Examples](docs/error-handling-examples.md)**: Before/after examples with AI agent actions
 - **[Testing Guide](docs/testing-guide.md)**: How to test the improved error handling
 - **[Local container guide](local-container/README.md)**: Includes OAuth2/OIDC Keycloak auto-setup and manual fallback configuration steps
-- **[Code Engine + Keycloak guide](CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)**: Non-compose deployment steps for the same authenticated setup
+- **[Code Engine + Keycloak guide](ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)**: Non-compose deployment steps for the same authenticated setup
 
 ## Prerequisites
 - Python 3.9+

@@ -9,8 +9,14 @@ This web application proxies requests to `booking_system_rest`.
 The web app authentication is controlled by environment variable.
 
 - `OAUTH2_ENABLED=false` (default): no Keycloak token is requested by this web app
-- `OAUTH2_ENABLED=true`: web app requests a Keycloak token and forwards it to the backend
+- `OAUTH2_ENABLED=true`: web app requests a Keycloak token and forwards it to the backend API
 - If OAuth2 is enabled and required OIDC settings are missing, startup fails fast
+
+Important distinction:
+
+1. `OAUTH2_ENABLED=true` enforces **service-to-service auth** (`web_app -> booking_system_rest`).
+2. It does **not** enforce a browser-user login in the UI.
+3. Therefore users can still use the UI without a login prompt, while backend calls are authenticated by the server-side client credentials flow.
 
 Required environment variables when OAuth2 is enabled:
 
@@ -58,7 +64,7 @@ docker run --rm -p 8083:8083 \
 
 Use this guide for the complete setup (Keycloak realm + clients + booking API + web app + verification):
 
-- [`../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
+- [`../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
 
 Notebook-based deployment is still available:
 

@@ -121,7 +121,7 @@ For non-compose deployments (for example IBM Cloud Code Engine), set these expli
 3. `OIDC_AUDIENCE=booking-api`
 4. `OIDC_JWKS_URL=https://<keycloak-host>/realms/galaxium/protocol/openid-connect/certs`
 
-See [`../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md) for end-to-end setup and verification.
+See [`../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md) for end-to-end setup and verification.
 
 ## Installation
 

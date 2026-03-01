@@ -4,6 +4,7 @@ import requests
 import json
 import os
 import time
+import logging
 
 
 def _as_bool(value, default=False):
@@ -27,6 +28,7 @@ TOKEN_CACHE = {
 }
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+logger = logging.getLogger(__name__)
 
 # Enable CORS for all routes and origins
 # send_wildcard True will send Access-Control-Allow-Origin: *
@@ -50,7 +52,9 @@ def validate_runtime_settings():
         raise RuntimeError(
             "OAUTH2_ENABLED=true but missing settings: "
             + ", ".join(missing)
-            + ". Set all OIDC settings or explicitly set OAUTH2_ENABLED=false."
+            + ". Set all OIDC settings or explicitly set OAUTH2_ENABLED=false. "
+            + "Note: OAUTH2_ENABLED only secures web-app -> backend calls (client credentials), "
+            + "not browser user login."
         )
 
 def get_access_token():
@@ -82,6 +86,16 @@ def get_access_token():
     return token
 
 validate_runtime_settings()
+
+if OAUTH2_ENABLED:
+    logger.warning(
+        "OAUTH2_ENABLED=true secures web-app -> backend calls using Keycloak client credentials. "
+        "This does NOT require browser users to log in."
+    )
+else:
+    logger.warning(
+        "OAUTH2_ENABLED=false: web app calls backend without OAuth2 token."
+    )
 
 # Helper to proxy to backend with JSON headers
 def proxy_request(method, path, params=None, json_body=None):
@@ -155,6 +169,8 @@ def health():
             "proxy_to": BACKEND_URL,
             "oauth2_enabled": OAUTH2_ENABLED,
             "oidc_token_url": OIDC_TOKEN_URL if OAUTH2_ENABLED else None,
+            "frontend_user_login_enforced": False,
+            "auth_mode": "service-to-service" if OAUTH2_ENABLED else "none",
         }
     )
     

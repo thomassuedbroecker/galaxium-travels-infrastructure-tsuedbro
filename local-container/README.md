@@ -96,6 +96,87 @@ If all checks pass, Keycloak is actively used to protect the booking API endpoin
 
 > Note: Tokens requested from `http://localhost:8080` may have an issuer mismatch with the booking API (`Invalid issuer`) because the API validates the in-network issuer (`http://keycloak:8080/...`). The script requests a token from inside the Docker network to avoid this mismatch.
 
+### Verify MCP Server Auth with MCP Inspector (Local + Containerized)
+
+From `local-container/` run:
+
+```sh
+bash verify-keycloak-auth-mcp.sh
+```
+
+What this script verifies:
+
+1. Keycloak and the MCP server are reachable.
+2. MCP Inspector `tools/list` without a bearer token is rejected (`401`).
+3. MCP Inspector `tools/list` with a Keycloak traveler token succeeds and returns MCP tools.
+
+Implementation note:
+- If `npx` is available, the script runs `@modelcontextprotocol/inspector` directly.
+- If `npx` is not available, it runs the inspector from a Docker container (`ghcr.io/modelcontextprotocol/inspector:latest`).
+
+### Manual MCP Inspector Test (Local)
+
+Use this if you want to validate the MCP auth flow manually in the Inspector UI.
+
+1. Start the local container stack:
+
+```sh
+cd local-container
+bash start-containers-detach.sh
+```
+
+2. Get a Keycloak traveler access token from inside the compose network:
+
+```sh
+TOKEN="$(
+  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
+)"
+echo "${TOKEN}"
+```
+
+3. Start MCP Inspector on your machine:
+
+Option A (requires Node.js/npm, provides Inspector UI):
+
+```sh
+npx @modelcontextprotocol/inspector
+```
+
+If `npx` is not available:
+
+- Install Node.js (includes `npx`), then retry:
+
+```sh
+brew install node
+```
+
+Option B (no Node.js required, CLI check via Docker image):
+
+```sh
+docker run --rm ghcr.io/modelcontextprotocol/inspector:latest \
+  --cli http://host.docker.internal:8084/mcp \
+  --transport http \
+  --method tools/list \
+  --header "Authorization: Bearer ${TOKEN}" \
+  --verbose
+```
+
+Linux note: add `--add-host host.docker.internal:host-gateway` to the `docker run` command.
+
+4. In Inspector, connect to the local MCP server:
+1. Transport: `Streamable HTTP`
+2. URL: `http://localhost:8084/mcp`
+
+5. Run a negative auth check (no header):
+1. Leave headers empty.
+2. Click connect, then run `tools/list`.
+3. Expected result: request is rejected with `401` (missing bearer token).
+
+6. Run a positive auth check (with bearer token):
+1. Add header `Authorization` with value `Bearer <TOKEN>`.
+2. Reconnect and run `tools/list`.
+3. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
+
 ### Manual setup fallback (if import fails)
 
 Open `http://localhost:8080/admin` and log in with:
@@ -152,7 +233,7 @@ curl -s -X POST \
   -d "client_secret=web-app-proxy-secret"
 ```
 
-The booking REST API now validates bearer tokens when `AUTH_ENABLED=true`.
+The booking REST API and MCP server now validate bearer tokens when `AUTH_ENABLED=true`.
 The web app enforces traveler login when `FRONTEND_AUTH_REQUIRED=true`.
 
 * Simplified Architecture on Code Engine
@@ -167,7 +248,7 @@ For a full non-compose setup guide (including Keycloak realm/client setup and re
 
 Important:
 
-1. In this compose file, auth toggles are set to `AUTH_ENABLED=true`, `OAUTH2_ENABLED=true`, and `FRONTEND_AUTH_REQUIRED=true`.
+1. In this compose file, auth toggles are set to `AUTH_ENABLED=true` (for `booking_system_rest` and `booking_system_mcp`), `OAUTH2_ENABLED=true`, and `FRONTEND_AUTH_REQUIRED=true`.
 2. Outside compose (for example Code Engine), you must set these toggles explicitly to keep the same behavior.
 
 For an automated auth verification against deployed URLs (no Docker needed), run:

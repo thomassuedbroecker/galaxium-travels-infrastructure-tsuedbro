@@ -47,6 +47,12 @@ services:
     container_name: booking_system_mcp
     ports:
       - 8084:8084
+    depends_on:
+      - keycloak
+    environment:
+      - AUTH_ENABLED=true
+      - OIDC_ISSUER=http://keycloak:8080/realms/galaxium
+      - OIDC_AUDIENCE=booking-api
   web_app:
     build: 
       context: ${WEB_APP_DOCKER_CONTEXT}

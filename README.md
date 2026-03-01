@@ -27,10 +27,12 @@ The containerized setup now enforces an end-to-end authenticated booking flow wi
 - Travelers authenticate in the frontend against Keycloak before booking actions are available.
 - Traveler identity is derived from the Keycloak token and synced to the booking backend.
 - Booking backend endpoints are protected and return `401` without a bearer token.
+- MCP booking endpoints are protected and return `401` without a bearer token.
 
 Compose defaults now set:
 
 - `AUTH_ENABLED=true` on `booking_system_rest`
+- `AUTH_ENABLED=true` on `booking_system_mcp`
 - `OAUTH2_ENABLED=true` on `galaxium-booking-web-app`
 - `FRONTEND_AUTH_REQUIRED=true` on `galaxium-booking-web-app`
 
@@ -39,6 +41,7 @@ Containerized verification:
 ```sh
 cd local-container
 bash verify-keycloak-auth.sh
+bash verify-keycloak-auth-mcp.sh
 ```
 
 For non-compose deployments (for example IBM Cloud Code Engine), use:

@@ -33,6 +33,27 @@ This service can be deployed as an MCP server, making its booking tools availabl
 
 ![](../images/connect-to-mcp-locally-02.jpg)
 
+## OAuth2/OIDC Security
+
+The MCP server uses the same bearer token validation model as `booking_system_rest`.
+
+Environment variables:
+
+- `AUTH_ENABLED` - `true` or `false` (default `false`)
+- `OIDC_ISSUER` - OIDC issuer URL (example: `http://keycloak:8080/realms/galaxium`)
+- `OIDC_AUDIENCE` - expected audience claim (example: `booking-api`)
+- `OIDC_JWKS_URL` - optional JWKS URL override
+
+When `AUTH_ENABLED=true`, MCP protocol requests require a bearer token in the `Authorization` header.
+The root health route (`GET /`) remains public.
+
+For non-compose deployments (for example IBM Cloud Code Engine), set:
+
+1. `AUTH_ENABLED=true`
+2. `OIDC_ISSUER=https://<keycloak-host>/realms/galaxium`
+3. `OIDC_AUDIENCE=booking-api`
+4. `OIDC_JWKS_URL=https://<keycloak-host>/realms/galaxium/protocol/openid-connect/certs`
+
 ## Deploying to IBM Code Engine
 
 - Build and push your Docker image (see Dockerfile).

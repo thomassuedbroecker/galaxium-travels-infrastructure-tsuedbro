@@ -1,13 +1,72 @@
-from fastmcp import FastMCP
-from pydantic import BaseModel
-from db import SessionLocal, init_db
-from seed import seed
-from models import User, Flight, Booking
 from datetime import datetime
+from fastapi import HTTPException
+from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_http_headers, get_http_request
+from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import PlainTextResponse
+from starlette.responses import JSONResponse, PlainTextResponse
+
+from auth import require_oauth2_header, validate_auth_configuration
+from db import SessionLocal, init_db
+from models import Booking, Flight, User
+from seed import seed
 
 mcp = FastMCP("Booking System MCP")
+
+
+async def oauth2_middleware(*args):
+    # FastMCP versions differ in middleware signature ordering.
+    if len(args) != 2:
+        raise RuntimeError("Unexpected middleware invocation signature")
+
+    first, second = args
+    if callable(first):
+        call_next, context = first, second
+    else:
+        context, call_next = first, second
+
+    request = get_http_request()
+    if request is None:
+        return await call_next(context)
+
+    request_method = request.method.upper()
+    request_path = request.url.path
+
+    if request_method == "OPTIONS":
+        return await call_next(context)
+
+    if request_method == "GET" and request_path == "/":
+        return await call_next(context)
+
+    headers = get_http_headers(include_all=False)
+    authorization_header = headers.get("authorization")
+    try:
+        require_oauth2_header(authorization_header)
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    return await call_next(context)
+
+
+def register_middleware(server: FastMCP, middleware_handler):
+    middleware_attr = getattr(server, "middleware", None)
+    if callable(middleware_attr):
+        middleware_attr(middleware_handler)
+        return
+    if isinstance(middleware_attr, list):
+        middleware_attr.append(middleware_handler)
+        return
+
+    add_middleware = getattr(server, "add_middleware", None)
+    if callable(add_middleware):
+        add_middleware(middleware_handler)
+        return
+
+    raise RuntimeError("FastMCP middleware registration is not supported by this version")
+
+
+register_middleware(mcp, oauth2_middleware)
+
 
 # Pydantic models for structured output
 class FlightOut(BaseModel):
@@ -161,6 +220,7 @@ async def root_health_check(request: Request) -> PlainTextResponse:
     return PlainTextResponse("OK")
 
 # Initialize DB and seed data on startup
+validate_auth_configuration()
 init_db()
 seed()
 

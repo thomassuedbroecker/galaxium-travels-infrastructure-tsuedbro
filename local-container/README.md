@@ -155,3 +155,25 @@ The booking REST API now validates bearer tokens when `AUTH_ENABLED=true`.
 * Simplified Architecture on Code Engine
 
 ![](/images/run-containers-on-code-engine-01.png)
+
+## Deploying Without Docker Compose (Code Engine Example)
+
+For a full non-compose setup guide (including Keycloak realm/client setup and required environment variables for both services), see:
+
+- [`../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
+
+Important:
+
+1. In this compose file, auth toggles are set to `AUTH_ENABLED=true` and `OAUTH2_ENABLED=true`.
+2. Outside compose (for example Code Engine), you must set these toggles explicitly to keep the same behavior.
+
+For an automated auth verification against deployed URLs (no Docker needed), run:
+
+```sh
+export BOOKING_API_BASE_URL=https://<booking-api-url>
+export KEYCLOAK_TOKEN_URL=https://<keycloak-url>/realms/galaxium/protocol/openid-connect/token
+export OIDC_CLIENT_ID=web-app-proxy
+export OIDC_CLIENT_SECRET=<web-app-proxy-client-secret>
+export WEB_APP_BASE_URL=https://<web-app-url>
+bash verify-keycloak-auth-remote.sh
+```

@@ -1,88 +1,65 @@
-# Galaxium Booking System
+# Galaxium Booking Web App
 
-This is a simple web application for booking flights using the Galaxium Travels Booking API.
-
-This simple web application provides a user-friendly interface for booking flights, viewing available flights, and managing user bookings. The application is containerized using Docker, making it easy to deploy and run in any environment that supports Docker.
+This web application proxies requests to `booking_system_rest`.
 
 ![](/images/run-containers-02.gif)
 
-### 1. Project Structure
+## Security Behavior
 
-This is the web application project structure. We'll use a simple structure with the following directories and files:
+The web app authentication is controlled by environment variable.
 
-```sh
-galaxium-booking-web-app/
-├── app.py
-├── Dockerfile
-├── requirements.txt
-├── static/
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       └── script.js
-└── templates/
-    ├── base.html
-    ├── index.html
-    ├── flights.html
-    ├── bookings.html
-    ├── register.html
-    └── book_flight.html
-```
+- `OAUTH2_ENABLED=false` (default): no Keycloak token is requested by this web app
+- `OAUTH2_ENABLED=true`: web app requests a Keycloak token and forwards it to the backend
+- If OAuth2 is enabled and required OIDC settings are missing, startup fails fast
 
-## 2. Prerequisites
+Required environment variables when OAuth2 is enabled:
 
-- Docker
+1. `BACKEND_URL`
+2. `OIDC_TOKEN_URL`
+3. `OIDC_CLIENT_ID`
+4. `OIDC_CLIENT_SECRET`
 
-## 3. Running the Application locally
+Compose behavior:
 
-1. Navigate to the application folder:
-   ```sh
-   cd galaxium-booking-web-app
-   ```
+1. `local-container/docker_compose.yaml` sets `OAUTH2_ENABLED=true` for the `web_app` container.
+2. If you run outside compose (for example Code Engine), you must set `OAUTH2_ENABLED=true` yourself.
 
-2. Configure the `BACKEND_URL` in the `.env` file.
-   Insert your Code Engine `BACKEND_URL`.
-   
-   Enable the needed environment by uncomment the BACKEND_URL.
+## Local Run With Docker
 
-   ```sh
-   cat .env-template > .env
-   ```
-
-3. Build the Docker image:
-   ```sh
-   docker build -t galaxium-booking-web-app .
-   ```
-
-4. Run the Docker container:
-   ```sh
-   source .env
-   docker run -p 8083:8083 galaxium-booking-web-app -e BACKEND_URL=${BACKEND_URL}
-   ```
-
-5. Open your browser and navigate to `http://localhost:8083` to access the application.
-
-## 4. Deploy to IBM Code Engine
-
-![](/images/run-containers-on-code-engine-01.png)
-
-1. Install Jupyter
+1. Go to the web app directory:
 
 ```sh
-python3 -m venv .venv
-source ./.venv/bin/activate
-pip install jupyter
-pip install dotenv
+cd galaxium-booking-web-app
 ```
 
-2. Start Jupyter Notebook
+2. Create a local env file:
 
 ```sh
-jupyter notebook
+cp .env-template .env
+source .env
 ```
 
-3. Start the `deployment_web_application_server.ipynb` Notebook and follow the steps inside the Notebook
+3. Build and run:
 
 ```sh
-deployment_web_application_server.ipynb
+docker build -t galaxium-booking-web-app .
+docker run --rm -p 8083:8083 \
+  -e BACKEND_URL="${BACKEND_URL}" \
+  -e OAUTH2_ENABLED="${OAUTH2_ENABLED}" \
+  -e OIDC_TOKEN_URL="${OIDC_TOKEN_URL}" \
+  -e OIDC_CLIENT_ID="${OIDC_CLIENT_ID}" \
+  -e OIDC_CLIENT_SECRET="${OIDC_CLIENT_SECRET}" \
+  galaxium-booking-web-app
 ```
+
+4. Open `http://localhost:8083`.
+
+## IBM Code Engine / Non-Compose Deployment
+
+Use this guide for the complete setup (Keycloak realm + clients + booking API + web app + verification):
+
+- [`../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
+
+Notebook-based deployment is still available:
+
+- `deployment_web_application_server.ipynb`

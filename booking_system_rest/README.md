@@ -114,6 +114,15 @@ curl -H "Authorization: Bearer <access_token>" \
   http://localhost:8082/flights
 ```
 
+For non-compose deployments (for example IBM Cloud Code Engine), set these explicitly:
+
+1. `AUTH_ENABLED=true`
+2. `OIDC_ISSUER=https://<keycloak-host>/realms/galaxium`
+3. `OIDC_AUDIENCE=booking-api`
+4. `OIDC_JWKS_URL=https://<keycloak-host>/realms/galaxium/protocol/openid-connect/certs`
+
+See [`../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md) for end-to-end setup and verification.
+
 ## Installation
 
 1. **Clone the repository**

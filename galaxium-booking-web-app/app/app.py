@@ -5,8 +5,17 @@ import json
 import os
 import time
 
-BACKEND_URL = os.getenv('BACKEND_URL')
-OAUTH2_ENABLED = os.getenv('OAUTH2_ENABLED', 'false').lower() in {"1", "true", "yes", "on"}
+
+def _as_bool(value, default=False):
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+BACKEND_URL = (os.getenv("BACKEND_URL") or "").strip()
+# Auth is controlled via environment variable.
+# Set OAUTH2_ENABLED=true to enforce Keycloak/OIDC token acquisition in the web app.
+OAUTH2_ENABLED = _as_bool(os.getenv("OAUTH2_ENABLED"), default=False)
 OIDC_TOKEN_URL = os.getenv('OIDC_TOKEN_URL')
 OIDC_CLIENT_ID = os.getenv('OIDC_CLIENT_ID')
 OIDC_CLIENT_SECRET = os.getenv('OIDC_CLIENT_SECRET')
@@ -23,9 +32,13 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 # send_wildcard True will send Access-Control-Allow-Origin: *
 CORS(app, resources={r"/*": {"origins": "*"}}, send_wildcard=True)
 
-def validate_oauth2_settings():
+def validate_runtime_settings():
+    if not BACKEND_URL:
+        raise RuntimeError("BACKEND_URL must be set")
+
     if not OAUTH2_ENABLED:
         return
+
     missing = []
     if not OIDC_TOKEN_URL:
         missing.append("OIDC_TOKEN_URL")
@@ -35,7 +48,9 @@ def validate_oauth2_settings():
         missing.append("OIDC_CLIENT_SECRET")
     if missing:
         raise RuntimeError(
-            f"OAUTH2_ENABLED=true but missing settings: {', '.join(missing)}"
+            "OAUTH2_ENABLED=true but missing settings: "
+            + ", ".join(missing)
+            + ". Set all OIDC settings or explicitly set OAUTH2_ENABLED=false."
         )
 
 def get_access_token():
@@ -66,7 +81,7 @@ def get_access_token():
     TOKEN_CACHE["expires_at_epoch"] = now + expires_in
     return token
 
-validate_oauth2_settings()
+validate_runtime_settings()
 
 # Helper to proxy to backend with JSON headers
 def proxy_request(method, path, params=None, json_body=None):
@@ -134,7 +149,14 @@ def api_cancel(booking_id):
 # Simple health endpoint
 @app.route("/api/health")
 def health():
-    return jsonify({"status": "ok", "proxy_to": BACKEND_URL})
+    return jsonify(
+        {
+            "status": "ok",
+            "proxy_to": BACKEND_URL,
+            "oauth2_enabled": OAUTH2_ENABLED,
+            "oidc_token_url": OIDC_TOKEN_URL if OAUTH2_ENABLED else None,
+        }
+    )
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8083, debug=True)

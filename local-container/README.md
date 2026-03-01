@@ -116,66 +116,49 @@ Implementation note:
 
 ### Manual MCP Inspector Test (Local)
 
-Use this if you want to validate the MCP auth flow manually in the Inspector UI.
+Use this short flow to validate MCP auth in Inspector.
 
-1. Start the local container stack:
+1. Terminal 1: start the full local stack:
 
 ```sh
 cd local-container
-bash start-containers-detach.sh
+bash start-build-containers.sh
 ```
 
-2. Get a Keycloak traveler access token from inside the compose network:
-
-```sh
-TOKEN="$(
-  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
-)"
-echo "${TOKEN}"
-```
-
-3. Start MCP Inspector on your machine:
-
-Option A (requires Node.js/npm, provides Inspector UI):
+2. Terminal 2: start MCP Inspector UI:
 
 ```sh
 npx @modelcontextprotocol/inspector
 ```
 
-If `npx` is not available:
-
-- Install Node.js (includes `npx`), then retry:
+If `npx` is missing, install Node.js first:
 
 ```sh
 brew install node
 ```
 
-Option B (no Node.js required, CLI check via Docker image):
+3. Terminal 3: get a Keycloak access token:
 
 ```sh
-docker run --rm ghcr.io/modelcontextprotocol/inspector:latest \
-  --cli http://host.docker.internal:8084/mcp \
-  --transport http \
-  --method tools/list \
-  --header "Authorization: Bearer ${TOKEN}" \
-  --verbose
+TOKEN="$(
+  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
+)"
+echo "Copy following token:\nBearer ${TOKEN}"
 ```
 
-Linux note: add `--add-host host.docker.internal:host-gateway` to the `docker run` command.
+4. In Inspector UI, connect to MCP:
+- Connection type: `Streamable HTTP`
+- URL: `http://localhost:8084/mcp`
+- Authentication option A (manual token header): `Authorization: Bearer <TOKEN>`
+- Authentication option B (full OAuth in UI):
+  - Token URL: `http://localhost:8080/realms/galaxium/protocol/openid-connect/token`
+  - Client ID: `web-app-proxy`
+  - Client Secret: `web-app-proxy-secret`
+  - Username: `demo-user`
+  - Password: `demo-user-password`
+  - Scope: `openid profile email`
 
-4. In Inspector, connect to the local MCP server:
-1. Transport: `Streamable HTTP`
-2. URL: `http://localhost:8084/mcp`
-
-5. Run a negative auth check (no header):
-1. Leave headers empty.
-2. Click connect, then run `tools/list`.
-3. Expected result: request is rejected with `401` (missing bearer token).
-
-6. Run a positive auth check (with bearer token):
-1. Add header `Authorization` with value `Bearer <TOKEN>`.
-2. Reconnect and run `tools/list`.
-3. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
+Run `tools/list` after connect. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
 
 ### Manual setup fallback (if import fails)
 

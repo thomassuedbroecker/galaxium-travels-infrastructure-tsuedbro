@@ -27,7 +27,7 @@
       "publicClient": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "secret": "web-app-proxy-secret",
       "protocolMappers": [
         {

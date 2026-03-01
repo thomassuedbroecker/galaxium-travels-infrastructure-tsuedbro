@@ -8,15 +8,18 @@ This web application proxies requests to `booking_system_rest`.
 
 The web app authentication is controlled by environment variable.
 
-- `OAUTH2_ENABLED=false` (default): no Keycloak token is requested by this web app
-- `OAUTH2_ENABLED=true`: web app requests a Keycloak token and forwards it to the backend API
-- If OAuth2 is enabled and required OIDC settings are missing, startup fails fast
+- `OAUTH2_ENABLED=true`: web app can request Keycloak tokens for backend calls.
+- `FRONTEND_AUTH_REQUIRED` defaults to `OAUTH2_ENABLED` if unset.
+- `FRONTEND_AUTH_REQUIRED=true`: traveler login is mandatory in the browser UI.
+- If OAuth2 is enabled and required OIDC settings are missing, startup fails fast.
 
-Important distinction:
+Expected authenticated flow:
 
-1. `OAUTH2_ENABLED=true` enforces **service-to-service auth** (`web_app -> booking_system_rest`).
-2. It does **not** enforce a browser-user login in the UI.
-3. Therefore users can still use the UI without a login prompt, while backend calls are authenticated by the server-side client credentials flow.
+1. Unauthenticated browser access to `/` is redirected to `/login`.
+2. Traveler logs in with Keycloak credentials in the frontend.
+3. Web app stores traveler session and syncs traveler profile to booking backend.
+4. Booking backend APIs are called with Keycloak bearer token.
+5. Booking/list/cancel operations are available only with authenticated traveler session.
 
 Required environment variables when OAuth2 is enabled:
 
@@ -24,11 +27,15 @@ Required environment variables when OAuth2 is enabled:
 2. `OIDC_TOKEN_URL`
 3. `OIDC_CLIENT_ID`
 4. `OIDC_CLIENT_SECRET`
+5. `FRONTEND_AUTH_REQUIRED` (`true` to require traveler login in UI)
+6. `FLASK_SECRET_KEY` (required when `FRONTEND_AUTH_REQUIRED=true`)
 
 Compose behavior:
 
-1. `local-container/docker_compose.yaml` sets `OAUTH2_ENABLED=true` for the `web_app` container.
-2. If you run outside compose (for example Code Engine), you must set `OAUTH2_ENABLED=true` yourself.
+1. `local-container/docker_compose.yaml` sets:
+   - `OAUTH2_ENABLED=true`
+   - `FRONTEND_AUTH_REQUIRED=true`
+2. If you run outside compose (for example Code Engine), you must set these explicitly.
 
 ## Local Run With Docker
 
@@ -52,13 +59,16 @@ docker build -t galaxium-booking-web-app .
 docker run --rm -p 8083:8083 \
   -e BACKEND_URL="${BACKEND_URL}" \
   -e OAUTH2_ENABLED="${OAUTH2_ENABLED}" \
+  -e FRONTEND_AUTH_REQUIRED="${FRONTEND_AUTH_REQUIRED}" \
   -e OIDC_TOKEN_URL="${OIDC_TOKEN_URL}" \
   -e OIDC_CLIENT_ID="${OIDC_CLIENT_ID}" \
   -e OIDC_CLIENT_SECRET="${OIDC_CLIENT_SECRET}" \
+  -e OIDC_SCOPE="${OIDC_SCOPE}" \
+  -e FLASK_SECRET_KEY="${FLASK_SECRET_KEY}" \
   galaxium-booking-web-app
 ```
 
-4. Open `http://localhost:8083`.
+4. Open `http://localhost:8083` and login as traveler.
 
 ## IBM Code Engine / Non-Compose Deployment
 

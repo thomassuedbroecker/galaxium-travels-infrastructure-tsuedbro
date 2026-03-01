@@ -10,16 +10,22 @@ set -euo pipefail
 #
 # Optional:
 # - WEB_APP_BASE_URL (example: https://web-app....codeengine.appdomain.cloud)
+# - TRAVELER_USERNAME / TRAVELER_PASSWORD (to verify post-login web app calls)
 
 BOOKING_API_BASE_URL="${BOOKING_API_BASE_URL:-}"
 KEYCLOAK_TOKEN_URL="${KEYCLOAK_TOKEN_URL:-}"
 OIDC_CLIENT_ID="${OIDC_CLIENT_ID:-}"
 OIDC_CLIENT_SECRET="${OIDC_CLIENT_SECRET:-}"
 WEB_APP_BASE_URL="${WEB_APP_BASE_URL:-}"
+TRAVELER_USERNAME="${TRAVELER_USERNAME:-}"
+TRAVELER_PASSWORD="${TRAVELER_PASSWORD:-}"
 
 TMP_NO_TOKEN_BODY="/tmp/galaxium_remote_no_token_body.json"
 TMP_WITH_TOKEN_BODY="/tmp/galaxium_remote_with_token_body.json"
 TMP_WEB_APP_BODY="/tmp/galaxium_remote_web_app_body.json"
+TMP_WEB_ROOT_HEADERS="/tmp/galaxium_remote_web_root_headers.txt"
+TMP_WEB_UNAUTH_BODY="/tmp/galaxium_remote_web_unauth_body.json"
+WEB_COOKIE_FILE="/tmp/galaxium_remote_web_cookies.txt"
 
 require_var() {
   local name="$1"
@@ -49,6 +55,8 @@ require_var "OIDC_CLIENT_SECRET" "${OIDC_CLIENT_SECRET}"
 BOOKING_FLIGHTS_URL="${BOOKING_API_BASE_URL%/}/flights"
 BOOKING_HEALTH_URL="${BOOKING_API_BASE_URL%/}/health"
 WEB_APP_FLIGHTS_URL="${WEB_APP_BASE_URL%/}/api/flights"
+WEB_APP_ROOT_URL="${WEB_APP_BASE_URL%/}/"
+WEB_APP_LOGIN_URL="${WEB_APP_BASE_URL%/}/login"
 
 echo "Checking booking API health..."
 BOOKING_HEALTH_STATUS="$(curl -s -o /dev/null -w '%{http_code}' "${BOOKING_HEALTH_URL}")"
@@ -93,14 +101,32 @@ fi
 echo "OK: Booking API returned flight data with a valid Keycloak token"
 
 if [[ -n "${WEB_APP_BASE_URL}" ]]; then
-  WEB_APP_STATUS="$(curl -s -o "${TMP_WEB_APP_BODY}" -w '%{http_code}' "${WEB_APP_FLIGHTS_URL}")"
-  assert_status "200" "${WEB_APP_STATUS}" "Web app proxy /api/flights"
-  if ! grep -q "\"flight_id\"" "${TMP_WEB_APP_BODY}"; then
-    echo "ERROR: web app response does not look correct:"
-    cat "${TMP_WEB_APP_BODY}"
-    exit 1
+  WEB_ROOT_STATUS="$(curl -s -o /tmp/galaxium_remote_web_root_body.html -D "${TMP_WEB_ROOT_HEADERS}" -w '%{http_code}' "${WEB_APP_ROOT_URL}")"
+  assert_status "302" "${WEB_ROOT_STATUS}" "Web app root without traveler login"
+
+  WEB_APP_UNAUTH_STATUS="$(curl -s -o "${TMP_WEB_UNAUTH_BODY}" -w '%{http_code}' "${WEB_APP_FLIGHTS_URL}")"
+  assert_status "401" "${WEB_APP_UNAUTH_STATUS}" "Web app /api/flights without traveler session"
+
+  if [[ -n "${TRAVELER_USERNAME}" && -n "${TRAVELER_PASSWORD}" ]]; then
+    rm -f "${WEB_COOKIE_FILE}"
+    LOGIN_STATUS="$(curl -s -o /tmp/galaxium_remote_login_body.html -c "${WEB_COOKIE_FILE}" -b "${WEB_COOKIE_FILE}" -w '%{http_code}' \
+      -X POST "${WEB_APP_LOGIN_URL}" \
+      --data-urlencode "username=${TRAVELER_USERNAME}" \
+      --data-urlencode "password=${TRAVELER_PASSWORD}" \
+      --data-urlencode "next=/")"
+    assert_status "302" "${LOGIN_STATUS}" "Traveler login via web app"
+
+    WEB_APP_STATUS="$(curl -s -o "${TMP_WEB_APP_BODY}" -b "${WEB_COOKIE_FILE}" -w '%{http_code}' "${WEB_APP_FLIGHTS_URL}")"
+    assert_status "200" "${WEB_APP_STATUS}" "Web app /api/flights with traveler session"
+    if ! grep -q "\"flight_id\"" "${TMP_WEB_APP_BODY}"; then
+      echo "ERROR: web app response does not look correct:"
+      cat "${TMP_WEB_APP_BODY}"
+      exit 1
+    fi
+    echo "OK: Web app traveler-authenticated flights endpoint works"
+  else
+    echo "INFO: TRAVELER_USERNAME/TRAVELER_PASSWORD not set, skipping post-login web app validation"
   fi
-  echo "OK: Web app proxy can access booking API through OAuth2"
 fi
 
 echo
@@ -109,5 +135,9 @@ echo "Summary:"
 echo "  1) No token -> Booking API rejected request (401)"
 echo "  2) Valid Keycloak token -> Booking API accepted request (200)"
 if [[ -n "${WEB_APP_BASE_URL}" ]]; then
-  echo "  3) Web app proxy endpoint -> returned data successfully (200)"
+  echo "  3) Web app root requires traveler login (302 to /login)"
+  echo "  4) Web app API blocks unauthenticated traveler access (401)"
+  if [[ -n "${TRAVELER_USERNAME}" && -n "${TRAVELER_PASSWORD}" ]]; then
+    echo "  5) Web app API works after traveler login (200)"
+  fi
 fi

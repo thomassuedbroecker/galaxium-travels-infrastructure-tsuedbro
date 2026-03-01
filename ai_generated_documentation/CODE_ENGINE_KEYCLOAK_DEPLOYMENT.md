@@ -50,7 +50,7 @@ Important:
 
 1. `AUTH_ENABLED` and `OAUTH2_ENABLED` are explicit feature toggles.
 2. Outside Docker Compose, you must set both toggles to `true` to match the compose behavior.
-3. `OAUTH2_ENABLED=true` secures web-app -> booking API calls with client credentials, but it does not enforce browser-user login in the UI.
+3. Set `FRONTEND_AUTH_REQUIRED=true` to enforce traveler login in the browser UI.
 
 ### Booking API (`booking_system_rest`)
 
@@ -63,10 +63,12 @@ Important:
 
 1. `BACKEND_URL=https://<your-booking-api-host>`
 2. `OAUTH2_ENABLED=true`
-3. `OIDC_TOKEN_URL=https://<your-keycloak-host>/realms/galaxium/protocol/openid-connect/token`
-4. `OIDC_CLIENT_ID=web-app-proxy`
-5. `OIDC_CLIENT_SECRET=<web-app-proxy-client-secret>`
-6. Optional: `OIDC_SCOPE=openid profile email`
+3. `FRONTEND_AUTH_REQUIRED=true`
+4. `OIDC_TOKEN_URL=https://<your-keycloak-host>/realms/galaxium/protocol/openid-connect/token`
+5. `OIDC_CLIENT_ID=web-app-proxy`
+6. `OIDC_CLIENT_SECRET=<web-app-proxy-client-secret>`
+7. `FLASK_SECRET_KEY=<strong-random-secret>`
+8. Optional: `OIDC_SCOPE=openid profile email`
 
 ## 4. IBM Cloud Code Engine Example
 
@@ -111,9 +113,11 @@ ibmcloud ce application create \
   --port 8083 \
   --env BACKEND_URL=https://<booking-system-rest-url> \
   --env OAUTH2_ENABLED=true \
+  --env FRONTEND_AUTH_REQUIRED=true \
   --env OIDC_TOKEN_URL=https://<your-keycloak-host>/realms/galaxium/protocol/openid-connect/token \
   --env OIDC_CLIENT_ID=web-app-proxy \
-  --env OIDC_CLIENT_SECRET=<web-app-proxy-client-secret>
+  --env OIDC_CLIENT_SECRET=<web-app-proxy-client-secret> \
+  --env FLASK_SECRET_KEY=<strong-random-secret>
 ```
 
 ## 5. Verification
@@ -147,6 +151,14 @@ curl -H "Authorization: Bearer <access_token>" \
 
 Expected: HTTP `200` and flight data.
 
+4. Browser app requires traveler login:
+
+```bash
+curl -i https://<galaxium-booking-web-app-url>/
+```
+
+Expected: HTTP `302` redirect to `/login`.
+
 ### Automated check script (works without Docker Compose)
 
 Use [`local-container/verify-keycloak-auth-remote.sh`](local-container/verify-keycloak-auth-remote.sh):
@@ -157,6 +169,9 @@ export KEYCLOAK_TOKEN_URL=https://<your-keycloak-host>/realms/galaxium/protocol/
 export OIDC_CLIENT_ID=web-app-proxy
 export OIDC_CLIENT_SECRET=<web-app-proxy-client-secret>
 export WEB_APP_BASE_URL=https://<galaxium-booking-web-app-url>
+# Optional: verify post-login frontend call
+# export TRAVELER_USERNAME=<traveler-username>
+# export TRAVELER_PASSWORD=<traveler-password>
 bash local-container/verify-keycloak-auth-remote.sh
 ```
 

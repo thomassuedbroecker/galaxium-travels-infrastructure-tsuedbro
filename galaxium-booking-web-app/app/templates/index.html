@@ -3,79 +3,80 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Galaxium Travels — Example Booking Frontend</title>
-
-  <!-- Bootstrap (CDN) -->
+  <title>Galaxium Travels — Traveler Portal</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
-
   <style>
     :root {
-        --galaxium-primary: #6f42c1;  /* deep purple */
-        --galaxium-accent:  #ffbf00;  /* golden accent */
+      --galaxium-primary: #14532d;
+      --galaxium-accent: #f59e0b;
     }
 
     body {
-        padding-top: 3rem;
-        background: linear-gradient(135deg, #6f42c1 0%, #2b6cb0 100%);
-        background-attachment: fixed;
-        min-height: 100vh;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding-top: 2rem;
+      background: linear-gradient(140deg, #0b1324 0%, #102a43 45%, #14532d 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .container { 
-        max-width: 1100px; 
+    .container {
+      max-width: 1120px;
     }
 
     h1 {
-        color: var(--galaxium-accent);
-        font-weight: 700;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+      color: #fef3c7;
+      font-weight: 700;
     }
 
     .card {
-        border-radius: 12px;
-        border: none;
-        background-color: #ffffff;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      border: none;
+      background-color: #ffffff;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
     }
 
     table thead {
-        background-color: var(--galaxium-primary);
-        color: #fff;
+      background-color: var(--galaxium-primary);
+      color: #fff;
     }
 
-    table tbody tr:hover {
-        background-color: rgba(111, 66, 193, 0.08);
-    }
-
-    .status-active {
-        color: #198754; /* Bootstrap green */
-        font-weight: bold;
+    .status-booked {
+      color: #198754;
+      font-weight: 700;
     }
 
     .status-cancelled {
-        color: #dc3545; /* Bootstrap red */
-        font-weight: bold;
+      color: #dc3545;
+      font-weight: 700;
     }
 
     footer {
-        border-top: 1px solid rgba(255,255,255,0.2);
-        padding-top: 1rem;
-        margin-top: 2rem;
-        font-size: 0.9rem;
-        color: #f1f1f1;
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      padding-top: 1rem;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: #e5e7eb;
     }
   </style>
-  <!-- INSET THE COPIED CODE -->
-  <!-- watsonx Orchestrate Agent -->
-  <!-- INSET THE COPIED CODE -->
 </head>
 <body>
-<div class="container">
-  <h1 class="mb-4">Galaxium Travels — Example Frontend</h1>
+<div class="container pb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Galaxium Traveler Portal</h1>
+    {% if frontend_auth_required %}
+      <a href="/logout" class="btn btn-warning btn-sm">Logout</a>
+    {% endif %}
+  </div>
+
+  <div class="card p-3 mb-3">
+    <h5 class="mb-3">Authenticated Traveler</h5>
+    <div id="travelerInfo">
+      <div class="text-muted">Loading traveler context...</div>
+    </div>
+  </div>
 
   <div class="row g-3">
-    <div class="col-md-8">
+    <div class="col-lg-8">
       <div class="card p-3 mb-3">
         <h5>Available Flights</h5>
         <div class="mb-2 d-flex gap-2">
@@ -95,19 +96,10 @@
       </div>
 
       <div class="card p-3 mb-3">
-        <h5>My Bookings</h5>
-        <form id="bookingsForm" class="row g-2 align-items-end">
-          <div class="col-auto">
-            <label class="form-label">User ID</label>
-            <input id="bookingsUserId" class="form-control" type="number" placeholder="Enter user id">
-          </div>
-          <div class="col-auto">
-            <button class="btn btn-primary" id="refreshBookings" type="submit">List My Bookings</button>
-          </div>
-          <div class="col-auto">
-            <button id="clearBookings" class="btn btn-outline-secondary" type="button">Clear</button>
-          </div>
-        </form>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">My Bookings</h5>
+          <button id="refreshBookings" class="btn btn-outline-primary btn-sm" type="button">Refresh</button>
+        </div>
         <div id="bookingsAlert"></div>
         <div class="table-responsive mt-2">
           <table class="table table-bordered" id="bookingsTable">
@@ -120,33 +112,13 @@
       </div>
     </div>
 
-    <div class="col-md-4">
-      <div class="card p-3 mb-3">
-        <h5>Register New User</h5>
-        <form id="registerForm">
-          <div class="mb-2">
-            <label class="form-label">Name</label>
-            <input id="regName" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Email</label>
-            <input id="regEmail" class="form-control" type="email" required>
-          </div>
-          <button class="btn btn-success w-100">Register</button>
-        </form>
-        <div id="registerResult" class="mt-2"></div>
-      </div>
-
+    <div class="col-lg-4">
       <div class="card p-3">
-        <h5>Quick Book</h5>
+        <h5>Book A Flight</h5>
         <form id="bookForm">
           <div class="mb-2">
-            <label class="form-label">User ID</label>
-            <input id="bookUserId" class="form-control" type="number" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Name</label>
-            <input id="bookName" class="form-control" required>
+            <label class="form-label">Traveler</label>
+            <input id="bookTraveler" class="form-control" readonly>
           </div>
           <div class="mb-2">
             <label class="form-label">Flight ID</label>
@@ -159,37 +131,89 @@
     </div>
   </div>
 
-  <footer class="mt-4 text-muted">Proxy backend: <span id="backendUrl"></span></footer>
+  <footer class="mt-4">
+    Proxy backend: <span id="backendUrl"></span>
+  </footer>
 </div>
 
-<!-- Bootstrap + simple JS -->
 <script>
-const backend = { url: "{{ backend_url }}" }; // shown for reference
+const backend = { url: "{{ backend_url }}" };
+const frontendAuthRequired = {{ "true" if frontend_auth_required else "false" }};
 document.getElementById('backendUrl').textContent = backend.url;
 
-// Helpers
-async function jsonFetch(path, opts = {}) {
-  const res = await fetch(path, Object.assign({headers: {'Accept':'application/json','Content-Type':'application/json'}}, opts));
-  const text = await res.text();
-  try { return { ok: res.ok, status: res.status, body: JSON.parse(text || '{}') }; }
-  catch(e) { return { ok: res.ok, status: res.status, body: text }; }
+function redirectToLoginIfNeeded(status) {
+  if (status === 401 && frontendAuthRequired) {
+    window.location.href = '/login';
+    return true;
+  }
+  return false;
 }
 
-// Flights
+async function jsonFetch(path, opts = {}) {
+  const merged = Object.assign(
+    { headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } },
+    opts
+  );
+
+  const res = await fetch(path, merged);
+  const text = await res.text();
+  let body;
+  try { body = JSON.parse(text || '{}'); }
+  catch (e) { body = text; }
+
+  return { ok: res.ok, status: res.status, body };
+}
+
+async function loadTraveler() {
+  const out = document.getElementById('travelerInfo');
+  const r = await jsonFetch('/api/traveler');
+
+  if (redirectToLoginIfNeeded(r.status)) {
+    return null;
+  }
+
+  if (!r.ok) {
+    out.innerHTML = `<div class="alert alert-danger">Traveler lookup failed (${r.status}): ${JSON.stringify(r.body)}</div>`;
+    return null;
+  }
+
+  if (!r.body.traveler_id) {
+    out.innerHTML = `<div class="alert alert-warning">Traveler login is not enforced in this deployment.</div>`;
+    document.getElementById('bookTraveler').value = 'not authenticated';
+    return null;
+  }
+
+  out.innerHTML = `
+    <div><strong>Traveler ID:</strong> ${r.body.traveler_id}</div>
+    <div><strong>Name:</strong> ${r.body.name}</div>
+    <div><strong>Email:</strong> ${r.body.email}</div>
+    <div><strong>Username:</strong> ${r.body.username || '-'}</div>
+  `;
+  document.getElementById('bookTraveler').value = `${r.body.name} (#${r.body.traveler_id})`;
+  return r.body;
+}
+
 async function loadFlights() {
-  const el = document.querySelector("#flightsTable tbody");
-  el.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
+  const el = document.querySelector('#flightsTable tbody');
+  el.innerHTML = '<tr><td colspan="8">Loading...</td></tr>';
+
   const r = await jsonFetch('/api/flights');
+  if (redirectToLoginIfNeeded(r.status)) {
+    return;
+  }
+
   if (!r.ok) {
     document.getElementById('flightsAlert').innerHTML = `<div class="alert alert-danger">Error loading flights: ${r.status}</div>`;
     el.innerHTML = '';
     return;
   }
+
   const arr = Array.isArray(r.body) ? r.body : [];
   if (arr.length === 0) {
     el.innerHTML = '<tr><td colspan="8">No flights available</td></tr>';
     return;
   }
+
   el.innerHTML = arr.map(f => `
     <tr>
       <td>${f.flight_id}</td>
@@ -204,96 +228,99 @@ async function loadFlights() {
   `).join('');
 }
 
-// Fill quick book form
 function fillBook(flightId) {
   document.getElementById('bookFlightId').value = flightId;
   document.getElementById('bookResult').innerHTML = '';
-  window.scrollTo({top:0, behavior:'smooth'});
 }
 
-// Register
-document.getElementById('registerForm').addEventListener('submit', async (ev)=>{
-  ev.preventDefault();
-  const name = document.getElementById('regName').value;
-  const email = document.getElementById('regEmail').value;
-  const r = await jsonFetch('/api/register', { method: 'POST', body: JSON.stringify({name, email}) });
-  const out = document.getElementById('registerResult');
-  if (!r.ok) out.innerHTML = `<div class="alert alert-danger">Error (${r.status}): ${JSON.stringify(r.body)}</div>`;
-  else out.innerHTML = `<div class="alert alert-success">Registered: ID ${r.body.user_id} — ${r.body.name} (${r.body.email})</div>`;
-});
+async function loadBookings() {
+  const el = document.querySelector('#bookingsTable tbody');
+  el.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
 
-// Quick Book
-document.getElementById('bookForm').addEventListener('submit', async (ev)=>{
-  ev.preventDefault();
-  const user_id = parseInt(document.getElementById('bookUserId').value);
-  const name = document.getElementById('bookName').value;
-  const flight_id = parseInt(document.getElementById('bookFlightId').value);
-  const r = await jsonFetch('/api/book', { method: 'POST', body: JSON.stringify({user_id, name, flight_id}) });
-  const out = document.getElementById('bookResult');
-  if (!r.ok) out.innerHTML = `<div class="alert alert-danger">Failed to book: ${r.status} ${JSON.stringify(r.body)}</div>`;
-  else out.innerHTML = `<div class="alert alert-success">Booked (ID ${r.body.booking_id}) for flight ${r.body.flight_id}</div>`;
-});
-
-// List bookings
-document.getElementById('bookingsForm').addEventListener('submit', async (ev)=>{
-  ev.preventDefault();
-  const id = document.getElementById('bookingsUserId').value;
-  await loadBookings(id);
-});
-document.getElementById('refreshBookings').addEventListener('click', ()=>{}); // handled by form submit
-document.getElementById('clearBookings').addEventListener('click', ()=>{
-  document.getElementById('bookingsUserId').value = '';
-  document.querySelector("#bookingsTable tbody").innerHTML = '';
-  document.getElementById('bookingsAlert').innerHTML = '';
-});
-
-// Load bookings by user id
-async function loadBookings(userId) {
-  if (!userId) {
-    document.getElementById('bookingsAlert').innerHTML = `<div class="alert alert-warning">Please enter a numeric User ID.</div>`;
+  const r = await jsonFetch('/api/bookings');
+  if (redirectToLoginIfNeeded(r.status)) {
     return;
   }
-  document.getElementById('bookingsAlert').innerHTML = '';
-  const el = document.querySelector("#bookingsTable tbody");
-  el.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
-  const r = await jsonFetch(`/api/bookings/${userId}`);
+
   if (!r.ok) {
-    document.getElementById('bookingsAlert').innerHTML = `<div class="alert alert-danger">Error: ${r.status}</div>`;
+    document.getElementById('bookingsAlert').innerHTML = `<div class="alert alert-danger">Error loading bookings: ${r.status}</div>`;
     el.innerHTML = '';
     return;
   }
+
   const arr = Array.isArray(r.body) ? r.body : [];
-  if (arr.length === 0) { el.innerHTML = '<tr><td colspan="5">No bookings</td></tr>'; return; }
+  if (arr.length === 0) {
+    el.innerHTML = '<tr><td colspan="5">No bookings found</td></tr>';
+    return;
+  }
+
   el.innerHTML = arr.map(b => `
     <tr>
       <td>${b.booking_id}</td>
       <td>${b.flight_id}</td>
-      <td class="status-${b.status.toLowerCase()}">${b.status}</td>
+      <td class="status-${(b.status || '').toLowerCase()}">${b.status}</td>
       <td>${b.booking_time}</td>
       <td><button class="btn btn-sm btn-danger" onclick="cancelBooking(${b.booking_id})">Cancel</button></td>
     </tr>
   `).join('');
 }
 
-// Cancel booking
 async function cancelBooking(bookingId) {
-  if (!confirm("Cancel booking " + bookingId + " ?")) return;
-  const r = await jsonFetch('/api/cancel/' + bookingId, { method: 'POST', body: '{}' });
-  if (!r.ok) {
-    alert("Failed to cancel: " + r.status);
+  if (!confirm(`Cancel booking ${bookingId}?`)) return;
+
+  const r = await jsonFetch(`/api/cancel/${bookingId}`, { method: 'POST', body: '{}' });
+  if (redirectToLoginIfNeeded(r.status)) {
     return;
   }
-  alert("Canceled booking " + bookingId);
-  // refresh bookings table if a user id is present
-  const uid = document.getElementById('bookingsUserId').value;
-  if (uid) await loadBookings(uid);
+
+  if (!r.ok) {
+    alert(`Failed to cancel booking (${r.status})`);
+    return;
+  }
+
+  alert(`Booking ${bookingId} cancelled`);
+  await loadBookings();
 }
 
-// Refresh flights button
-document.getElementById('refreshFlights').addEventListener('click', loadFlights);
+// Book flight for authenticated traveler
 
-// Initial load
-loadFlights();
+document.getElementById('bookForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const flightId = parseInt(document.getElementById('bookFlightId').value, 10);
+
+  const r = await jsonFetch('/api/book', {
+    method: 'POST',
+    body: JSON.stringify({ flight_id: flightId })
+  });
+
+  if (redirectToLoginIfNeeded(r.status)) {
+    return;
+  }
+
+  const out = document.getElementById('bookResult');
+  if (!r.ok) {
+    out.innerHTML = `<div class="alert alert-danger">Failed to book: ${r.status} ${JSON.stringify(r.body)}</div>`;
+    return;
+  }
+
+  if (r.body && r.body.success === false) {
+    out.innerHTML = `<div class="alert alert-warning">${r.body.error}: ${r.body.details || ''}</div>`;
+    return;
+  }
+
+  out.innerHTML = `<div class="alert alert-success">Booked (ID ${r.body.booking_id}) for flight ${r.body.flight_id}</div>`;
+  await loadFlights();
+  await loadBookings();
+});
+
+document.getElementById('refreshFlights').addEventListener('click', loadFlights);
+document.getElementById('refreshBookings').addEventListener('click', loadBookings);
+
+(async function init() {
+  await loadTraveler();
+  await loadFlights();
+  await loadBookings();
+})();
 </script>
 </body>
 </html>

@@ -87,8 +87,10 @@ What this script verifies:
 
 1. Keycloak and the booking API are reachable.
 2. Calling `GET /flights` without a bearer token fails with `401`.
-3. Calling `GET /flights` with a Keycloak-issued token succeeds with `200`.
-4. The web app proxy (`/api/flights`) can obtain a token and call the booking API successfully.
+3. Calling `GET /flights` with a Keycloak traveler token succeeds with `200`.
+4. The web app root redirects to `/login` when no traveler session exists.
+5. Web app APIs fail with `401` without traveler login.
+6. After traveler login, web app APIs (flights/bookings/book) succeed.
 
 If all checks pass, Keycloak is actively used to protect the booking API endpoints.
 
@@ -120,7 +122,7 @@ Create client `web-app-proxy`:
 2. Set `Client authentication = On`.
 3. Set `Service accounts roles = On`.
 4. Set `Standard flow = Off`.
-5. Set `Direct access grants = Off`.
+5. Set `Direct access grants = On` (required for traveler username/password login in this demo frontend).
 6. Set client secret to `web-app-proxy-secret` (Credentials tab).
 
 Add audience mapper to `web-app-proxy`:
@@ -138,7 +140,7 @@ Optional demo user:
 Configured OAuth2 clients:
 
 - `booking-api`
-- `web-app-proxy` (used by the Flask proxy to obtain client credentials tokens)
+- `web-app-proxy` (used by the Flask web app for traveler login and backend token forwarding)
 
 Test token request:
 
@@ -151,6 +153,7 @@ curl -s -X POST \
 ```
 
 The booking REST API now validates bearer tokens when `AUTH_ENABLED=true`.
+The web app enforces traveler login when `FRONTEND_AUTH_REQUIRED=true`.
 
 * Simplified Architecture on Code Engine
 
@@ -164,7 +167,7 @@ For a full non-compose setup guide (including Keycloak realm/client setup and re
 
 Important:
 
-1. In this compose file, auth toggles are set to `AUTH_ENABLED=true` and `OAUTH2_ENABLED=true`.
+1. In this compose file, auth toggles are set to `AUTH_ENABLED=true`, `OAUTH2_ENABLED=true`, and `FRONTEND_AUTH_REQUIRED=true`.
 2. Outside compose (for example Code Engine), you must set these toggles explicitly to keep the same behavior.
 
 For an automated auth verification against deployed URLs (no Docker needed), run:
@@ -175,5 +178,8 @@ export KEYCLOAK_TOKEN_URL=https://<keycloak-url>/realms/galaxium/protocol/openid
 export OIDC_CLIENT_ID=web-app-proxy
 export OIDC_CLIENT_SECRET=<web-app-proxy-client-secret>
 export WEB_APP_BASE_URL=https://<web-app-url>
+# optional (verifies post-login frontend access)
+# export TRAVELER_USERNAME=<traveler-username>
+# export TRAVELER_PASSWORD=<traveler-password>
 bash verify-keycloak-auth-remote.sh
 ```

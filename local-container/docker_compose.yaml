@@ -61,6 +61,9 @@ services:
     environment:
       - BACKEND_URL=http://booking_system:8082
       - OAUTH2_ENABLED=true
+      - FRONTEND_AUTH_REQUIRED=true
       - OIDC_TOKEN_URL=http://keycloak:8080/realms/galaxium/protocol/openid-connect/token
       - OIDC_CLIENT_ID=web-app-proxy
       - OIDC_CLIENT_SECRET=web-app-proxy-secret
+      - OIDC_SCOPE=openid profile email
+      - FLASK_SECRET_KEY=local-dev-secret-key

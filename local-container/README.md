@@ -11,7 +11,7 @@
 
 ```sh
 cd local-container
-bash start-containers.sh
+bash start-build-containers.sh
 ```
 
 * Example output:
@@ -62,7 +62,7 @@ The compose setup now starts a local Keycloak server for OAuth2/OIDC:
 
 The setup is automated through realm import:
 
-- Compose mounts [galaxium-realm.json](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure/local-container/keycloak/realm/galaxium-realm.json) into Keycloak.
+- Compose mounts [`keycloak/realm/galaxium-realm.json`](./keycloak/realm/galaxium-realm.json) into Keycloak.
 - Keycloak starts with `start-dev --import-realm`.
 - Realm `galaxium` and the required clients are created automatically.
 
@@ -74,6 +74,25 @@ curl -s http://localhost:8080/realms/galaxium/.well-known/openid-configuration
 
 If this returns JSON, import worked.
 If this returns `Realm does not exist`, follow the manual setup below.
+
+### Verify Keycloak Is Enforced (Automated Test)
+
+From `local-container/` run:
+
+```sh
+bash verify-keycloak-auth.sh
+```
+
+What this script verifies:
+
+1. Keycloak and the booking API are reachable.
+2. Calling `GET /flights` without a bearer token fails with `401`.
+3. Calling `GET /flights` with a Keycloak-issued token succeeds with `200`.
+4. The web app proxy (`/api/flights`) can obtain a token and call the booking API successfully.
+
+If all checks pass, Keycloak is actively used to protect the booking API endpoints.
+
+> Note: Tokens requested from `http://localhost:8080` may have an issuer mismatch with the booking API (`Invalid issuer`) because the API validates the in-network issuer (`http://keycloak:8080/...`). The script requests a token from inside the Docker network to avoid this mismatch.
 
 ### Manual setup fallback (if import fails)
 

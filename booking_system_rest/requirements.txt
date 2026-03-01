@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+sqlalchemy
+databases
+pydantic[email]
+python-dotenv
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+pytest-mock
+PyJWT[crypto]

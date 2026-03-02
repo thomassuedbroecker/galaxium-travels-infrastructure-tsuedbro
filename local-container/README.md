@@ -131,6 +131,15 @@ bash start-build-containers.sh
 npx @modelcontextprotocol/inspector
 ```
 
+Use the browser URL opened by Inspector (it includes `MCP_PROXY_AUTH_TOKEN=...`).
+If you open `http://localhost:6274` manually without this token, the UI can show a connection error.
+Optional fixed token launch:
+
+```sh
+export MCP_PROXY_AUTH_TOKEN=local-dev-token
+npx @modelcontextprotocol/inspector
+```
+
 If `npx` is missing, install Node.js first:
 
 ```sh
@@ -173,6 +182,23 @@ Troubleshooting:
 - In Inspector, remove old saved connection entries and reconnect with the URL above.
 - If Inspector shows `MCP error -32602: Invalid request parameters`, switch auth mode to `Custom Headers`, clear any OAuth settings, and reconnect.
 - If Inspector shows `MCP error -32601: Method not found`, check container logs for `MCP request method: ...` to see which JSON-RPC method was requested.
+- `GET /openapi.json` returning `404` is expected for this MCP server.
+- Use MCP checks instead:
+
+```sh
+curl -i http://localhost:8084/
+curl -i -X POST http://localhost:8084/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"debug","version":"1.0"}}}'
+```
+- After MCP code changes, rebuild/recreate the MCP container before testing:
+
+```sh
+docker compose -f docker_compose.yaml build booking_system_mcp
+docker compose -f docker_compose.yaml up -d --force-recreate booking_system_mcp
+docker compose -f docker_compose.yaml logs -f booking_system_mcp
+```
 - Use `Custom Header JSON` for auth:
 
 ```json

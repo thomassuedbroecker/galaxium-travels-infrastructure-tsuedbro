@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from datetime import datetime
 from fastapi import HTTPException
 from fastmcp import FastMCP
@@ -69,6 +70,119 @@ def _rpc_notification_ack() -> PlainTextResponse:
     return PlainTextResponse("", status_code=202)
 
 
+def _negotiated_protocol_version(request: Request) -> str:
+    header_value = (request.headers.get("mcp-protocol-version") or "").strip()
+    return header_value or "2025-11-25"
+
+
+def _tool_specs() -> list[dict]:
+    return [
+        {
+            "name": "list_flights",
+            "description": "List all available flights.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "book_flight",
+            "description": "Book a seat on a specific flight for a user.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "flight_id": {"type": "integer"},
+                },
+                "required": ["user_id", "name", "flight_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "get_bookings",
+            "description": "Retrieve all bookings for a specific user.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "integer"},
+                },
+                "required": ["user_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "cancel_booking",
+            "description": "Cancel an existing booking by booking ID.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "booking_id": {"type": "integer"},
+                },
+                "required": ["booking_id"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "register_user",
+            "description": "Register a new user with name and email.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "email": {"type": "string"},
+                },
+                "required": ["name", "email"],
+                "additionalProperties": False,
+            },
+        },
+        {
+            "name": "get_user_id",
+            "description": "Retrieve user details by name and email.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "email": {"type": "string"},
+                },
+                "required": ["name", "email"],
+                "additionalProperties": False,
+            },
+        },
+    ]
+
+
+def _serialize_result(value):
+    if isinstance(value, BaseModel):
+        return value.model_dump()
+    if isinstance(value, list):
+        return [_serialize_result(item) for item in value]
+    if isinstance(value, dict):
+        return {k: _serialize_result(v) for k, v in value.items()}
+    return value
+
+
+def _call_tool_by_name(tool_name: str, arguments: dict):
+    if tool_name == "list_flights":
+        return list_flights()
+    if tool_name == "book_flight":
+        return book_flight(
+            user_id=arguments["user_id"],
+            name=arguments["name"],
+            flight_id=arguments["flight_id"],
+        )
+    if tool_name == "get_bookings":
+        return get_bookings(user_id=arguments["user_id"])
+    if tool_name == "cancel_booking":
+        return cancel_booking(booking_id=arguments["booking_id"])
+    if tool_name == "register_user":
+        return register_user(name=arguments["name"], email=arguments["email"])
+    if tool_name == "get_user_id":
+        return get_user_id(name=arguments["name"], email=arguments["email"])
+    raise ValueError(f"Unknown tool: {tool_name}")
+
+
 async def oauth2_middleware(*args, **kwargs):
     call_next, context = _resolve_middleware_call(args, kwargs)
 
@@ -103,7 +217,26 @@ async def oauth2_middleware(*args, **kwargs):
     if rpc_payload:
         method = rpc_payload.get("method")
         request_id = rpc_payload.get("id")
-        print(f"MCP request method: {method}")
+        logging.warning("MCP request method=%s id=%s path=%s", method, request_id, request_path)
+
+        if method == "initialize":
+            return _rpc_result_response(
+                request_id,
+                {
+                    "protocolVersion": _negotiated_protocol_version(request),
+                    "capabilities": {
+                        "tools": {"listChanged": False},
+                        "resources": {"listChanged": False, "subscribe": False},
+                        "prompts": {"listChanged": False},
+                        "logging": {},
+                    },
+                    "serverInfo": {
+                        "name": "Booking System MCP",
+                        "version": "1.0.0",
+                    },
+                    "instructions": "Use tools/list to discover available booking tools.",
+                },
+            )
 
         # Compatibility shims for clients that probe optional methods
         # and fail hard on -32601.
@@ -113,6 +246,43 @@ async def oauth2_middleware(*args, **kwargs):
             return _rpc_notification_ack()
         if method == "notifications/cancelled":
             return _rpc_notification_ack()
+        if method == "notifications/roots/list_changed":
+            return _rpc_notification_ack()
+        if method == "tools/list":
+            return _rpc_result_response(request_id, {"tools": _tool_specs()})
+        if method == "tools/call":
+            params = rpc_payload.get("params") or {}
+            tool_name = params.get("name")
+            arguments = params.get("arguments") or {}
+            try:
+                tool_result = _call_tool_by_name(tool_name, arguments)
+                serialized_result = _serialize_result(tool_result)
+                return _rpc_result_response(
+                    request_id,
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": json.dumps(serialized_result),
+                            }
+                        ],
+                        "structuredContent": serialized_result,
+                        "isError": False,
+                    },
+                )
+            except Exception as exc:
+                return _rpc_result_response(
+                    request_id,
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Tool call failed: {str(exc)}",
+                            }
+                        ],
+                        "isError": True,
+                    },
+                )
         if method == "resources/list":
             return _rpc_result_response(request_id, {"resources": []})
         if method == "resources/templates/list":
@@ -142,6 +312,8 @@ async def oauth2_middleware(*args, **kwargs):
             )
         if method == "logging/setLevel":
             return _rpc_result_response(request_id, {})
+        if method == "roots/list":
+            return _rpc_result_response(request_id, {"roots": []})
 
     return await _invoke_call_next(call_next, context)
 
@@ -149,14 +321,18 @@ async def oauth2_middleware(*args, **kwargs):
 def register_middleware(server: FastMCP, middleware_handler):
     middleware_attr = getattr(server, "middleware", None)
     if callable(middleware_attr):
+        logging.warning("Registering MCP middleware using callable 'middleware'")
         middleware_attr(middleware_handler)
         return
     if isinstance(middleware_attr, list):
+        logging.warning("Registering MCP middleware by appending to list 'middleware'")
         middleware_attr.append(middleware_handler)
+        logging.warning("MCP middleware list size is now: %s", len(middleware_attr))
         return
 
     add_middleware = getattr(server, "add_middleware", None)
     if callable(add_middleware):
+        logging.warning("Registering MCP middleware using callable 'add_middleware'")
         add_middleware(middleware_handler)
         return
 

@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime
 from fastapi import HTTPException
 from fastmcp import FastMCP
@@ -40,6 +41,34 @@ async def _invoke_call_next(call_next, context):
         return await call_next()
 
 
+async def _extract_rpc_request(request: Request) -> dict | None:
+    if request.method.upper() != "POST":
+        return None
+    content_type = (request.headers.get("content-type") or "").lower()
+    if "json" not in content_type:
+        return None
+    try:
+        payload = json.loads((await request.body()).decode("utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _rpc_result_response(request_id, result: dict) -> JSONResponse:
+    return JSONResponse(
+        {
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "result": result,
+        }
+    )
+
+
+def _rpc_notification_ack() -> PlainTextResponse:
+    # JSON-RPC notifications do not require a response body.
+    return PlainTextResponse("", status_code=202)
+
+
 async def oauth2_middleware(*args, **kwargs):
     call_next, context = _resolve_middleware_call(args, kwargs)
 
@@ -69,6 +98,50 @@ async def oauth2_middleware(*args, **kwargs):
         require_oauth2_header(authorization_header)
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    rpc_payload = await _extract_rpc_request(request)
+    if rpc_payload:
+        method = rpc_payload.get("method")
+        request_id = rpc_payload.get("id")
+        print(f"MCP request method: {method}")
+
+        # Compatibility shims for clients that probe optional methods
+        # and fail hard on -32601.
+        if method == "ping":
+            return _rpc_result_response(request_id, {})
+        if method == "notifications/initialized":
+            return _rpc_notification_ack()
+        if method == "notifications/cancelled":
+            return _rpc_notification_ack()
+        if method == "resources/list":
+            return _rpc_result_response(request_id, {"resources": []})
+        if method == "resources/templates/list":
+            return _rpc_result_response(request_id, {"resourceTemplates": []})
+        if method == "resources/subscribe":
+            return _rpc_result_response(request_id, {})
+        if method == "resources/unsubscribe":
+            return _rpc_result_response(request_id, {})
+        if method == "resources/read":
+            return _rpc_result_response(request_id, {"contents": []})
+        if method == "prompts/list":
+            return _rpc_result_response(request_id, {"prompts": []})
+        if method == "prompts/get":
+            return _rpc_result_response(
+                request_id,
+                {"description": "", "messages": []},
+            )
+        if method == "completion/complete":
+            return _rpc_result_response(
+                request_id,
+                {"completion": {"values": [], "total": 0, "hasMore": False}},
+            )
+        if method == "completions/complete":
+            return _rpc_result_response(
+                request_id,
+                {"completion": {"values": [], "total": 0, "hasMore": False}},
+            )
+        if method == "logging/setLevel":
+            return _rpc_result_response(request_id, {})
 
     return await _invoke_call_next(call_next, context)
 

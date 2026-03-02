@@ -143,13 +143,17 @@ brew install node
 TOKEN="$(
   docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
 )"
-echo "Copy following token:\n{\"Authorization\":\"Bearer ${TOKEN}\"}"
+TOKEN="$(echo "${TOKEN}" | tr -d '\r\n')"
+printf '{"Authorization":"Bearer %s"}\n' "${TOKEN}"
+# macOS helper (optional): copy JSON header directly to clipboard
+printf '{"Authorization":"Bearer %s"}' "${TOKEN}" | pbcopy
 ```
 
 4. In Inspector UI, connect to MCP:
 - Connection type: `Streamable HTTP`
 - URL: `http://localhost:8084/mcp`
 - Important: use `/mcp` (not `/msp`)
+- Auth mode: `Custom Headers` (do not use OAuth mode)
 - Header: `Authorization: Bearer <TOKEN>`
 - If you use `Custom Header JSON`, paste:
 
@@ -167,6 +171,8 @@ Troubleshooting:
 - If container logs show `POST /msp ... 404`, Inspector is pointing to the wrong path.
 - The correct URL is `http://localhost:8084/mcp` (not `/msp`).
 - In Inspector, remove old saved connection entries and reconnect with the URL above.
+- If Inspector shows `MCP error -32602: Invalid request parameters`, switch auth mode to `Custom Headers`, clear any OAuth settings, and reconnect.
+- If Inspector shows `MCP error -32601: Method not found`, check container logs for `MCP request method: ...` to see which JSON-RPC method was requested.
 - Use `Custom Header JSON` for auth:
 
 ```json

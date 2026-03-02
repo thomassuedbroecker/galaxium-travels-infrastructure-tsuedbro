@@ -143,22 +143,44 @@ brew install node
 TOKEN="$(
   docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
 )"
-echo "Copy following token:\nBearer ${TOKEN}"
+echo "Copy following token:\n{\"Authorization\":\"Bearer ${TOKEN}\"}"
 ```
 
 4. In Inspector UI, connect to MCP:
 - Connection type: `Streamable HTTP`
 - URL: `http://localhost:8084/mcp`
-- Authentication option A (manual token header): `Authorization: Bearer <TOKEN>`
-- Authentication option B (full OAuth in UI):
-  - Token URL: `http://localhost:8080/realms/galaxium/protocol/openid-connect/token`
-  - Client ID: `web-app-proxy`
-  - Client Secret: `web-app-proxy-secret`
-  - Username: `demo-user`
-  - Password: `demo-user-password`
-  - Scope: `openid profile email`
+- Important: use `/mcp` (not `/msp`)
+- Header: `Authorization: Bearer <TOKEN>`
+- If you use `Custom Header JSON`, paste:
+
+```json
+{"Authorization":"Bearer <TOKEN>"}
+```
+
+Note: The current Inspector UI does not expose a full OAuth form (`Token URL`, `Client ID`, etc.).  
+It also does not provide username/password fields.  
+Get the token in terminal (step 3), then paste it into the header field.
 
 Run `tools/list` after connect. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
+
+Troubleshooting:
+- If container logs show `POST /msp ... 404`, Inspector is pointing to the wrong path.
+- The correct URL is `http://localhost:8084/mcp` (not `/msp`).
+- In Inspector, remove old saved connection entries and reconnect with the URL above.
+- Use `Custom Header JSON` for auth:
+
+```json
+{"Authorization":"Bearer <TOKEN>"}
+```
+
+- Do not use OAuth discovery in Inspector for this local setup. If enabled, Inspector may probe `/.well-known/...` on the MCP server and show additional 404s.
+
+Compatibility behavior in this repo:
+- `/msp` is accepted as a legacy alias and redirected to `/mcp`.
+- `/.well-known/openid-configuration`
+- `/.well-known/oauth-authorization-server`
+- `/.well-known/oauth-protected-resource` (and `/mcp`, `/msp` variants)
+are exposed on the MCP server for local Inspector discovery compatibility.
 
 ### Manual setup fallback (if import fails)
 

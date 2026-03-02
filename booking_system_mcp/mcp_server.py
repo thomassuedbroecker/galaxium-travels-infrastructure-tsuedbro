@@ -1,10 +1,11 @@
+import os
 from datetime import datetime
 from fastapi import HTTPException
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_headers, get_http_request
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import JSONResponse, PlainTextResponse
+from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
 
 from auth import require_oauth2_header, validate_auth_configuration
 from db import SessionLocal, init_db
@@ -14,29 +15,53 @@ from seed import seed
 mcp = FastMCP("Booking System MCP")
 
 
-async def oauth2_middleware(*args):
-    # FastMCP versions differ in middleware signature ordering.
-    if len(args) != 2:
-        raise RuntimeError("Unexpected middleware invocation signature")
+def _resolve_middleware_call(args, kwargs):
+    # FastMCP versions differ in middleware invocation style.
+    call_next = kwargs.get("call_next") or kwargs.get("next")
+    context = kwargs.get("context") or kwargs.get("ctx")
 
-    first, second = args
-    if callable(first):
-        call_next, context = first, second
-    else:
-        context, call_next = first, second
+    if call_next is not None:
+        return call_next, context
+
+    if len(args) == 2:
+        first, second = args
+        if callable(first):
+            return first, second
+        if callable(second):
+            return second, first
+
+    raise RuntimeError("Unexpected middleware invocation signature")
+
+
+async def _invoke_call_next(call_next, context):
+    try:
+        return await call_next(context)
+    except TypeError:
+        return await call_next()
+
+
+async def oauth2_middleware(*args, **kwargs):
+    call_next, context = _resolve_middleware_call(args, kwargs)
 
     request = get_http_request()
     if request is None:
-        return await call_next(context)
+        return await _invoke_call_next(call_next, context)
 
     request_method = request.method.upper()
     request_path = request.url.path
 
     if request_method == "OPTIONS":
-        return await call_next(context)
+        return await _invoke_call_next(call_next, context)
 
-    if request_method == "GET" and request_path == "/":
-        return await call_next(context)
+    if request_method == "GET" and (
+        request_path == "/"
+        or request_path.startswith("/.well-known/")
+    ):
+        return await _invoke_call_next(call_next, context)
+
+    # Backward-compatible alias route: /msp -> /mcp.
+    if request_path in {"/msp", "/msp/"}:
+        return await _invoke_call_next(call_next, context)
 
     headers = get_http_headers(include_all=False)
     authorization_header = headers.get("authorization")
@@ -45,7 +70,7 @@ async def oauth2_middleware(*args):
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
-    return await call_next(context)
+    return await _invoke_call_next(call_next, context)
 
 
 def register_middleware(server: FastMCP, middleware_handler):
@@ -218,6 +243,79 @@ def get_user_id(name: str, email: str) -> UserOut:
 @mcp.custom_route("/", methods=["GET"])
 async def root_health_check(request: Request) -> PlainTextResponse:
     return PlainTextResponse("OK")
+
+
+@mcp.custom_route("/msp", methods=["GET", "POST", "OPTIONS"])
+@mcp.custom_route("/msp/", methods=["GET", "POST", "OPTIONS"])
+async def msp_compat_redirect(request: Request) -> RedirectResponse:
+    query = request.url.query
+    target = "/mcp"
+    if query:
+        target = f"{target}?{query}"
+    return RedirectResponse(url=target, status_code=307)
+
+
+def _issuer() -> str:
+    return (os.getenv("OIDC_ISSUER") or "").strip()
+
+
+def _token_endpoint() -> str:
+    issuer = _issuer()
+    if not issuer:
+        return ""
+    return f"{issuer}/protocol/openid-connect/token"
+
+
+def _jwks_uri() -> str:
+    explicit = (os.getenv("OIDC_JWKS_URL") or "").strip()
+    if explicit:
+        return explicit
+    issuer = _issuer()
+    if not issuer:
+        return ""
+    return f"{issuer}/protocol/openid-connect/certs"
+
+
+@mcp.custom_route("/.well-known/openid-configuration", methods=["GET"])
+async def local_openid_configuration(request: Request) -> JSONResponse:
+    issuer = _issuer()
+    return JSONResponse(
+        {
+            "issuer": issuer,
+            "token_endpoint": _token_endpoint(),
+            "jwks_uri": _jwks_uri(),
+        }
+    )
+
+
+@mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET"])
+async def local_oauth_authorization_server(request: Request) -> JSONResponse:
+    issuer = _issuer()
+    return JSONResponse(
+        {
+            "issuer": issuer,
+            "token_endpoint": _token_endpoint(),
+            "jwks_uri": _jwks_uri(),
+        }
+    )
+
+
+def _oauth_protected_resource_payload() -> dict[str, object]:
+    issuer = _issuer()
+    mcp_base = "http://localhost:8084/mcp"
+    payload: dict[str, object] = {
+        "resource": mcp_base,
+    }
+    if issuer:
+        payload["authorization_servers"] = [issuer]
+    return payload
+
+
+@mcp.custom_route("/.well-known/oauth-protected-resource", methods=["GET"])
+@mcp.custom_route("/.well-known/oauth-protected-resource/mcp", methods=["GET"])
+@mcp.custom_route("/.well-known/oauth-protected-resource/msp", methods=["GET"])
+async def local_oauth_protected_resource(request: Request) -> JSONResponse:
+    return JSONResponse(_oauth_protected_resource_payload())
 
 # Initialize DB and seed data on startup
 validate_auth_configuration()

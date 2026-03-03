@@ -418,3 +418,14 @@ export WEB_APP_BASE_URL=https://<web-app-url>
 # export TRAVELER_PASSWORD=<traveler-password>
 bash verify-keycloak-auth-remote.sh
 ```
+
+Additional command:
+
+Get token
+
+```sh
+TOKEN="$(
+  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
+)"
+echo "\n{\"Authentication\":\"${TOKEN}\"}\n"
+```

@@ -427,5 +427,11 @@ Get token
 TOKEN="$(
   docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
 )"
-echo "\n{\"Authentication\":\"${TOKEN}\"}\n"
+TOKEN="$(echo "${TOKEN}" | tr -d '\r\n')"
+printf '{"Authorization":"Bearer %s"}\n' "${TOKEN}"
 ```
+
+Important:
+- Use the token command above (`docker exec web_app ... http://keycloak:8080 ...`).
+- Do not request the token from `http://localhost:8080/...` for MCP auth checks in this compose setup.
+- `localhost` tokens have issuer `http://localhost:8080/realms/galaxium`, but REST/MCP validate issuer `http://keycloak:8080/realms/galaxium`, which causes `invalid_token`.

@@ -272,7 +272,15 @@ bash verify-keycloak-inspector-client.sh
 - The correct URL is `http://localhost:8084/mcp` (not `/msp`).
 - In Inspector, remove old saved connection entries and reconnect with the URL above.
 - If Inspector shows `MCP error -32602: Invalid request parameters`, switch auth mode to `Custom Headers`, clear any OAuth settings, and reconnect.
-- If Inspector shows `MCP error -32601: Method not found`, check container logs for `MCP request method: ...` to see which JSON-RPC method was requested.
+- If Inspector shows `MCP error -32601: Method not found`, rebuild/recreate MCP and restart Inspector:
+
+```sh
+docker compose -f docker_compose.yaml build booking_system_mcp
+docker compose -f docker_compose.yaml up -d --force-recreate booking_system_mcp
+bash start-mcp-inspector-ui.sh
+```
+
+Then remove old saved Inspector connections and reconnect to `http://localhost:8084/mcp`.
 - `GET /openapi.json` returning `404` is expected for this MCP server.
 - If UI, REST, or MCP checks fail in unclear ways, run the unified verifier first:
 

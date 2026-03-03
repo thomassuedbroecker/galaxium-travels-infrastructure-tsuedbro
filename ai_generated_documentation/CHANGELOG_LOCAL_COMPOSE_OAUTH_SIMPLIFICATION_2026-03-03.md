@@ -10,6 +10,7 @@ This iteration simplifies local OAuth validation and improves troubleshooting vi
 4. Added deterministic Inspector UI launcher with generated connection config.
 5. Added `local-container/test-results/` to `.gitignore` to avoid report artifacts polluting git status.
 6. Hardened MCP OAuth discovery compatibility for Inspector OAuth mode.
+7. Replaced custom MCP middleware auth with native FastMCP auth provider to fix `initialize -> -32601 Method not found`.
 
 ## What Changed
 
@@ -76,6 +77,26 @@ To address Inspector OAuth error `Failed to discover OAuth metadata`, MCP server
 - `start-mcp-inspector-ui.sh` now performs metadata preflight validation before opening Inspector.
 - Unified E2E script now includes metadata discovery test case (`E2E-009`) and sets explicit MCP `Accept` headers to avoid transport `406` negotiation failures.
 - Added local OAuth client registration endpoint (`/oauth/register`) and exposed `registration_endpoint` in auth metadata so Inspector OAuth `Client Registration` can complete.
+
+### 3b. MCP protocol/auth parity fix for Inspector
+
+To address unstable Inspector behavior (`Method not found`, inconsistent auth checks), MCP auth handling was simplified:
+
+- Removed custom MCP middleware-based JSON-RPC interception.
+- Enabled native FastMCP HTTP auth (`RequireAuthMiddleware`) using the same Keycloak token validation path as REST (`validate_access_token` in `booking_system_mcp/auth.py`).
+- Added framework-level CORS middleware for `/mcp` preflight and browser transport compatibility.
+- Updated E2E MCP checks to:
+  - accept native unauthorized payloads (`invalid_token`/`Missing bearer token`)
+  - parse streamable-http SSE responses
+  - preserve `MCP-Session-Id` from `initialize` and reuse it for `tools/list`
+
+Verified outcomes in local compose run:
+
+- Unauthenticated `POST /mcp` `initialize` -> `401`
+- Authenticated `initialize` -> `200` + MCP session id
+- Authenticated `tools/list` with session id -> `200` + expected booking tools
+- Full suite pass in one run:
+  - `local-container/test-results/oauth-e2e-all-20260303T215316Z.md`
 
 ### 4. Documentation updates
 

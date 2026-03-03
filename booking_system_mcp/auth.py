@@ -74,6 +74,12 @@ def _decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, **decode_kwargs)
 
 
+def validate_access_token(token: str) -> dict[str, Any]:
+    if not auth_enabled():
+        return {}
+    return _decode_token(token)
+
+
 def require_oauth2_header(authorization_header: str | None) -> dict[str, Any]:
     if not auth_enabled():
         return {}
@@ -93,7 +99,7 @@ def require_oauth2_header(authorization_header: str | None) -> dict[str, Any]:
 
     token = parts[1].strip()
     try:
-        return _decode_token(token)
+        return validate_access_token(token)
     except InvalidTokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

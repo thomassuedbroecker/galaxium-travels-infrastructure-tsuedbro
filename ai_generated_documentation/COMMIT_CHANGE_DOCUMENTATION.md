@@ -1,5 +1,13 @@
 # Commit Change Documentation
 
+## Update 2026-03-03 (Inspector Protocol Stabilization)
+
+The MCP Inspector regression (`initialize -> MCP -32601 Method not found`) was fixed by replacing custom MCP middleware auth with native FastMCP auth wiring and updating MCP E2E checks for session-aware streamable-http responses.
+
+See:
+
+- [`CHANGELOG_LOCAL_COMPOSE_OAUTH_SIMPLIFICATION_2026-03-03.md`](./CHANGELOG_LOCAL_COMPOSE_OAUTH_SIMPLIFICATION_2026-03-03.md)
+
 ## Update 2026-03-03 (Local Compose OAuth Hardening)
 
 For the latest local Docker Compose OAuth hardening cycle and unified UI+REST+MCP verification flow, see:

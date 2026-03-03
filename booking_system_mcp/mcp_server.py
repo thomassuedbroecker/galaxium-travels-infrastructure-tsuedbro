@@ -2,19 +2,18 @@ import os
 import json
 import logging
 from datetime import datetime
-from fastapi import HTTPException
 from fastmcp import FastMCP
-from fastmcp.server.dependencies import get_http_headers, get_http_request
+from fastmcp.server.auth import AccessToken, TokenVerifier
 from pydantic import BaseModel
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
-from auth import require_oauth2_header, validate_auth_configuration
+from auth import auth_enabled, validate_access_token, validate_auth_configuration
 from db import SessionLocal, init_db
 from models import Booking, Flight, User
 from seed import seed
-
-mcp = FastMCP("Booking System MCP")
 
 CORS_ALLOW_ORIGIN = (os.getenv("MCP_CORS_ALLOW_ORIGIN") or "*").strip() or "*"
 CORS_ALLOW_HEADERS = (
@@ -33,331 +32,68 @@ def _with_cors(response: Response) -> Response:
     return response
 
 
-def _resolve_middleware_call(args, kwargs):
-    # FastMCP versions differ in middleware invocation style.
-    call_next = kwargs.get("call_next") or kwargs.get("next")
-    context = kwargs.get("context") or kwargs.get("ctx")
-
-    if call_next is not None:
-        return call_next, context
-
-    if len(args) == 2:
-        first, second = args
-        if callable(first):
-            return first, second
-        if callable(second):
-            return second, first
-
-    raise RuntimeError("Unexpected middleware invocation signature")
+def _mcp_base_url() -> str:
+    explicit = (os.getenv("MCP_PUBLIC_BASE_URL") or "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    return "http://localhost:8084"
 
 
-async def _invoke_call_next(call_next, context):
-    try:
-        return await call_next(context)
-    except TypeError:
-        return await call_next()
+class KeycloakTokenVerifier(TokenVerifier):
+    def __init__(self) -> None:
+        super().__init__(base_url=_mcp_base_url())
 
+    async def verify_token(self, token: str) -> AccessToken | None:
+        try:
+            claims = validate_access_token(token)
+        except Exception as exc:
+            logging.warning("MCP token validation failed: %s", exc)
+            return None
 
-async def _extract_rpc_request(request: Request) -> dict | None:
-    if request.method.upper() != "POST":
-        return None
-    content_type = (request.headers.get("content-type") or "").lower()
-    if "json" not in content_type:
-        return None
-    try:
-        payload = json.loads((await request.body()).decode("utf-8"))
-    except Exception:
-        return None
-    return payload if isinstance(payload, dict) else None
+        raw_scope = claims.get("scope")
+        scopes = []
+        if isinstance(raw_scope, str):
+            scopes = [scope for scope in raw_scope.split() if scope]
 
+        client_id = claims.get("azp") or claims.get("client_id") or claims.get("sub")
+        if not isinstance(client_id, str) or not client_id.strip():
+            client_id = "keycloak-user"
 
-def _rpc_result_response(request_id, result: dict) -> JSONResponse:
-    return _with_cors(JSONResponse(
-        {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "result": result,
-        }
-    ))
+        expires_at = claims.get("exp")
+        if not isinstance(expires_at, int):
+            expires_at = None
 
-
-def _rpc_notification_ack() -> PlainTextResponse:
-    # JSON-RPC notifications do not require a response body.
-    return _with_cors(PlainTextResponse("", status_code=202))
-
-
-def _negotiated_protocol_version(request: Request) -> str:
-    header_value = (request.headers.get("mcp-protocol-version") or "").strip()
-    return header_value or "2025-11-25"
-
-
-def _tool_specs() -> list[dict]:
-    return [
-        {
-            "name": "list_flights",
-            "description": "List all available flights.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {},
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "book_flight",
-            "description": "Book a seat on a specific flight for a user.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "user_id": {"type": "integer"},
-                    "name": {"type": "string"},
-                    "flight_id": {"type": "integer"},
-                },
-                "required": ["user_id", "name", "flight_id"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "get_bookings",
-            "description": "Retrieve all bookings for a specific user.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "user_id": {"type": "integer"},
-                },
-                "required": ["user_id"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "cancel_booking",
-            "description": "Cancel an existing booking by booking ID.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "booking_id": {"type": "integer"},
-                },
-                "required": ["booking_id"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "register_user",
-            "description": "Register a new user with name and email.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "email": {"type": "string"},
-                },
-                "required": ["name", "email"],
-                "additionalProperties": False,
-            },
-        },
-        {
-            "name": "get_user_id",
-            "description": "Retrieve user details by name and email.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "email": {"type": "string"},
-                },
-                "required": ["name", "email"],
-                "additionalProperties": False,
-            },
-        },
-    ]
-
-
-def _serialize_result(value):
-    if isinstance(value, BaseModel):
-        return value.model_dump()
-    if isinstance(value, list):
-        return [_serialize_result(item) for item in value]
-    if isinstance(value, dict):
-        return {k: _serialize_result(v) for k, v in value.items()}
-    return value
-
-
-def _call_tool_by_name(tool_name: str, arguments: dict):
-    if tool_name == "list_flights":
-        return list_flights()
-    if tool_name == "book_flight":
-        return book_flight(
-            user_id=arguments["user_id"],
-            name=arguments["name"],
-            flight_id=arguments["flight_id"],
-        )
-    if tool_name == "get_bookings":
-        return get_bookings(user_id=arguments["user_id"])
-    if tool_name == "cancel_booking":
-        return cancel_booking(booking_id=arguments["booking_id"])
-    if tool_name == "register_user":
-        return register_user(name=arguments["name"], email=arguments["email"])
-    if tool_name == "get_user_id":
-        return get_user_id(name=arguments["name"], email=arguments["email"])
-    raise ValueError(f"Unknown tool: {tool_name}")
-
-
-async def oauth2_middleware(*args, **kwargs):
-    call_next, context = _resolve_middleware_call(args, kwargs)
-
-    request = get_http_request()
-    if request is None:
-        return await _invoke_call_next(call_next, context)
-
-    request_method = request.method.upper()
-    request_path = request.url.path
-
-    if request_method == "OPTIONS":
-        return _with_cors(PlainTextResponse("", status_code=204))
-
-    if request_method == "GET" and (
-        request_path == "/"
-        or request_path.startswith("/.well-known/")
-    ):
-        return _with_cors(await _invoke_call_next(call_next, context))
-
-    # Backward-compatible alias route: /msp -> /mcp.
-    if request_path in {"/msp", "/msp/"}:
-        return _with_cors(await _invoke_call_next(call_next, context))
-
-    headers = get_http_headers(include_all=False)
-    authorization_header = headers.get("authorization")
-    try:
-        require_oauth2_header(authorization_header)
-    except HTTPException as exc:
-        return _with_cors(
-            JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        return AccessToken(
+            token=token,
+            client_id=client_id,
+            scopes=scopes,
+            expires_at=expires_at,
+            claims=claims,
         )
 
-    rpc_payload = await _extract_rpc_request(request)
-    if rpc_payload:
-        method = rpc_payload.get("method")
-        request_id = rpc_payload.get("id")
-        logging.warning("MCP request method=%s id=%s path=%s", method, request_id, request_path)
 
-        if method == "initialize":
-            return _rpc_result_response(
-                request_id,
-                {
-                    "protocolVersion": _negotiated_protocol_version(request),
-                    "capabilities": {
-                        "tools": {"listChanged": False},
-                        "resources": {"listChanged": False, "subscribe": False},
-                        "prompts": {"listChanged": False},
-                        "logging": {},
-                    },
-                    "serverInfo": {
-                        "name": "Booking System MCP",
-                        "version": "1.0.0",
-                    },
-                    "instructions": "Use tools/list to discover available booking tools.",
-                },
-            )
-
-        # Compatibility shims for clients that probe optional methods
-        # and fail hard on -32601.
-        if method == "ping":
-            return _rpc_result_response(request_id, {})
-        if method == "notifications/initialized":
-            return _rpc_notification_ack()
-        if method == "notifications/cancelled":
-            return _rpc_notification_ack()
-        if method == "notifications/roots/list_changed":
-            return _rpc_notification_ack()
-        if method == "tools/list":
-            return _rpc_result_response(request_id, {"tools": _tool_specs()})
-        if method == "tools/call":
-            params = rpc_payload.get("params") or {}
-            tool_name = params.get("name")
-            arguments = params.get("arguments") or {}
-            try:
-                tool_result = _call_tool_by_name(tool_name, arguments)
-                serialized_result = _serialize_result(tool_result)
-                return _rpc_result_response(
-                    request_id,
-                    {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": json.dumps(serialized_result),
-                            }
-                        ],
-                        "structuredContent": serialized_result,
-                        "isError": False,
-                    },
-                )
-            except Exception as exc:
-                return _rpc_result_response(
-                    request_id,
-                    {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"Tool call failed: {str(exc)}",
-                            }
-                        ],
-                        "isError": True,
-                    },
-                )
-        if method == "resources/list":
-            return _rpc_result_response(request_id, {"resources": []})
-        if method == "resources/templates/list":
-            return _rpc_result_response(request_id, {"resourceTemplates": []})
-        if method == "resources/subscribe":
-            return _rpc_result_response(request_id, {})
-        if method == "resources/unsubscribe":
-            return _rpc_result_response(request_id, {})
-        if method == "resources/read":
-            return _rpc_result_response(request_id, {"contents": []})
-        if method == "prompts/list":
-            return _rpc_result_response(request_id, {"prompts": []})
-        if method == "prompts/get":
-            return _rpc_result_response(
-                request_id,
-                {"description": "", "messages": []},
-            )
-        if method == "completion/complete":
-            return _rpc_result_response(
-                request_id,
-                {"completion": {"values": [], "total": 0, "hasMore": False}},
-            )
-        if method == "completions/complete":
-            return _rpc_result_response(
-                request_id,
-                {"completion": {"values": [], "total": 0, "hasMore": False}},
-            )
-        if method == "logging/setLevel":
-            return _rpc_result_response(request_id, {})
-        if method == "roots/list":
-            return _rpc_result_response(request_id, {"roots": []})
-
-    return _with_cors(await _invoke_call_next(call_next, context))
+def _build_auth_provider() -> TokenVerifier | None:
+    if not auth_enabled():
+        return None
+    return KeycloakTokenVerifier()
 
 
-def register_middleware(server: FastMCP, middleware_handler):
-    middleware_attr = getattr(server, "middleware", None)
-    if callable(middleware_attr):
-        logging.warning("Registering MCP middleware using callable 'middleware'")
-        middleware_attr(middleware_handler)
-        return
-    if isinstance(middleware_attr, list):
-        logging.warning("Registering MCP middleware by appending to list 'middleware'")
-        middleware_attr.append(middleware_handler)
-        logging.warning("MCP middleware list size is now: %s", len(middleware_attr))
-        return
-
-    add_middleware = getattr(server, "add_middleware", None)
-    if callable(add_middleware):
-        logging.warning("Registering MCP middleware using callable 'add_middleware'")
-        add_middleware(middleware_handler)
-        return
-
-    raise RuntimeError("FastMCP middleware registration is not supported by this version")
+mcp = FastMCP("Booking System MCP", auth=_build_auth_provider())
 
 
-register_middleware(mcp, oauth2_middleware)
+def _csv_values(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+HTTP_MIDDLEWARE = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=[CORS_ALLOW_ORIGIN],
+        allow_methods=_csv_values(CORS_ALLOW_METHODS),
+        allow_headers=_csv_values(CORS_ALLOW_HEADERS),
+        expose_headers=_csv_values(CORS_EXPOSE_HEADERS),
+    )
+]
 
 
 # Pydantic models for structured output
@@ -570,13 +306,6 @@ def _jwks_uri() -> str:
     return f"{auth_server}/protocol/openid-connect/certs"
 
 
-def _mcp_base_url() -> str:
-    explicit = (os.getenv("MCP_PUBLIC_BASE_URL") or "").strip()
-    if explicit:
-        return explicit.rstrip("/")
-    return "http://localhost:8084"
-
-
 def _registration_endpoint() -> str:
     return f"{_mcp_base_url()}/oauth/register"
 
@@ -655,20 +384,25 @@ async def local_oauth_authorization_server(request: Request) -> JSONResponse:
                 "client_secret_post",
             ],
             "scopes_supported": ["openid", "profile", "email"],
-            "registration_endpoint": _registration_endpoint(),
         }
     ))
 
 
 def _oauth_protected_resource_payload() -> dict[str, object]:
     issuer = _auth_server_url()
-    mcp_base = f"{_mcp_base_url()}/mcp"
+    mcp_base_url = _mcp_base_url()
+    mcp_resource = f"{mcp_base_url}/mcp"
     payload: dict[str, object] = {
-        "resource": mcp_base,
+        "resource": mcp_resource,
         "scopes_supported": ["openid", "profile", "email"],
     }
-    if issuer:
-        payload["authorization_servers"] = [issuer]
+    # Local Inspector compatibility:
+    # advertise MCP base first so clients discover the MCP-hosted
+    # oauth-authorization-server metadata (which includes registration_endpoint).
+    authorization_servers: list[str] = [mcp_base_url]
+    if issuer and issuer not in authorization_servers:
+        authorization_servers.append(issuer)
+    payload["authorization_servers"] = authorization_servers
     return payload
 
 
@@ -732,4 +466,10 @@ init_db()
 seed()
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=8084, path="/mcp")
+    mcp.run(
+        transport="streamable-http",
+        host="0.0.0.0",
+        port=8084,
+        path="/mcp",
+        middleware=HTTP_MIDDLEWARE,
+    )

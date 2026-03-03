@@ -35,7 +35,10 @@ TMP_WEB_BOOKINGS_BODY="/tmp/galaxium_e2e_web_bookings_body.json"
 TMP_WEB_BOOK_BODY="/tmp/galaxium_e2e_web_book_body.json"
 TMP_MCP_NO_TOKEN_BODY="/tmp/galaxium_e2e_mcp_no_token_body.json"
 TMP_MCP_INIT_BODY="/tmp/galaxium_e2e_mcp_initialize_body.json"
+TMP_MCP_INIT_HEADERS="/tmp/galaxium_e2e_mcp_initialize_headers.txt"
+TMP_MCP_INIT_BODY_JSON="/tmp/galaxium_e2e_mcp_initialize_body_payload.json"
 TMP_MCP_TOOLS_BODY="/tmp/galaxium_e2e_mcp_tools_body.json"
+TMP_MCP_TOOLS_BODY_JSON="/tmp/galaxium_e2e_mcp_tools_body_payload.json"
 TMP_MCP_OAUTH_PROTECTED_RESOURCE_BODY="/tmp/galaxium_e2e_mcp_oauth_protected_resource.json"
 TMP_MCP_OAUTH_AUTH_SERVER_BODY="/tmp/galaxium_e2e_mcp_oauth_auth_server.json"
 TMP_MCP_OAUTH_REGISTRATION_BODY="/tmp/galaxium_e2e_mcp_oauth_registration.json"
@@ -168,6 +171,31 @@ assert_mcp_tool_present() {
     fail_step "MCP tools/list response missing tool '${tool_name}'"
   fi
   echo "OK: MCP tools/list contains '${tool_name}'"
+}
+
+extract_mcp_json_payload() {
+  local input_file="$1"
+  local output_file="$2"
+
+  if jq -e . "${input_file}" >/dev/null 2>&1; then
+    cp "${input_file}" "${output_file}"
+    return 0
+  fi
+
+  local payload_line
+  payload_line="$(sed -n 's/^data: //p' "${input_file}" | tail -n 1)"
+  if [[ -z "${payload_line}" ]]; then
+    echo "Failed MCP body content:"
+    cat "${input_file}"
+    fail_step "MCP response body did not contain JSON payload"
+  fi
+
+  printf '%s\n' "${payload_line}" > "${output_file}"
+  if ! jq -e . "${output_file}" >/dev/null 2>&1; then
+    echo "Failed extracted MCP payload:"
+    cat "${output_file}"
+    fail_step "MCP response payload is not valid JSON"
+  fi
 }
 
 run_mcp_inspector_cli() {
@@ -318,13 +346,14 @@ run_mcp_protocol_tests() {
       -d "${MCP_INITIALIZE_PAYLOAD}"
   )"
   assert_status "401" "${mcp_no_token_status}" "MCP initialize without bearer token"
-  assert_contains "${TMP_MCP_NO_TOKEN_BODY}" "Missing bearer token" "MCP unauthenticated response"
+  assert_contains "${TMP_MCP_NO_TOKEN_BODY}" "invalid_token|Missing bearer token" "MCP unauthenticated response"
   pass_step "MCP unauthenticated rejection verified"
 
   start_step "E2E-007" "MCP initialize + tools/list succeed with bearer token"
-  local mcp_init_status mcp_tools_status
+  local mcp_init_status mcp_tools_status mcp_session_id
   mcp_init_status="$(
     curl -s -o "${TMP_MCP_INIT_BODY}" -w '%{http_code}' \
+      -D "${TMP_MCP_INIT_HEADERS}" \
       -X POST "${MCP_ENDPOINT_URL}" \
       -H "Content-Type: application/json" \
       -H "Accept: ${MCP_ACCEPT_HEADER}" \
@@ -333,8 +362,14 @@ run_mcp_protocol_tests() {
       -d "${MCP_INITIALIZE_PAYLOAD}"
   )"
   assert_status "200" "${mcp_init_status}" "MCP initialize with bearer token"
-  if ! jq -e '.result.serverInfo.name == "Booking System MCP"' "${TMP_MCP_INIT_BODY}" >/dev/null; then
+  extract_mcp_json_payload "${TMP_MCP_INIT_BODY}" "${TMP_MCP_INIT_BODY_JSON}"
+  if ! jq -e '.result.serverInfo.name == "Booking System MCP"' "${TMP_MCP_INIT_BODY_JSON}" >/dev/null; then
     fail_step "MCP initialize response does not contain expected serverInfo"
+  fi
+
+  mcp_session_id="$(awk 'tolower($1)=="mcp-session-id:" {print $2}' "${TMP_MCP_INIT_HEADERS}" | tr -d '\r\n')"
+  if [[ -z "${mcp_session_id}" ]]; then
+    fail_step "MCP initialize response did not include mcp-session-id header"
   fi
 
   mcp_tools_status="$(
@@ -343,12 +378,14 @@ run_mcp_protocol_tests() {
       -H "Content-Type: application/json" \
       -H "Accept: ${MCP_ACCEPT_HEADER}" \
       -H "MCP-Protocol-Version: 2025-11-25" \
+      -H "MCP-Session-Id: ${mcp_session_id}" \
       -H "Authorization: Bearer ${USER_ACCESS_TOKEN}" \
       -d "${MCP_TOOLS_LIST_PAYLOAD}"
   )"
   assert_status "200" "${mcp_tools_status}" "MCP tools/list with bearer token"
+  extract_mcp_json_payload "${TMP_MCP_TOOLS_BODY}" "${TMP_MCP_TOOLS_BODY_JSON}"
   for tool_name in list_flights book_flight get_bookings cancel_booking register_user get_user_id; do
-    assert_mcp_tool_present "${TMP_MCP_TOOLS_BODY}" "${tool_name}"
+    assert_mcp_tool_present "${TMP_MCP_TOOLS_BODY_JSON}" "${tool_name}"
   done
   pass_step "MCP authenticated JSON-RPC checks passed"
 }

@@ -570,6 +570,47 @@ def _jwks_uri() -> str:
     return f"{auth_server}/protocol/openid-connect/certs"
 
 
+def _mcp_base_url() -> str:
+    explicit = (os.getenv("MCP_PUBLIC_BASE_URL") or "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+    return "http://localhost:8084"
+
+
+def _registration_endpoint() -> str:
+    return f"{_mcp_base_url()}/oauth/register"
+
+
+def _inspector_redirect_uris() -> list[str]:
+    explicit_csv = (os.getenv("OIDC_INSPECTOR_REDIRECT_URIS") or "").strip()
+    if explicit_csv:
+        values = [item.strip() for item in explicit_csv.split(",") if item.strip()]
+        # Preserve order while deduplicating.
+        return list(dict.fromkeys(values))
+    return [
+        "http://localhost:6274/oauth/callback",
+        "http://localhost:6274/oauth/callback/debug",
+        "http://127.0.0.1:6274/oauth/callback",
+        "http://127.0.0.1:6274/oauth/callback/debug",
+    ]
+
+
+def _inspector_client_id() -> str:
+    return (
+        os.getenv("OIDC_INSPECTOR_CLIENT_ID")
+        or os.getenv("OIDC_CLIENT_ID")
+        or "web-app-proxy"
+    ).strip()
+
+
+def _inspector_client_secret() -> str:
+    return (
+        os.getenv("OIDC_INSPECTOR_CLIENT_SECRET")
+        or os.getenv("OIDC_CLIENT_SECRET")
+        or "web-app-proxy-secret"
+    ).strip()
+
+
 @mcp.custom_route("/.well-known/openid-configuration", methods=["GET", "OPTIONS"])
 @mcp.custom_route("/.well-known/openid-configuration/mcp", methods=["GET", "OPTIONS"])
 @mcp.custom_route("/.well-known/openid-configuration/msp", methods=["GET", "OPTIONS"])
@@ -600,6 +641,7 @@ async def local_oauth_authorization_server(request: Request) -> JSONResponse:
             "authorization_endpoint": _authorization_endpoint(),
             "token_endpoint": _token_endpoint(),
             "jwks_uri": _jwks_uri(),
+            "registration_endpoint": _registration_endpoint(),
             "response_types_supported": ["code"],
             "grant_types_supported": [
                 "authorization_code",
@@ -613,13 +655,14 @@ async def local_oauth_authorization_server(request: Request) -> JSONResponse:
                 "client_secret_post",
             ],
             "scopes_supported": ["openid", "profile", "email"],
+            "registration_endpoint": _registration_endpoint(),
         }
     ))
 
 
 def _oauth_protected_resource_payload() -> dict[str, object]:
     issuer = _auth_server_url()
-    mcp_base = "http://localhost:8084/mcp"
+    mcp_base = f"{_mcp_base_url()}/mcp"
     payload: dict[str, object] = {
         "resource": mcp_base,
         "scopes_supported": ["openid", "profile", "email"],
@@ -636,6 +679,52 @@ async def local_oauth_protected_resource(request: Request) -> JSONResponse:
     if request.method.upper() == "OPTIONS":
         return _with_cors(PlainTextResponse("", status_code=204))
     return _with_cors(JSONResponse(_oauth_protected_resource_payload()))
+
+
+@mcp.custom_route("/oauth/register", methods=["POST", "OPTIONS"])
+@mcp.custom_route("/oauth/register/mcp", methods=["POST", "OPTIONS"])
+async def local_oauth_client_registration(request: Request) -> JSONResponse:
+    if request.method.upper() == "OPTIONS":
+        return _with_cors(PlainTextResponse("", status_code=204))
+
+    request_payload: dict[str, object] = {}
+    try:
+        decoded = json.loads((await request.body()).decode("utf-8"))
+        if isinstance(decoded, dict):
+            request_payload = decoded
+    except Exception:
+        request_payload = {}
+
+    requested_redirects = request_payload.get("redirect_uris")
+    allowed_redirects = set(_inspector_redirect_uris())
+    effective_redirects: list[str] = []
+    if isinstance(requested_redirects, list):
+        for item in requested_redirects:
+            if isinstance(item, str) and item in allowed_redirects:
+                effective_redirects.append(item)
+
+    if not effective_redirects:
+        effective_redirects = _inspector_redirect_uris()
+
+    token_endpoint_auth_method = "client_secret_post"
+    requested_auth_method = request_payload.get("token_endpoint_auth_method")
+    if isinstance(requested_auth_method, str) and requested_auth_method.strip():
+        token_endpoint_auth_method = requested_auth_method.strip()
+
+    issued_at = int(datetime.utcnow().timestamp())
+    registration_payload = {
+        "client_id": _inspector_client_id(),
+        "client_secret": _inspector_client_secret(),
+        "client_id_issued_at": issued_at,
+        "client_secret_expires_at": 0,
+        "redirect_uris": effective_redirects,
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": token_endpoint_auth_method,
+        "scope": "openid profile email",
+        "application_type": "web",
+    }
+    return _with_cors(JSONResponse(registration_payload, status_code=201))
 
 # Initialize DB and seed data on startup
 validate_auth_configuration()

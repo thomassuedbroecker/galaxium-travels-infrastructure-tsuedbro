@@ -75,6 +75,7 @@ To address Inspector OAuth error `Failed to discover OAuth metadata`, MCP server
   - `/.well-known/oauth-authorization-server/msp`
 - `start-mcp-inspector-ui.sh` now performs metadata preflight validation before opening Inspector.
 - Unified E2E script now includes metadata discovery test case (`E2E-009`) and sets explicit MCP `Accept` headers to avoid transport `406` negotiation failures.
+- Added local OAuth client registration endpoint (`/oauth/register`) and exposed `registration_endpoint` in auth metadata so Inspector OAuth `Client Registration` can complete.
 
 ### 4. Documentation updates
 

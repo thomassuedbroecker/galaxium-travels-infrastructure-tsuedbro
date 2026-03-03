@@ -67,6 +67,29 @@ if ! jq -e '.issuer and .authorization_endpoint and .token_endpoint and .jwks_ur
   exit 1
 fi
 
+REGISTRATION_ENDPOINT="$(jq -r '.registration_endpoint // empty' /tmp/galaxium_inspector_oauth_auth_server.json)"
+if [[ -z "${REGISTRATION_ENDPOINT}" ]]; then
+  echo "ERROR: authorization server metadata is missing registration_endpoint"
+  cat /tmp/galaxium_inspector_oauth_auth_server.json
+  exit 1
+fi
+
+REGISTRATION_STATUS="$(curl -s -o /tmp/galaxium_inspector_oauth_registration.json -w '%{http_code}' \
+  -X POST "${REGISTRATION_ENDPOINT}" \
+  -H "Content-Type: application/json" \
+  -d '{"client_name":"inspector-ui-preflight","redirect_uris":["http://localhost:6274/oauth/callback"],"grant_types":["authorization_code","refresh_token"],"response_types":["code"],"token_endpoint_auth_method":"client_secret_post","scope":"openid profile email"}')"
+if [[ "${REGISTRATION_STATUS}" != "201" ]]; then
+  echo "ERROR: client registration preflight failed (HTTP ${REGISTRATION_STATUS}) at ${REGISTRATION_ENDPOINT}"
+  cat /tmp/galaxium_inspector_oauth_registration.json
+  exit 1
+fi
+
+if ! jq -e '.client_id and .client_secret and .redirect_uris and (.redirect_uris | length > 0)' /tmp/galaxium_inspector_oauth_registration.json >/dev/null; then
+  echo "ERROR: invalid client registration payload at ${REGISTRATION_ENDPOINT}"
+  cat /tmp/galaxium_inspector_oauth_registration.json
+  exit 1
+fi
+
 TOKEN="$(
   docker exec "${TOKEN_SOURCE_CONTAINER}" python -c "import requests; r=requests.post('${KEYCLOAK_TOKEN_URL_IN_CONTAINER}', data={'grant_type':'password','client_id':'${CLIENT_ID}','client_secret':'${CLIENT_SECRET}','username':'${TRAVELER_USERNAME}','password':'${TRAVELER_PASSWORD}'}, timeout=10); r.raise_for_status(); print(r.json().get('access_token',''))"
 )"
@@ -102,6 +125,7 @@ ${HEADER_JSON}
 4. Metadata preflight passed:
    - \`${MCP_OAUTH_PROTECTED_RESOURCE_URL}\`
    - \`${MCP_OAUTH_AUTH_SERVER_URL}\`
+   - \`${REGISTRATION_ENDPOINT}\`
 EOF
 
 echo "Saved Inspector UI config:"

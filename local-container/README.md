@@ -237,6 +237,22 @@ Troubleshooting:
      - `http://localhost:8084/.well-known/oauth-authorization-server`
   4. If still failing, use `Custom Headers` mode to continue testing and inspect `booking_system_mcp` logs.
 
+- If OAuth flow shows `Client Registration -> Load failed`:
+  1. Rebuild/recreate MCP container (commands above).
+  2. Run `bash start-mcp-inspector-ui.sh` and confirm client-registration preflight passes.
+  3. Verify registration endpoint from metadata:
+     - `curl -s http://localhost:8084/.well-known/oauth-authorization-server | jq -r .registration_endpoint`
+  4. Test registration endpoint manually (expect `201`):
+
+```sh
+REG="$(curl -s http://localhost:8084/.well-known/oauth-authorization-server | jq -r .registration_endpoint)"
+curl -i -X POST "${REG}" \
+  -H "Content-Type: application/json" \
+  -d '{"client_name":"manual-check","redirect_uris":["http://localhost:6274/oauth/callback"],"grant_types":["authorization_code","refresh_token"],"response_types":["code"],"token_endpoint_auth_method":"client_secret_post","scope":"openid profile email"}'
+```
+
+  5. If this still fails, use `Custom Headers` mode to continue testing and inspect `booking_system_mcp` logs.
+
 - If `verify-keycloak-inspector-client.sh` reports `standardFlowEnabled expected 'true' but got 'false'`, run:
 
 ```sh

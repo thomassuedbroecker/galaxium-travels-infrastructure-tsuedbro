@@ -38,6 +38,7 @@ TMP_MCP_INIT_BODY="/tmp/galaxium_e2e_mcp_initialize_body.json"
 TMP_MCP_TOOLS_BODY="/tmp/galaxium_e2e_mcp_tools_body.json"
 TMP_MCP_OAUTH_PROTECTED_RESOURCE_BODY="/tmp/galaxium_e2e_mcp_oauth_protected_resource.json"
 TMP_MCP_OAUTH_AUTH_SERVER_BODY="/tmp/galaxium_e2e_mcp_oauth_auth_server.json"
+TMP_MCP_OAUTH_REGISTRATION_BODY="/tmp/galaxium_e2e_mcp_oauth_registration.json"
 TMP_MCP_NO_TOKEN_OUT="/tmp/galaxium_e2e_mcp_inspector_no_token.out"
 TMP_MCP_WITH_TOKEN_OUT="/tmp/galaxium_e2e_mcp_inspector_with_token.out"
 WEB_COOKIE_FILE="/tmp/galaxium_e2e_web_cookies.txt"
@@ -355,7 +356,7 @@ run_mcp_protocol_tests() {
 run_mcp_metadata_discovery_checks() {
   start_step "E2E-009" "MCP OAuth metadata discovery endpoints are reachable"
 
-  local protected_resource_status auth_server_status
+  local protected_resource_status auth_server_status registration_status registration_endpoint
   protected_resource_status="$(
     curl -s -o "${TMP_MCP_OAUTH_PROTECTED_RESOURCE_BODY}" -w '%{http_code}' \
       "${MCP_OAUTH_PROTECTED_RESOURCE_URL}"
@@ -374,7 +375,23 @@ run_mcp_metadata_discovery_checks() {
     fail_step "MCP oauth-authorization-server payload missing expected metadata fields"
   fi
 
-  pass_step "MCP OAuth metadata endpoints returned valid payloads"
+  registration_endpoint="$(jq -r '.registration_endpoint // empty' "${TMP_MCP_OAUTH_AUTH_SERVER_BODY}")"
+  if [[ -z "${registration_endpoint}" ]]; then
+    fail_step "MCP oauth-authorization-server payload is missing registration_endpoint"
+  fi
+
+  registration_status="$(
+    curl -s -o "${TMP_MCP_OAUTH_REGISTRATION_BODY}" -w '%{http_code}' \
+      -X POST "${registration_endpoint}" \
+      -H "Content-Type: application/json" \
+      -d '{"client_name":"local-e2e-oauth-client","redirect_uris":["http://localhost:6274/oauth/callback"],"grant_types":["authorization_code","refresh_token"],"response_types":["code"],"token_endpoint_auth_method":"client_secret_post","scope":"openid profile email"}'
+  )"
+  assert_status "201" "${registration_status}" "MCP oauth client registration endpoint"
+  if ! jq -e '.client_id and .client_secret and .redirect_uris and (.redirect_uris | length > 0)' "${TMP_MCP_OAUTH_REGISTRATION_BODY}" >/dev/null; then
+    fail_step "MCP oauth client registration payload missing expected fields"
+  fi
+
+  pass_step "MCP OAuth metadata and client registration endpoints returned valid payloads"
 }
 
 run_mcp_inspector_cli_checks() {

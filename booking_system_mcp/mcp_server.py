@@ -508,29 +508,57 @@ def _issuer() -> str:
     return (os.getenv("OIDC_ISSUER") or "").strip()
 
 
-def _token_endpoint() -> str:
+def _auth_server_url() -> str:
+    explicit = (
+        os.getenv("OIDC_AUTHORIZATION_SERVER_URL")
+        or os.getenv("OIDC_PUBLIC_ISSUER")
+        or ""
+    ).strip()
+    if explicit:
+        return explicit
+
     issuer = _issuer()
     if not issuer:
         return ""
-    return f"{issuer}/protocol/openid-connect/token"
+
+    # Local compose fallback: metadata should point to host-reachable Keycloak URL.
+    # Internal in-network issuer (keycloak:8080) breaks Inspector discovery on host.
+    if "://keycloak:8080/" in issuer:
+        return issuer.replace("://keycloak:8080/", "://localhost:8080/")
+    return issuer
+
+
+def _token_endpoint() -> str:
+    auth_server = _auth_server_url()
+    if not auth_server:
+        return ""
+    return f"{auth_server}/protocol/openid-connect/token"
+
+
+def _authorization_endpoint() -> str:
+    auth_server = _auth_server_url()
+    if not auth_server:
+        return ""
+    return f"{auth_server}/protocol/openid-connect/auth"
 
 
 def _jwks_uri() -> str:
     explicit = (os.getenv("OIDC_JWKS_URL") or "").strip()
     if explicit:
         return explicit
-    issuer = _issuer()
-    if not issuer:
+    auth_server = _auth_server_url()
+    if not auth_server:
         return ""
-    return f"{issuer}/protocol/openid-connect/certs"
+    return f"{auth_server}/protocol/openid-connect/certs"
 
 
 @mcp.custom_route("/.well-known/openid-configuration", methods=["GET"])
 async def local_openid_configuration(request: Request) -> JSONResponse:
-    issuer = _issuer()
+    issuer = _auth_server_url()
     return JSONResponse(
         {
             "issuer": issuer,
+            "authorization_endpoint": _authorization_endpoint(),
             "token_endpoint": _token_endpoint(),
             "jwks_uri": _jwks_uri(),
         }
@@ -539,21 +567,36 @@ async def local_openid_configuration(request: Request) -> JSONResponse:
 
 @mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET"])
 async def local_oauth_authorization_server(request: Request) -> JSONResponse:
-    issuer = _issuer()
+    issuer = _auth_server_url()
     return JSONResponse(
         {
             "issuer": issuer,
+            "authorization_endpoint": _authorization_endpoint(),
             "token_endpoint": _token_endpoint(),
             "jwks_uri": _jwks_uri(),
+            "response_types_supported": ["code"],
+            "grant_types_supported": [
+                "authorization_code",
+                "refresh_token",
+                "client_credentials",
+                "password",
+            ],
+            "code_challenge_methods_supported": ["S256"],
+            "token_endpoint_auth_methods_supported": [
+                "client_secret_basic",
+                "client_secret_post",
+            ],
+            "scopes_supported": ["openid", "profile", "email"],
         }
     )
 
 
 def _oauth_protected_resource_payload() -> dict[str, object]:
-    issuer = _issuer()
+    issuer = _auth_server_url()
     mcp_base = "http://localhost:8084/mcp"
     payload: dict[str, object] = {
         "resource": mcp_base,
+        "scopes_supported": ["openid", "profile", "email"],
     }
     if issuer:
         payload["authorization_servers"] = [issuer]

@@ -26,9 +26,19 @@
       "protocol": "openid-connect",
       "publicClient": false,
       "serviceAccountsEnabled": true,
-      "standardFlowEnabled": false,
+      "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "secret": "web-app-proxy-secret",
+      "redirectUris": [
+        "http://localhost:6274/oauth/callback",
+        "http://localhost:6274/oauth/callback/debug",
+        "http://127.0.0.1:6274/oauth/callback",
+        "http://127.0.0.1:6274/oauth/callback/debug"
+      ],
+      "webOrigins": [
+        "http://localhost:6274",
+        "http://127.0.0.1:6274"
+      ],
       "protocolMappers": [
         {
           "name": "aud-booking-api",

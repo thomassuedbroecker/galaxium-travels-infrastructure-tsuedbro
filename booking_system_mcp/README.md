@@ -43,6 +43,7 @@ Environment variables:
 - `OIDC_ISSUER` - OIDC issuer URL (example: `http://keycloak:8080/realms/galaxium`)
 - `OIDC_AUDIENCE` - expected audience claim (example: `booking-api`)
 - `OIDC_JWKS_URL` - optional JWKS URL override
+- `OIDC_AUTHORIZATION_SERVER_URL` - optional host-reachable auth server URL for OAuth metadata discovery (example local: `http://localhost:8080/realms/galaxium`)
 
 When `AUTH_ENABLED=true`, MCP protocol requests require a bearer token in the `Authorization` header.
 The root health route (`GET /`) remains public.

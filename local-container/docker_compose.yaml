@@ -53,6 +53,7 @@ services:
       - AUTH_ENABLED=true
       - OIDC_ISSUER=http://keycloak:8080/realms/galaxium
       - OIDC_AUDIENCE=booking-api
+      - OIDC_AUTHORIZATION_SERVER_URL=http://localhost:8080/realms/galaxium
   web_app:
     build: 
       context: ${WEB_APP_DOCKER_CONTEXT}

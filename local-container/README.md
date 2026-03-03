@@ -114,6 +114,30 @@ Implementation note:
 - If `npx` is available, the script runs `@modelcontextprotocol/inspector` directly.
 - If `npx` is not available, it runs the inspector from a Docker container (`ghcr.io/modelcontextprotocol/inspector:latest`).
 
+### MCP Test App (CLI)
+
+Use this if you want to verify MCP connectivity without Inspector UI.
+
+```sh
+cd local-container
+python3 mcp_test_app.py
+```
+
+What it does:
+1. Gets a Keycloak token (prefers `docker exec web_app`).
+2. Calls MCP `initialize`.
+3. Calls MCP `tools/list`.
+4. Calls MCP `tools/call` for `list_flights`.
+
+Useful options:
+
+```sh
+python3 mcp_test_app.py --skip-tool-call
+python3 mcp_test_app.py --token-source http
+python3 mcp_test_app.py --token "<access_token>"
+python3 mcp_test_app.py --mcp-url http://localhost:8084/mcp
+```
+
 ### Manual MCP Inspector Test (Local)
 
 Use this short flow to validate MCP auth in Inspector.
@@ -176,6 +200,31 @@ Get the token in terminal (step 3), then paste it into the header field.
 
 Run `tools/list` after connect. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
 
+### MCP Inspector OAuth Mode (Optional)
+
+If you use Inspector OAuth flow (instead of Custom Headers), configure:
+
+1. MCP URL: `http://localhost:8084/mcp`
+2. OAuth Client ID: `web-app-proxy`
+3. OAuth Client Secret: `web-app-proxy-secret`
+4. Scope: `openid profile email`
+
+Before launching Inspector OAuth flow, verify Keycloak client settings:
+
+```sh
+cd local-container
+bash verify-keycloak-inspector-client.sh
+```
+
+Important:
+- Local realm import is configured with `standardFlowEnabled=true` and Inspector redirect URIs for `web-app-proxy`.
+- If your running Keycloak was started before this change, recreate Keycloak so realm import is re-applied:
+
+```sh
+docker compose -f docker_compose.yaml down
+docker compose -f docker_compose.yaml up -d --force-recreate keycloak booking_system_mcp web_app booking_system
+```
+
 Troubleshooting:
 - If container logs show `POST /msp ... 404`, Inspector is pointing to the wrong path.
 - The correct URL is `http://localhost:8084/mcp` (not `/msp`).
@@ -183,6 +232,14 @@ Troubleshooting:
 - If Inspector shows `MCP error -32602: Invalid request parameters`, switch auth mode to `Custom Headers`, clear any OAuth settings, and reconnect.
 - If Inspector shows `MCP error -32601: Method not found`, check container logs for `MCP request method: ...` to see which JSON-RPC method was requested.
 - `GET /openapi.json` returning `404` is expected for this MCP server.
+- If OAuth discovery fails, verify MCP metadata returns host-reachable auth URLs (not `keycloak:8080`):
+
+```sh
+curl -s http://localhost:8084/.well-known/oauth-protected-resource | jq .
+curl -s http://localhost:8084/.well-known/oauth-authorization-server | jq .
+```
+
+Expected: `authorization_servers` and `issuer` use `http://localhost:8080/realms/galaxium`.
 - Use MCP checks instead:
 
 ```sh

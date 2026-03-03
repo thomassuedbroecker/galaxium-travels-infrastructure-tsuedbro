@@ -4,6 +4,11 @@
 
 The MCP Inspector regression (`initialize -> MCP -32601 Method not found`) was fixed by replacing custom MCP middleware auth with native FastMCP auth wiring and updating MCP E2E checks for session-aware streamable-http responses.
 
+This cycle also refined the local manual Inspector runbook in `local-container/README.md` with:
+- explicit Terminal 1/2/3 flow
+- corrected UI port (`6274`)
+- corrected custom header format (`Authorization: Bearer <token>`)
+
 See:
 
 - [`CHANGELOG_LOCAL_COMPOSE_OAUTH_SIMPLIFICATION_2026-03-03.md`](./CHANGELOG_LOCAL_COMPOSE_OAUTH_SIMPLIFICATION_2026-03-03.md)

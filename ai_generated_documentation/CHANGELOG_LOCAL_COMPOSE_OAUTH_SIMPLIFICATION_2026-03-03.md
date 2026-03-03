@@ -11,6 +11,7 @@ This iteration simplifies local OAuth validation and improves troubleshooting vi
 5. Added `local-container/test-results/` to `.gitignore` to avoid report artifacts polluting git status.
 6. Hardened MCP OAuth discovery compatibility for Inspector OAuth mode.
 7. Replaced custom MCP middleware auth with native FastMCP auth provider to fix `initialize -> -32601 Method not found`.
+8. Refined manual Inspector documentation into a short 3-terminal runbook with corrected token/header format.
 
 ## What Changed
 
@@ -106,6 +107,21 @@ Verified outcomes in local compose run:
 2. focused wrapper commands for UI/REST and MCP
 3. report artifact locations
 4. Inspector UI startup through the helper script
+
+### 4a. Manual Inspector Runbook Refinement
+
+`local-container/README.md` manual section was updated to be explicit and operational:
+
+- Added a clear Terminal 1 / Terminal 2 / Terminal 3 flow.
+- Kept the stack startup command as `bash start-build-containers.sh`.
+- Added explicit Inspector UI action: click `Open Auth Settings` when using OAuth UI flow.
+- Corrected browser UI port note to `http://localhost:6274` (not `62744`).
+- Corrected token header usage for Custom Headers mode:
+  - key: `Authorization`
+  - value format: `Bearer <token>`
+- Added explicit final validation step in Inspector:
+  - run `tools/list`
+  - run `tools/call` with `list_flights`
 
 ## Validation Notes
 

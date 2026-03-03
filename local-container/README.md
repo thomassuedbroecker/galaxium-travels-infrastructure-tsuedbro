@@ -154,7 +154,7 @@ python3 mcp_test_app.py --mcp-url http://localhost:8084/mcp
 
 ### Manual MCP Inspector Test (Local)
 
-Use this short flow to validate MCP auth in Inspector.
+Use this short 3-terminal flow to validate MCP auth in Inspector.
 
 1. Terminal 1: start the full local stack:
 
@@ -170,11 +170,15 @@ docker compose -f docker_compose.yaml build booking_system_mcp
 docker compose -f docker_compose.yaml up -d --force-recreate booking_system_mcp
 ```
 
-2. Terminal 2: start MCP Inspector UI with prepared token and config:
+2. Terminal 2: start MCP Inspector UI:
 
 ```sh
 bash start-mcp-inspector-ui.sh
 ```
+
+Open the browser URL printed by Inspector (usually `http://localhost:6274/...`).
+If you test OAuth registration in the UI, click `Open Auth Settings` there.
+Use `http://localhost:6274` (not `http://localhost:62744`).
 
 If `npx` is missing, install Node.js first:
 
@@ -182,19 +186,33 @@ If `npx` is missing, install Node.js first:
 brew install node
 ```
 
-This command:
-- gets a Keycloak traveler token,
-- saves UI connection settings in `local-container/test-results/inspector-ui-config-<timestamp>.md`,
-- starts Inspector with a fixed proxy token.
+3. Terminal 3: generate the bearer token for Custom Header JSON:
 
-3. In Inspector UI, connect to MCP:
+```sh
+TOKEN="$(
+  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
+)"
+TOKEN="$(echo "${TOKEN}" | tr -d '\r\n')"
+printf '{"Authorization":"Bearer %s"}\n' "${TOKEN}"
+```
+
+4. In Inspector UI, connect to MCP:
 - Connection type: `Streamable HTTP`
 - URL: `http://localhost:8084/mcp`
 - Important: use `/mcp` (not `/msp`)
 - Auth mode: `Custom Headers` (recommended local mode)
-- Paste the `Custom Header JSON` printed by `start-mcp-inspector-ui.sh`
+- Paste the JSON from terminal 3:
 
-4. Run `tools/list` after connect. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
+```json
+{"Authorization":"Bearer <TOKEN>"}
+```
+
+5. Press `Connect` in Inspector UI.
+
+6. Run `tools/list`.
+Expected result: `list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`.
+
+7. Run `tools/call` with tool name `list_flights` to verify end-to-end MCP access.
 
 ### MCP Inspector OAuth Mode (Optional)
 

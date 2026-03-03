@@ -58,58 +58,21 @@ For non-compose deployments (for example IBM Cloud Code Engine), set:
 ## Deploying to IBM Code Engine
 
 - Build and push your Docker image (see Dockerfile).
-- Deploy to Code Engine, exposing port 8484.
-- The MCP server will be available at `https://<your-app-url>:8484/mcp`.
+- Deploy to Code Engine, exposing container port `8084`.
+- The MCP endpoint will be available at `https://<your-app-url>/mcp`.
 
 ---
 
-# Booking System Demo (FastAPI + SQLite)
+## MCP Tools
 
-This is a simple booking system for a space travel company, built with FastAPI and SQLite. It is designed for easy deployment on Fly.io.
+The server exposes booking capabilities through MCP tools (not REST endpoints):
 
-## Features
-- List available flights
-- Book a flight
-- View user bookings
-- Cancel a booking
-
-## Requirements
-- Python 3.9+
-- [pip](https://pip.pypa.io/en/stable/)
-
-## Setup (Local)
-
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the app:
-   ```bash
-   uvicorn app:app --reload
-   ```
-3. The API will be available at `http://127.0.0.1:8484`.
-4. Use the interactive docs at `http://127.0.0.1:8484/docs`.
-
-## Database
-- The SQLite database file (`booking.db`) will be created automatically on first run.
-- To add initial data, you can use a SQLite client or add endpoints/scripts as needed.
-
-## Deploying to Fly.io
-
-1. Install the [Fly.io CLI](https://fly.io/docs/hands-on/install-flyctl/)
-2. Run:
-   ```bash
-   fly launch
-   fly volumes create bookings_data --size 1
-   fly deploy
-   ```
-3. The app will be deployed and accessible via your Fly.io app URL.
-
-## Endpoints
-- `GET /flights` — List all flights
-- `POST /book` — Book a flight (requires `user_id` and `flight_id`)
-- `GET /bookings/{user_id}` — List bookings for a user
-- `POST /cancel/{booking_id}` — Cancel a booking
+- `list_flights`
+- `book_flight`
+- `get_bookings`
+- `cancel_booking`
+- `register_user`
+- `get_user_id`
 
 ## Error Handling
 
@@ -143,7 +106,7 @@ All error messages are designed to work seamlessly with MCP tools:
 - **User management**: `register_user`, `get_user_id`
 - **Booking management**: `get_bookings`, `cancel_booking`
 
-For comprehensive error handling documentation, see the [Error Handling Guide](../../docs/error-handling-guide.md) and [Error Handling Examples](../../docs/error-handling-examples.md).
+For comprehensive error handling documentation, see the [Error Handling Guide](../booking_system_rest/docs/error-handling-guide.md) and [Error Handling Examples](../booking_system_rest/docs/error-handling-examples.md).
 
 ---
 

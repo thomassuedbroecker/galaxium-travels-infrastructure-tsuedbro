@@ -1,13 +1,13 @@
 # Start all server applications
 
->**Custom Docker-Compose** in watsonx Orchestrate it not official supported: https://developer.watson-orchestrate.ibm.com/developer_edition/custom_yaml
->**Important Note**: _Before starting watsonx Orchestrate Developer Edition with a custom Docker Compose file, make sure you understand every change in your configuration. The ADK doesn’t offers official support to custom Compose setups, so you’re responsible for troubleshooting any issues that arise._
+>**Custom Docker Compose** in watsonx Orchestrate is not officially supported: https://developer.watson-orchestrate.ibm.com/developer_edition/custom_yaml
+>**Important Note**: _Before starting watsonx Orchestrate Developer Edition with a custom Docker Compose file, make sure you understand every change in your configuration. The ADK does not officially support custom Compose setups, so you are responsible for troubleshooting any issues that arise._
 
-* Simplified Architecture local containers in compose
+* Simplified architecture for local containers in Compose
 
 ![](/images/run-containers-03.png)
 
-1. Insert followling commands
+1. Run the following commands
 
 ```sh
 cd local-container

@@ -9,7 +9,7 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Dependency for FastAPI
+# Database initialization and shared session dependency helper.
 
 def init_db():
     Base.metadata.create_all(bind=engine)

@@ -74,7 +74,7 @@ The system provides detailed error messages for:
 - **Permission issues**: Suggestions for file system access problems
 - **Data validation**: Clear explanation of required fields and formats
 
-For comprehensive error handling documentation, see the [Error Handling Guide](../../docs/error-handling-guide.md) and [Error Handling Examples](../../docs/error-handling-examples.md).
+For comprehensive error handling documentation, see the [Error Handling Guide](../booking_system_rest/docs/error-handling-guide.md) and [Error Handling Examples](../booking_system_rest/docs/error-handling-examples.md).
 
 ## API Documentation
 

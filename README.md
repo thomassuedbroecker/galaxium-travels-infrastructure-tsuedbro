@@ -18,7 +18,7 @@ We've significantly improved error messages across all systems to make them more
 - **Before**: `"User not found"`
 - **After**: `"User with ID 999 is not registered. Please register first using /register endpoint"`
 
-See the [Error Handling Guide](docs/error-handling-guide.md) for detailed examples and the [Error Handling Examples](docs/error-handling-examples.md) for before/after comparisons.
+See the [Error Handling Guide](booking_system_rest/docs/error-handling-guide.md) for detailed examples and the [Error Handling Examples](booking_system_rest/docs/error-handling-examples.md) for before/after comparisons.
 
 ### Keycloak-Enforced Traveler Authentication (Containerized Flow)
 The containerized setup now enforces an end-to-end authenticated booking flow with Keycloak:
@@ -68,7 +68,7 @@ galaxium-travels-infrastructure/
   HR_database/             # HR database app with markdown backend
   local-container/         # Docker Compose stack + Keycloak auth verification scripts
   ai_generated_documentation/ # Deployment guides (including Code Engine + Keycloak)
-  docs/                    # Documentation and guides
+  booking_system_rest/docs/ # Shared error-handling/testing guides
   README.md                # This file
 ```
 
@@ -112,9 +112,9 @@ galaxium-travels-infrastructure/
 
 ## Documentation
 
-- **[Error Handling Guide](docs/error-handling-guide.md)**: Comprehensive overview of error message improvements
-- **[Error Handling Examples](docs/error-handling-examples.md)**: Before/after examples with AI agent actions
-- **[Testing Guide](docs/testing-guide.md)**: How to test the improved error handling
+- **[Error Handling Guide](booking_system_rest/docs/error-handling-guide.md)**: Comprehensive overview of error message improvements
+- **[Error Handling Examples](booking_system_rest/docs/error-handling-examples.md)**: Before/after examples with AI agent actions
+- **[Testing Guide](booking_system_rest/docs/testing-guide.md)**: How to test the improved error handling
 - **[Local container guide](local-container/README.md)**: Includes OAuth2/OIDC Keycloak auto-setup and manual fallback configuration steps
 - **[Code Engine + Keycloak guide](ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)**: Non-compose deployment steps for the same authenticated setup
 - **[Web app auth guide](galaxium-booking-web-app/README.md)**: Traveler login flow, required env vars, and runtime auth modes

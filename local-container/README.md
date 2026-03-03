@@ -91,6 +91,20 @@ This single command validates all three surfaces in one compose session:
 4. MCP auth enforcement via protocol JSON-RPC (`initialize`/`tools/list` return `401` without token and `200` with token).
 
 If this script passes, local compose auth is working concurrently for UI, REST, and MCP.
+Reports are saved automatically in `local-container/test-results/` as:
+- `oauth-e2e-<scope>-<timestamp>.md`
+- `oauth-e2e-<scope>-<timestamp>.json`
+- `oauth-e2e-<scope>-<timestamp>.log`
+
+Scope examples:
+
+```sh
+# UI + REST only
+bash verify-keycloak-auth.sh
+
+# MCP only (includes Inspector CLI check)
+bash verify-keycloak-auth-mcp.sh
+```
 
 ### Focused Checks (Optional)
 
@@ -100,18 +114,7 @@ From `local-container/` run:
 bash verify-keycloak-auth.sh
 ```
 
-What this script verifies:
-
-1. Keycloak and the booking API are reachable.
-2. Calling `GET /flights` without a bearer token fails with `401`.
-3. Calling `GET /flights` with a Keycloak traveler token succeeds with `200`.
-4. The web app root redirects to `/login` when no traveler session exists.
-5. Web app APIs fail with `401` without traveler login.
-6. After traveler login, web app APIs (flights/bookings/book) succeed.
-
-If all checks pass, Keycloak is actively used to protect the booking API endpoints.
-
-> Note: Tokens requested from `http://localhost:8080` may have an issuer mismatch with the booking API (`Invalid issuer`) because the API validates the in-network issuer (`http://keycloak:8080/...`). The script requests a token from inside the Docker network to avoid this mismatch.
+This wrapper runs: `bash verify-keycloak-auth-e2e.sh --scope ui-rest`
 
 ### Verify MCP Server Auth with MCP Inspector (Local + Containerized)
 
@@ -121,15 +124,7 @@ From `local-container/` run:
 bash verify-keycloak-auth-mcp.sh
 ```
 
-What this script verifies:
-
-1. Keycloak and the MCP server are reachable.
-2. MCP Inspector `tools/list` without a bearer token is rejected (`401`).
-3. MCP Inspector `tools/list` with a Keycloak traveler token succeeds and returns MCP tools.
-
-Implementation note:
-- If `npx` is available, the script runs `@modelcontextprotocol/inspector` directly.
-- If `npx` is not available, it runs the inspector from a Docker container (`ghcr.io/modelcontextprotocol/inspector:latest`).
+This wrapper runs: `bash verify-keycloak-auth-e2e.sh --scope mcp --with-inspector-cli`
 
 Use these focused checks when `verify-keycloak-auth-e2e.sh` fails and you want to isolate UI/REST vs MCP issues.
 
@@ -168,19 +163,17 @@ cd local-container
 bash start-build-containers.sh
 ```
 
-2. Terminal 2: start MCP Inspector UI:
+If you changed MCP auth/discovery code, rebuild and recreate MCP first:
 
 ```sh
-npx @modelcontextprotocol/inspector
+docker compose -f docker_compose.yaml build booking_system_mcp
+docker compose -f docker_compose.yaml up -d --force-recreate booking_system_mcp
 ```
 
-Use the browser URL opened by Inspector (it includes `MCP_PROXY_AUTH_TOKEN=...`).
-If you open `http://localhost:6274` manually without this token, the UI can show a connection error.
-Optional fixed token launch:
+2. Terminal 2: start MCP Inspector UI with prepared token and config:
 
 ```sh
-export MCP_PROXY_AUTH_TOKEN=local-dev-token
-npx @modelcontextprotocol/inspector
+bash start-mcp-inspector-ui.sh
 ```
 
 If `npx` is missing, install Node.js first:
@@ -189,35 +182,19 @@ If `npx` is missing, install Node.js first:
 brew install node
 ```
 
-3. Terminal 3: get a Keycloak access token:
+This command:
+- gets a Keycloak traveler token,
+- saves UI connection settings in `local-container/test-results/inspector-ui-config-<timestamp>.md`,
+- starts Inspector with a fixed proxy token.
 
-```sh
-TOKEN="$(
-  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
-)"
-TOKEN="$(echo "${TOKEN}" | tr -d '\r\n')"
-printf '{"Authorization":"Bearer %s"}\n' "${TOKEN}"
-# macOS helper (optional): copy JSON header directly to clipboard
-printf '{"Authorization":"Bearer %s"}' "${TOKEN}" | pbcopy
-```
-
-4. In Inspector UI, connect to MCP:
+3. In Inspector UI, connect to MCP:
 - Connection type: `Streamable HTTP`
 - URL: `http://localhost:8084/mcp`
 - Important: use `/mcp` (not `/msp`)
-- Auth mode: `Custom Headers` (do not use OAuth mode)
-- Header: `Authorization: Bearer <TOKEN>`
-- If you use `Custom Header JSON`, paste:
+- Auth mode: `Custom Headers` (recommended local mode)
+- Paste the `Custom Header JSON` printed by `start-mcp-inspector-ui.sh`
 
-```json
-{"Authorization":"Bearer <TOKEN>"}
-```
-
-Note: The current Inspector UI does not expose a full OAuth form (`Token URL`, `Client ID`, etc.).  
-It also does not provide username/password fields.  
-Get the token in terminal (step 3), then paste it into the header field.
-
-Run `tools/list` after connect. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
+4. Run `tools/list` after connect. Expected result: tool list is returned (`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`).
 
 ### MCP Inspector OAuth Mode (Optional)
 
@@ -246,6 +223,20 @@ docker compose -f docker_compose.yaml up -d --force-recreate keycloak booking_sy
 ```
 
 Troubleshooting:
+- If Inspector UI shows `Connection Error - Check if your MCP server is running and proxy token is correct`:
+  1. Stop Inspector.
+  2. Start again with `bash start-mcp-inspector-ui.sh`.
+  3. Open the exact browser URL printed by Inspector (do not type localhost manually).
+  4. Use the generated `Custom Header JSON` from the saved config file.
+
+- If OAuth flow shows `Failed to discover OAuth metadata`:
+  1. Rebuild/recreate MCP container (commands above).
+  2. Run `bash start-mcp-inspector-ui.sh` and confirm metadata preflight passes.
+  3. Verify these endpoints return `200`:
+     - `http://localhost:8084/.well-known/oauth-protected-resource`
+     - `http://localhost:8084/.well-known/oauth-authorization-server`
+  4. If still failing, use `Custom Headers` mode to continue testing and inspect `booking_system_mcp` logs.
+
 - If `verify-keycloak-inspector-client.sh` reports `standardFlowEnabled expected 'true' but got 'false'`, run:
 
 ```sh

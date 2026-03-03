@@ -5,12 +5,13 @@
 For the latest local Docker Compose OAuth hardening cycle and unified UI+REST+MCP verification flow, see:
 
 - [`CHANGELOG_LOCAL_COMPOSE_OAUTH_2026-03-03.md`](./CHANGELOG_LOCAL_COMPOSE_OAUTH_2026-03-03.md)
+- [`CHANGELOG_LOCAL_COMPOSE_OAUTH_SIMPLIFICATION_2026-03-03.md`](./CHANGELOG_LOCAL_COMPOSE_OAUTH_SIMPLIFICATION_2026-03-03.md)
 
 Highlights of this update:
 
-1. Added `local-container/verify-keycloak-auth-e2e.sh` as the primary one-command local auth verifier.
-2. Updated `local-container/README.md` to promote the unified E2E flow and clarify Inspector auth mode guidance.
-3. Preserved and integrated Keycloak client sync/verify scripts into the recommended local verification process.
+1. Added `local-container/verify-keycloak-auth-e2e.sh` as the primary one-command local auth verifier with saved reports.
+2. Reduced duplicated verification logic by converting focused scripts into wrappers around the unified test suite.
+3. Added `local-container/start-mcp-inspector-ui.sh` to stabilize Inspector UI startup and connection configuration.
 
 ## Suggested Commit Title
 

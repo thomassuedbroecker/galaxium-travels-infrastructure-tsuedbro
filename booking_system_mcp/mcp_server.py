@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_headers, get_http_request
 from pydantic import BaseModel
 from starlette.requests import Request
-from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse
+from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
 from auth import require_oauth2_header, validate_auth_configuration
 from db import SessionLocal, init_db
@@ -15,6 +15,22 @@ from models import Booking, Flight, User
 from seed import seed
 
 mcp = FastMCP("Booking System MCP")
+
+CORS_ALLOW_ORIGIN = (os.getenv("MCP_CORS_ALLOW_ORIGIN") or "*").strip() or "*"
+CORS_ALLOW_HEADERS = (
+    os.getenv("MCP_CORS_ALLOW_HEADERS")
+    or "Authorization, Content-Type, MCP-Protocol-Version, mcp-protocol-version"
+).strip()
+CORS_ALLOW_METHODS = (os.getenv("MCP_CORS_ALLOW_METHODS") or "GET, POST, OPTIONS").strip()
+CORS_EXPOSE_HEADERS = (os.getenv("MCP_CORS_EXPOSE_HEADERS") or "WWW-Authenticate").strip()
+
+
+def _with_cors(response: Response) -> Response:
+    response.headers["Access-Control-Allow-Origin"] = CORS_ALLOW_ORIGIN
+    response.headers["Access-Control-Allow-Headers"] = CORS_ALLOW_HEADERS
+    response.headers["Access-Control-Allow-Methods"] = CORS_ALLOW_METHODS
+    response.headers["Access-Control-Expose-Headers"] = CORS_EXPOSE_HEADERS
+    return response
 
 
 def _resolve_middleware_call(args, kwargs):
@@ -56,18 +72,18 @@ async def _extract_rpc_request(request: Request) -> dict | None:
 
 
 def _rpc_result_response(request_id, result: dict) -> JSONResponse:
-    return JSONResponse(
+    return _with_cors(JSONResponse(
         {
             "jsonrpc": "2.0",
             "id": request_id,
             "result": result,
         }
-    )
+    ))
 
 
 def _rpc_notification_ack() -> PlainTextResponse:
     # JSON-RPC notifications do not require a response body.
-    return PlainTextResponse("", status_code=202)
+    return _with_cors(PlainTextResponse("", status_code=202))
 
 
 def _negotiated_protocol_version(request: Request) -> str:
@@ -194,24 +210,26 @@ async def oauth2_middleware(*args, **kwargs):
     request_path = request.url.path
 
     if request_method == "OPTIONS":
-        return await _invoke_call_next(call_next, context)
+        return _with_cors(PlainTextResponse("", status_code=204))
 
     if request_method == "GET" and (
         request_path == "/"
         or request_path.startswith("/.well-known/")
     ):
-        return await _invoke_call_next(call_next, context)
+        return _with_cors(await _invoke_call_next(call_next, context))
 
     # Backward-compatible alias route: /msp -> /mcp.
     if request_path in {"/msp", "/msp/"}:
-        return await _invoke_call_next(call_next, context)
+        return _with_cors(await _invoke_call_next(call_next, context))
 
     headers = get_http_headers(include_all=False)
     authorization_header = headers.get("authorization")
     try:
         require_oauth2_header(authorization_header)
     except HTTPException as exc:
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        return _with_cors(
+            JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        )
 
     rpc_payload = await _extract_rpc_request(request)
     if rpc_payload:
@@ -315,7 +333,7 @@ async def oauth2_middleware(*args, **kwargs):
         if method == "roots/list":
             return _rpc_result_response(request_id, {"roots": []})
 
-    return await _invoke_call_next(call_next, context)
+    return _with_cors(await _invoke_call_next(call_next, context))
 
 
 def register_middleware(server: FastMCP, middleware_handler):
@@ -491,7 +509,7 @@ def get_user_id(name: str, email: str) -> UserOut:
 
 @mcp.custom_route("/", methods=["GET"])
 async def root_health_check(request: Request) -> PlainTextResponse:
-    return PlainTextResponse("OK")
+    return _with_cors(PlainTextResponse("OK"))
 
 
 @mcp.custom_route("/msp", methods=["GET", "POST", "OPTIONS"])
@@ -501,7 +519,7 @@ async def msp_compat_redirect(request: Request) -> RedirectResponse:
     target = "/mcp"
     if query:
         target = f"{target}?{query}"
-    return RedirectResponse(url=target, status_code=307)
+    return _with_cors(RedirectResponse(url=target, status_code=307))
 
 
 def _issuer() -> str:
@@ -552,23 +570,31 @@ def _jwks_uri() -> str:
     return f"{auth_server}/protocol/openid-connect/certs"
 
 
-@mcp.custom_route("/.well-known/openid-configuration", methods=["GET"])
+@mcp.custom_route("/.well-known/openid-configuration", methods=["GET", "OPTIONS"])
+@mcp.custom_route("/.well-known/openid-configuration/mcp", methods=["GET", "OPTIONS"])
+@mcp.custom_route("/.well-known/openid-configuration/msp", methods=["GET", "OPTIONS"])
 async def local_openid_configuration(request: Request) -> JSONResponse:
+    if request.method.upper() == "OPTIONS":
+        return _with_cors(PlainTextResponse("", status_code=204))
     issuer = _auth_server_url()
-    return JSONResponse(
+    return _with_cors(JSONResponse(
         {
             "issuer": issuer,
             "authorization_endpoint": _authorization_endpoint(),
             "token_endpoint": _token_endpoint(),
             "jwks_uri": _jwks_uri(),
         }
-    )
+    ))
 
 
-@mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET"])
+@mcp.custom_route("/.well-known/oauth-authorization-server", methods=["GET", "OPTIONS"])
+@mcp.custom_route("/.well-known/oauth-authorization-server/mcp", methods=["GET", "OPTIONS"])
+@mcp.custom_route("/.well-known/oauth-authorization-server/msp", methods=["GET", "OPTIONS"])
 async def local_oauth_authorization_server(request: Request) -> JSONResponse:
+    if request.method.upper() == "OPTIONS":
+        return _with_cors(PlainTextResponse("", status_code=204))
     issuer = _auth_server_url()
-    return JSONResponse(
+    return _with_cors(JSONResponse(
         {
             "issuer": issuer,
             "authorization_endpoint": _authorization_endpoint(),
@@ -588,7 +614,7 @@ async def local_oauth_authorization_server(request: Request) -> JSONResponse:
             ],
             "scopes_supported": ["openid", "profile", "email"],
         }
-    )
+    ))
 
 
 def _oauth_protected_resource_payload() -> dict[str, object]:
@@ -603,11 +629,13 @@ def _oauth_protected_resource_payload() -> dict[str, object]:
     return payload
 
 
-@mcp.custom_route("/.well-known/oauth-protected-resource", methods=["GET"])
-@mcp.custom_route("/.well-known/oauth-protected-resource/mcp", methods=["GET"])
-@mcp.custom_route("/.well-known/oauth-protected-resource/msp", methods=["GET"])
+@mcp.custom_route("/.well-known/oauth-protected-resource", methods=["GET", "OPTIONS"])
+@mcp.custom_route("/.well-known/oauth-protected-resource/mcp", methods=["GET", "OPTIONS"])
+@mcp.custom_route("/.well-known/oauth-protected-resource/msp", methods=["GET", "OPTIONS"])
 async def local_oauth_protected_resource(request: Request) -> JSONResponse:
-    return JSONResponse(_oauth_protected_resource_payload())
+    if request.method.upper() == "OPTIONS":
+        return _with_cors(PlainTextResponse("", status_code=204))
+    return _with_cors(JSONResponse(_oauth_protected_resource_payload()))
 
 # Initialize DB and seed data on startup
 validate_auth_configuration()

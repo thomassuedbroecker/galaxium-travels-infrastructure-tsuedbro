@@ -6,6 +6,7 @@ KEYCLOAK_ADMIN_USER="${KEYCLOAK_ADMIN_USER:-admin}"
 KEYCLOAK_ADMIN_PASSWORD="${KEYCLOAK_ADMIN_PASSWORD:-admin}"
 REALM_NAME="${REALM_NAME:-galaxium}"
 CLIENT_ID="${CLIENT_ID:-web-app-proxy}"
+EXPECTED_CLIENT_SECRET="${EXPECTED_CLIENT_SECRET:-web-app-proxy-secret}"
 
 EXPECTED_REDIRECT_1="${EXPECTED_REDIRECT_1:-http://localhost:6274/oauth/callback}"
 EXPECTED_REDIRECT_2="${EXPECTED_REDIRECT_2:-http://localhost:6274/oauth/callback/debug}"
@@ -18,6 +19,7 @@ TMP_ADMIN_TOKEN_BODY="/tmp/galaxium_keycloak_admin_token_sync.json"
 TMP_CLIENT_LIST_BODY="/tmp/galaxium_keycloak_client_list_sync.json"
 TMP_CLIENT_BODY="/tmp/galaxium_keycloak_client_body_sync.json"
 TMP_CLIENT_PATCHED_BODY="/tmp/galaxium_keycloak_client_body_sync_patched.json"
+TMP_CLIENT_SECRET_BODY="/tmp/galaxium_keycloak_client_secret_sync.json"
 
 require_command() {
   local command_name="$1"
@@ -102,12 +104,14 @@ jq \
   --arg r4 "${EXPECTED_REDIRECT_4}" \
   --arg o1 "${EXPECTED_ORIGIN_1}" \
   --arg o2 "${EXPECTED_ORIGIN_2}" \
+  --arg expected_secret "${EXPECTED_CLIENT_SECRET}" \
   '
   .standardFlowEnabled = true
   | .directAccessGrantsEnabled = true
   | .publicClient = false
   | .protocol = "openid-connect"
   | .serviceAccountsEnabled = true
+  | .secret = $expected_secret
   | .redirectUris = (((.redirectUris // []) + [$r1,$r2,$r3,$r4]) | unique)
   | .webOrigins = (((.webOrigins // []) + [$o1,$o2]) | unique)
   ' "${TMP_CLIENT_BODY}" > "${TMP_CLIENT_PATCHED_BODY}"
@@ -123,6 +127,32 @@ UPDATE_STATUS="$(
 if [[ "${UPDATE_STATUS}" != "204" ]]; then
   echo "ERROR: failed to update client config (HTTP ${UPDATE_STATUS})"
   cat /tmp/galaxium_keycloak_client_update_sync.out
+  exit 1
+fi
+
+CLIENT_SECRET_STATUS="$(
+  curl -s -o "${TMP_CLIENT_SECRET_BODY}" -w '%{http_code}' \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    "${KEYCLOAK_BASE_URL}/admin/realms/${REALM_NAME}/clients/${INTERNAL_CLIENT_ID}/client-secret"
+)"
+
+if [[ "${CLIENT_SECRET_STATUS}" != "200" ]]; then
+  echo "ERROR: failed to fetch client secret after update (HTTP ${CLIENT_SECRET_STATUS})"
+  cat "${TMP_CLIENT_SECRET_BODY}"
+  exit 1
+fi
+
+SET_SECRET_VALUE="$(jq -r '.value // empty' "${TMP_CLIENT_SECRET_BODY}")"
+if [[ "${SET_SECRET_VALUE}" != "${EXPECTED_CLIENT_SECRET}" ]]; then
+  echo "ERROR: client secret mismatch after sync"
+  echo "Expected: ${EXPECTED_CLIENT_SECRET}"
+  echo "Actual:   ${SET_SECRET_VALUE}"
+  echo
+  echo "To restore a clean local Keycloak state with the expected realm-import secret, run:"
+  echo "  docker compose -f docker_compose.yaml down"
+  echo "  docker compose -f docker_compose.yaml up -d --force-recreate keycloak web_app booking_system booking_system_mcp"
+  echo "Then rerun:"
+  echo "  bash verify-keycloak-inspector-client.sh"
   exit 1
 fi
 

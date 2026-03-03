@@ -144,16 +144,21 @@ if [[ "${CLIENT_SECRET_VALUE}" != "${EXPECTED_CLIENT_SECRET}" ]]; then
   echo "ERROR: client secret mismatch for '${CLIENT_ID}'"
   echo "Expected: ${EXPECTED_CLIENT_SECRET}"
   echo "Actual:   ${CLIENT_SECRET_VALUE}"
+  echo
+  echo "Recovery (local dev):"
+  echo "  docker compose -f docker_compose.yaml down"
+  echo "  docker compose -f docker_compose.yaml up -d --force-recreate keycloak web_app booking_system booking_system_mcp"
+  echo "  bash verify-keycloak-inspector-client.sh"
   exit 1
 fi
 echo "OK: client secret matches expected value"
 
-assert_json_contains "${EXPECTED_REDIRECT_1}" '.redirectUris[]? == $v' "${TMP_CLIENT_BODY}" "redirectUris"
-assert_json_contains "${EXPECTED_REDIRECT_2}" '.redirectUris[]? == $v' "${TMP_CLIENT_BODY}" "redirectUris"
-assert_json_contains "${EXPECTED_REDIRECT_3}" '.redirectUris[]? == $v' "${TMP_CLIENT_BODY}" "redirectUris"
-assert_json_contains "${EXPECTED_REDIRECT_4}" '.redirectUris[]? == $v' "${TMP_CLIENT_BODY}" "redirectUris"
-assert_json_contains "${EXPECTED_ORIGIN_1}" '.webOrigins[]? == $v' "${TMP_CLIENT_BODY}" "webOrigins"
-assert_json_contains "${EXPECTED_ORIGIN_2}" '.webOrigins[]? == $v' "${TMP_CLIENT_BODY}" "webOrigins"
+assert_json_contains "${EXPECTED_REDIRECT_1}" '(.redirectUris // []) | index($v) != null' "${TMP_CLIENT_BODY}" "redirectUris"
+assert_json_contains "${EXPECTED_REDIRECT_2}" '(.redirectUris // []) | index($v) != null' "${TMP_CLIENT_BODY}" "redirectUris"
+assert_json_contains "${EXPECTED_REDIRECT_3}" '(.redirectUris // []) | index($v) != null' "${TMP_CLIENT_BODY}" "redirectUris"
+assert_json_contains "${EXPECTED_REDIRECT_4}" '(.redirectUris // []) | index($v) != null' "${TMP_CLIENT_BODY}" "redirectUris"
+assert_json_contains "${EXPECTED_ORIGIN_1}" '(.webOrigins // []) | index($v) != null' "${TMP_CLIENT_BODY}" "webOrigins"
+assert_json_contains "${EXPECTED_ORIGIN_2}" '(.webOrigins // []) | index($v) != null' "${TMP_CLIENT_BODY}" "webOrigins"
 
 echo
 echo "PASS: Keycloak client '${CLIENT_ID}' is ready for MCP Inspector OAuth flow."

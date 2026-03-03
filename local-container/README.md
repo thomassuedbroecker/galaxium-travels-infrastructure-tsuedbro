@@ -75,7 +75,24 @@ curl -s http://localhost:8080/realms/galaxium/.well-known/openid-configuration
 If this returns JSON, import worked.
 If this returns `Realm does not exist`, follow the manual setup below.
 
-### Verify Keycloak Is Enforced (Automated Test)
+### Verify End-to-End OAuth for UI + REST + MCP (Recommended)
+
+From `local-container/` run:
+
+```sh
+bash verify-keycloak-auth-e2e.sh
+```
+
+This single command validates all three surfaces in one compose session:
+
+1. Sync + verify Keycloak client config for Inspector OAuth compatibility.
+2. UI auth enforcement (`/` redirects to `/login`, unauthenticated APIs return `401`, login enables session APIs).
+3. REST auth enforcement (`/flights` returns `401` without token and `200` with Keycloak traveler token).
+4. MCP auth enforcement via protocol JSON-RPC (`initialize`/`tools/list` return `401` without token and `200` with token).
+
+If this script passes, local compose auth is working concurrently for UI, REST, and MCP.
+
+### Focused Checks (Optional)
 
 From `local-container/` run:
 
@@ -113,6 +130,8 @@ What this script verifies:
 Implementation note:
 - If `npx` is available, the script runs `@modelcontextprotocol/inspector` directly.
 - If `npx` is not available, it runs the inspector from a Docker container (`ghcr.io/modelcontextprotocol/inspector:latest`).
+
+Use these focused checks when `verify-keycloak-auth-e2e.sh` fails and you want to isolate UI/REST vs MCP issues.
 
 ### MCP Test App (CLI)
 
@@ -209,10 +228,11 @@ If you use Inspector OAuth flow (instead of Custom Headers), configure:
 3. OAuth Client Secret: `web-app-proxy-secret`
 4. Scope: `openid profile email`
 
-Before launching Inspector OAuth flow, verify Keycloak client settings:
+Before launching Inspector OAuth flow, sync and verify Keycloak client settings:
 
 ```sh
 cd local-container
+bash sync-keycloak-inspector-client.sh
 bash verify-keycloak-inspector-client.sh
 ```
 
@@ -226,12 +246,33 @@ docker compose -f docker_compose.yaml up -d --force-recreate keycloak booking_sy
 ```
 
 Troubleshooting:
+- If `verify-keycloak-inspector-client.sh` reports `standardFlowEnabled expected 'true' but got 'false'`, run:
+
+```sh
+bash sync-keycloak-inspector-client.sh
+bash verify-keycloak-inspector-client.sh
+```
+
+- If `verify-keycloak-inspector-client.sh` reports `client secret mismatch`, reset local Keycloak state and re-import the realm:
+
+```sh
+docker compose -f docker_compose.yaml down
+docker compose -f docker_compose.yaml up -d --force-recreate keycloak web_app booking_system booking_system_mcp
+bash verify-keycloak-inspector-client.sh
+```
+
 - If container logs show `POST /msp ... 404`, Inspector is pointing to the wrong path.
 - The correct URL is `http://localhost:8084/mcp` (not `/msp`).
 - In Inspector, remove old saved connection entries and reconnect with the URL above.
 - If Inspector shows `MCP error -32602: Invalid request parameters`, switch auth mode to `Custom Headers`, clear any OAuth settings, and reconnect.
 - If Inspector shows `MCP error -32601: Method not found`, check container logs for `MCP request method: ...` to see which JSON-RPC method was requested.
 - `GET /openapi.json` returning `404` is expected for this MCP server.
+- If UI, REST, or MCP checks fail in unclear ways, run the unified verifier first:
+
+```sh
+bash verify-keycloak-auth-e2e.sh
+```
+
 - If OAuth discovery fails, verify MCP metadata returns host-reachable auth URLs (not `keycloak:8080`):
 
 ```sh
@@ -262,7 +303,9 @@ docker compose -f docker_compose.yaml logs -f booking_system_mcp
 {"Authorization":"Bearer <TOKEN>"}
 ```
 
-- Do not use OAuth discovery in Inspector for this local setup. If enabled, Inspector may probe `/.well-known/...` on the MCP server and show additional 404s.
+- Recommended for local dev: use `Custom Headers` mode with bearer token.
+- Optional: OAuth mode can work after `sync-keycloak-inspector-client.sh` and `verify-keycloak-inspector-client.sh`.
+- If OAuth mode metadata discovery fails, switch back to `Custom Headers` to continue testing.
 
 Compatibility behavior in this repo:
 - `/msp` is accepted as a legacy alias and redirected to `/mcp`.
@@ -296,9 +339,11 @@ Create client `web-app-proxy`:
 1. Create client with `Client ID = web-app-proxy`.
 2. Set `Client authentication = On`.
 3. Set `Service accounts roles = On`.
-4. Set `Standard flow = Off`.
+4. Set `Standard flow = On` (required for Inspector OAuth authorization-code flow).
 5. Set `Direct access grants = On` (required for traveler username/password login in this demo frontend).
 6. Set client secret to `web-app-proxy-secret` (Credentials tab).
+7. Add valid redirect URIs: `http://localhost:6274/oauth/callback`, `http://localhost:6274/oauth/callback/debug`, `http://127.0.0.1:6274/oauth/callback`, `http://127.0.0.1:6274/oauth/callback/debug`.
+8. Add web origins: `http://localhost:6274`, `http://127.0.0.1:6274`.
 
 Add audience mapper to `web-app-proxy`:
 

@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="2500" viewBox="0 0 1900 2500" role="img" aria-labelledby="title desc">
+  <title id="title">Keycloak usage for the MCP server only</title>
+  <desc id="desc">Sequence diagram showing MCP Inspector bootstrap, Keycloak registration, token generation, and authenticated MCP calls.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,4 L0,8 z" fill="#334155" />
+    </marker>
+    <marker id="arrow-dashed" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,4 L0,8 z" fill="#64748b" />
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 700 28px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 15px Arial, sans-serif; fill: #334155; }
+      .actor { stroke: #475569; stroke-width: 2; rx: 10; ry: 10; }
+      .actor-text { font: 700 16px Arial, sans-serif; fill: #0f172a; text-anchor: middle; }
+      .lifeline { stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 8 8; }
+      .phase-text { font: 700 18px Arial, sans-serif; fill: #0f172a; }
+      .note { fill: #fff7d6; stroke: #d4a72c; stroke-width: 2; rx: 12; ry: 12; }
+      .note-title { font: 700 15px Arial, sans-serif; fill: #7c2d12; }
+      .note-text { font: 400 14px Arial, sans-serif; fill: #334155; }
+      .arrow-line { stroke: #334155; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .arrow-dashed { stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 7 5; fill: none; marker-end: url(#arrow-dashed); }
+      .arrow-text { font: 400 14px Arial, sans-serif; fill: #0f172a; }
+      .small { font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1900" height="2500" />
+
+  <text class="title" x="40" y="50">Sequence Scope: Keycloak usage for the MCP server only</text>
+  <text class="subtitle" x="40" y="80">Separate rendered diagram for the local MCP Inspector to Keycloak to Booking System MCP authentication flow.</text>
+
+  <rect class="actor" x="60" y="120" width="180" height="60" fill="#f8fafc" />
+  <text class="actor-text" x="150" y="148">Developer /</text>
+  <text class="actor-text" x="150" y="168">Operator</text>
+
+  <rect class="actor" x="300" y="120" width="240" height="60" fill="#fff7d6" />
+  <text class="actor-text" x="420" y="148">start-mcp-</text>
+  <text class="actor-text" x="420" y="168">inspector-ui.sh</text>
+
+  <rect class="actor" x="610" y="120" width="220" height="60" fill="#dbeafe" />
+  <text class="actor-text" x="720" y="148">MCP Inspector UI</text>
+  <text class="actor-text" x="720" y="168">(Browser)</text>
+
+  <rect class="actor" x="900" y="120" width="190" height="60" fill="#efe7ff" />
+  <text class="actor-text" x="995" y="148">MCP Proxy</text>
+  <text class="actor-text" x="995" y="168">localhost:6277</text>
+
+  <rect class="actor" x="1160" y="120" width="270" height="60" fill="#dcfce7" />
+  <text class="actor-text" x="1295" y="148">Booking System MCP</text>
+  <text class="actor-text" x="1295" y="168">localhost:8084/mcp</text>
+
+  <rect class="actor" x="1500" y="120" width="260" height="60" fill="#fee2e2" />
+  <text class="actor-text" x="1630" y="148">Keycloak</text>
+  <text class="actor-text" x="1630" y="168">localhost:8080 / keycloak:8080</text>
+
+  <line class="lifeline" x1="150" y1="200" x2="150" y2="2380" />
+  <line class="lifeline" x1="420" y1="200" x2="420" y2="2380" />
+  <line class="lifeline" x1="720" y1="200" x2="720" y2="2380" />
+  <line class="lifeline" x1="995" y1="200" x2="995" y2="2380" />
+  <line class="lifeline" x1="1295" y1="200" x2="1295" y2="2380" />
+  <line class="lifeline" x1="1630" y1="200" x2="1630" y2="2380" />
+
+  <rect x="40" y="220" width="1820" height="42" rx="12" ry="12" fill="#fff7d6" stroke="#d4a72c" stroke-width="2" />
+  <text class="phase-text" x="60" y="248">Phase A: local startup preflight and helper token generation</text>
+
+  <path class="arrow-line" d="M150 310 L420 310" />
+  <text class="arrow-text" x="190" y="300">1. Run `bash local-container/start-mcp-inspector-ui.sh`</text>
+
+  <path class="arrow-line" d="M420 370 L1295 370" />
+  <text class="arrow-text" x="520" y="360">2. GET `/.well-known/oauth-protected-resource`</text>
+
+  <path class="arrow-dashed" d="M1295 420 L420 420" />
+  <text class="arrow-text" x="820" y="410">3. Return protected-resource metadata with `authorization_servers`</text>
+
+  <path class="arrow-line" d="M420 480 L1295 480" />
+  <text class="arrow-text" x="500" y="470">4. GET `/.well-known/oauth-authorization-server`</text>
+
+  <path class="arrow-dashed" d="M1295 530 L420 530" />
+  <text class="arrow-text" x="720" y="520">5. Return `issuer`, `authorization_endpoint`, `token_endpoint`, `jwks_uri`, `registration_endpoint`</text>
+
+  <path class="arrow-line" d="M420 590 L1295 590" />
+  <text class="arrow-text" x="520" y="580">6. POST `/oauth/register` preflight with callback `http://localhost:6274/oauth/callback`</text>
+
+  <path class="arrow-dashed" d="M1295 640 L420 640" />
+  <text class="arrow-text" x="770" y="630">7. Return generated client registration payload</text>
+
+  <path class="arrow-line" d="M420 710 L1630 710" />
+  <text class="arrow-text" x="610" y="700">8. `docker exec web_app ...` POST token request with `grant_type=password` for `demo-user`</text>
+
+  <path class="arrow-dashed" d="M1630 760 L420 760" />
+  <text class="arrow-text" x="760" y="750">9. Return traveler bearer token with issuer `http://keycloak:8080/realms/galaxium`</text>
+
+  <path class="arrow-dashed" d="M420 820 L150 820" />
+  <text class="arrow-text" x="210" y="810">10. Print Inspector URL, helper config, and JSON for `Custom Headers`</text>
+
+  <rect class="note" x="1080" y="845" width="760" height="120" />
+  <text class="note-title" x="1105" y="875">Local compose nuance</text>
+  <text class="note-text" x="1105" y="905">Discovery metadata is exposed with host-reachable Keycloak URLs (`localhost:8080`).</text>
+  <text class="note-text" x="1105" y="930">Final token validation inside the MCP container still uses the internal issuer (`keycloak:8080`).</text>
+
+  <rect x="40" y="1010" width="1820" height="42" rx="12" ry="12" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" />
+  <text class="phase-text" x="60" y="1038">Phase B: Inspector OAuth bootstrap and dynamic client registration</text>
+
+  <path class="arrow-line" d="M150 1100 L720 1100" />
+  <text class="arrow-text" x="230" y="1090">11. Open Inspector and choose `Open Auth Settings`</text>
+
+  <path class="arrow-line" d="M720 1160 L1295 1160" />
+  <text class="arrow-text" x="790" y="1150">12. GET `/.well-known/oauth-protected-resource`</text>
+
+  <path class="arrow-dashed" d="M1295 1210 L720 1210" />
+  <text class="arrow-text" x="820" y="1200">13. Return OAuth protected-resource metadata</text>
+
+  <path class="arrow-line" d="M720 1270 L1295 1270" />
+  <text class="arrow-text" x="790" y="1260">14. GET `/.well-known/oauth-authorization-server`</text>
+
+  <path class="arrow-dashed" d="M1295 1320 L720 1320" />
+  <text class="arrow-text" x="820" y="1310">15. Return browser-facing auth endpoints and `registration_endpoint`</text>
+
+  <path class="arrow-line" d="M720 1380 L1295 1380" />
+  <text class="arrow-text" x="790" y="1370">16. POST `/oauth/register` for MCP Inspector dynamic registration</text>
+
+  <path class="arrow-dashed" d="M1295 1430 L720 1430" />
+  <text class="arrow-text" x="790" y="1420">17. Return client id, client secret, scopes, and callback URI</text>
+
+  <path class="arrow-line" d="M720 1490 L1630 1490" />
+  <text class="arrow-text" x="800" y="1480">18. Start browser OAuth authorize request with PKCE</text>
+
+  <path class="arrow-line" d="M150 1550 L1630 1550" />
+  <text class="arrow-text" x="620" y="1540">19. Log in as `demo-user` and approve the Inspector bootstrap flow</text>
+
+  <path class="arrow-dashed" d="M1630 1600 L720 1600" />
+  <text class="arrow-text" x="1030" y="1590">20. Redirect back with authorization code</text>
+
+  <path class="arrow-line" d="M720 1660 L1630 1660" />
+  <text class="arrow-text" x="940" y="1650">21. Exchange authorization code for Inspector bootstrap access token</text>
+
+  <path class="arrow-dashed" d="M1630 1710 L720 1710" />
+  <text class="arrow-text" x="930" y="1700">22. Return Inspector bootstrap token and refresh token</text>
+
+  <rect x="40" y="1770" width="1820" height="42" rx="12" ry="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+  <text class="phase-text" x="60" y="1798">Phase C: final authenticated MCP session via `Custom Headers`</text>
+
+  <path class="arrow-line" d="M150 1860 L720 1860" />
+  <text class="arrow-text" x="220" y="1850">23. Set `Transport=Streamable HTTP`, `URL=http://localhost:8084/mcp`, `Connection=Via Proxy`</text>
+
+  <path class="arrow-line" d="M150 1920 L720 1920" />
+  <text class="arrow-text" x="270" y="1910">24. Paste `Authorization: Bearer &lt;token from script&gt;` into `Custom Headers`</text>
+
+  <path class="arrow-line" d="M720 1980 L995 1980" />
+  <text class="arrow-text small" x="742" y="1968">25. Send JSON-RPC `initialize` through proxy with</text>
+  <text class="arrow-text small" x="742" y="1986">`Authorization` and `X-MCP-Proxy-Auth`</text>
+
+  <path class="arrow-line" d="M995 2040 L1295 2040" />
+  <text class="arrow-text" x="1030" y="2030">26. Forward authenticated `initialize` request to `/mcp`</text>
+
+  <path class="arrow-line" d="M1295 2100 L1630 2100" />
+  <text class="arrow-text" x="1335" y="2090">27. Fetch JWKS on cache miss from `/protocol/openid-connect/certs`</text>
+
+  <path class="arrow-dashed" d="M1630 2150 L1295 2150" />
+  <text class="arrow-text" x="1445" y="2140">28. Return JWKS</text>
+
+  <path class="arrow-dashed" d="M1295 2210 L995 2210" />
+  <text class="arrow-text small" x="1035" y="2198">29. Validate RS256 signature, issuer, and audience.</text>
+  <text class="arrow-text small" x="1035" y="2216">Create FastMCP access context and return `initialize` result.</text>
+
+  <path class="arrow-dashed" d="M995 2270 L720 2270" />
+  <text class="arrow-text" x="815" y="2260">30. Inspector shows connected state</text>
+
+  <path class="arrow-line" d="M720 2330 L995 2330" />
+  <text class="arrow-text" x="742" y="2320">31. `tools/list` and `tools/call` use the same validated bearer token path</text>
+
+  <path class="arrow-line" d="M995 2370 L1295 2370" />
+  <text class="arrow-text" x="1030" y="2360">32. Proxy forwards tool invocations to MCP</text>
+
+  <path class="arrow-dashed" d="M1295 2410 L720 2410" />
+  <text class="arrow-text" x="905" y="2400">33. MCP returns tool results when authorization remains valid</text>
+
+  <rect class="note" x="40" y="2140" width="540" height="150" />
+  <text class="note-title" x="65" y="2170">Final working rule</text>
+  <text class="note-text" x="65" y="2200">1. Complete the Inspector OAuth bootstrap so the client is registered in Keycloak.</text>
+  <text class="note-text" x="65" y="2225">2. Do not use the browser bootstrap token for the final MCP session.</text>
+  <text class="note-text" x="65" y="2250">3. Use the bearer token minted inside compose and paste it into `Custom Headers`.</text>
+
+  <rect class="note" x="780" y="1850" width="390" height="95" />
+  <text class="note-title" x="805" y="1880">Proxy note</text>
+  <text class="note-text" x="805" y="1908">`Via Proxy` mode sends `X-MCP-Proxy-Auth`</text>
+  <text class="note-text" x="805" y="1933">to the proxy and `Authorization` to the MCP server.</text>
+</svg>

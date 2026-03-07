@@ -1,0 +1,168 @@
+<mxfile host="app.diagrams.net" modified="2026-03-07T18:10:00Z" agent="Mozilla/5.0" version="29.5.2" pages="1">
+  <diagram id="agent-direct-mcp-sequence" name="Agent Direct MCP Sequence">
+    <mxGraphModel dx="1600" dy="920" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Sequence Scope: How an agent must call the MCP server directly" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="1540" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="p_agent" value="Agent Runtime / MCP Client" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="60" width="240" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p_mcp" value="Booking System MCP&lt;br&gt;`POST /mcp`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="670" y="60" width="240" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p_kc" value="Keycloak&lt;br&gt;token + JWKS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="60" width="220" height="52" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l_agent" value="" style="shape=line;strokeColor=#999999;dashed=1;direction=south;" vertex="1" parent="1">
+          <mxGeometry x="198" y="120" width="4" height="1450" as="geometry" />
+        </mxCell>
+        <mxCell id="l_mcp" value="" style="shape=line;strokeColor=#999999;dashed=1;direction=south;" vertex="1" parent="1">
+          <mxGeometry x="788" y="120" width="4" height="1450" as="geometry" />
+        </mxCell>
+        <mxCell id="l_kc" value="" style="shape=line;strokeColor=#999999;dashed=1;direction=south;" vertex="1" parent="1">
+          <mxGeometry x="1338" y="120" width="4" height="1450" as="geometry" />
+        </mxCell>
+
+        <mxCell id="phase1" value="Phase A: discover how the MCP resource is protected (optional but recommended)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="150" width="1540" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="phase2" value="Phase B: obtain a bearer token from Keycloak" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="520" width="1540" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="phase3" value="Phase C: initialize an authenticated MCP session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="820" width="1540" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="phase4" value="Phase D: reuse the MCP session for `tools/list` and `tools/call`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1180" width="1540" height="32" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note_headers" value="Headers required on direct MCP calls:&lt;br&gt;- `Authorization: Bearer &lt;token&gt;`&lt;br&gt;- `Content-Type: application/json`&lt;br&gt;- `Accept: application/json, text/event-stream`&lt;br&gt;- `MCP-Protocol-Version: 2025-11-25`&lt;br&gt;- after `initialize`: `MCP-Session-Id: &lt;session-id&gt;`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="980" y="890" width="590" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="note_token" value="Token requirements enforced by the MCP server:&lt;br&gt;- valid RS256 signature&lt;br&gt;- issuer must match `OIDC_ISSUER`&lt;br&gt;- audience must include `booking-api` when `OIDC_AUDIENCE=booking-api`&lt;br&gt;- missing or invalid bearer token returns `401`" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="980" y="1270" width="590" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="note_local" value="Local compose nuance:&lt;br&gt;If the agent runs inside the same compose network, request the token from `http://keycloak:8080/...`.&lt;br&gt;If the agent runs outside the network, use the public Keycloak URL only when its issuer matches what the MCP server validates." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="980" y="1420" width="590" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" value="1. GET `/.well-known/oauth-protected-resource`" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="230" as="sourcePoint" />
+            <mxPoint x="790" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" value="2. Return `resource=http://.../mcp` and `authorization_servers`" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="280" as="sourcePoint" />
+            <mxPoint x="200" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" value="3. GET `/.well-known/oauth-authorization-server`" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="340" as="sourcePoint" />
+            <mxPoint x="790" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" value="4. Return `token_endpoint`, `jwks_uri`, supported grants, and issuer metadata" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="390" as="sourcePoint" />
+            <mxPoint x="200" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="5. Build auth request for a confidential client&lt;br&gt;Example: `grant_type=client_credentials`" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="450" as="sourcePoint" />
+            <mxPoint x="200" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e6" value="6. POST `/realms/galaxium/protocol/openid-connect/token`&lt;br&gt;with client id, client secret, and `grant_type=client_credentials`" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="610" as="sourcePoint" />
+            <mxPoint x="1340" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="7. Return bearer token&lt;br&gt;The token must satisfy the MCP server issuer and audience checks" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="670" as="sourcePoint" />
+            <mxPoint x="200" y="670" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="8. Prepare JSON-RPC `initialize` payload&lt;br&gt;clientInfo + protocolVersion + capabilities" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="730" as="sourcePoint" />
+            <mxPoint x="200" y="780" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e9" value="9. POST `/mcp` with `initialize` JSON-RPC request and bearer token" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="900" as="sourcePoint" />
+            <mxPoint x="790" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="10. On first validation, fetch JWKS from Keycloak if cache is empty" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="960" as="sourcePoint" />
+            <mxPoint x="1340" y="960" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" value="11. Return JWKS" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="1010" as="sourcePoint" />
+            <mxPoint x="790" y="1010" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" value="12. Validate JWT signature, issuer, and audience&lt;br&gt;Create authenticated FastMCP access context" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="1070" as="sourcePoint" />
+            <mxPoint x="790" y="1130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" value="13. Return `initialize` result + `mcp-session-id` response header" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="1110" as="sourcePoint" />
+            <mxPoint x="200" y="1110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e14" value="14. POST `/mcp` `tools/list` with same bearer token&lt;br&gt;and `MCP-Session-Id` from initialize" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="1260" as="sourcePoint" />
+            <mxPoint x="790" y="1260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" value="15. Return available tools:&lt;br&gt;`list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="1320" as="sourcePoint" />
+            <mxPoint x="200" y="1320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" value="16. POST `/mcp` `tools/call` with selected tool name and arguments" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="1380" as="sourcePoint" />
+            <mxPoint x="790" y="1380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e17" value="17. Execute tool in authenticated context and return JSON-RPC tool result" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="790" y="1440" as="sourcePoint" />
+            <mxPoint x="200" y="1440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" value="18. Refresh token or re-authenticate when the bearer token expires" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="1500" as="sourcePoint" />
+            <mxPoint x="1340" y="1500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

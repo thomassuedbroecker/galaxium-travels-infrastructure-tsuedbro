@@ -14,6 +14,8 @@ It combines a booking REST API, an MCP server, a Flask web UI, a markdown-backed
 - Test automation: [testing/README.md](testing/README.md)
 - Advanced deployment notes: [ai_generated_documentation/](ai_generated_documentation/)
 
+![](./images/galaxim-travel-usage.gif)
+
 ## Services
 
 | Path | Purpose | Default port | Canonical entry point |

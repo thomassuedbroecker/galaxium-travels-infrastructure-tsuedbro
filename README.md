@@ -1,7 +1,11 @@
+![](./images/galaxium-travels-login.jpg)
+
 # Galaxium Travels Infrastructure
 
 This repository is a small demo stack for the fictional company Galaxium Travels.
 It combines a booking REST API, an MCP server, a Flask web UI, a markdown-backed HR API, and a local Keycloak-based compose setup.
+
+![](./images/galaxim-travel-infrastructure-container-architecture.png)
 
 ## Start Here
 

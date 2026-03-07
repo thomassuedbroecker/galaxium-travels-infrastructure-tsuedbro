@@ -12,6 +12,7 @@ It combines a booking REST API, an MCP server, a Flask web UI, a markdown-backed
 - New user setup: [QUICKSTART.md](QUICKSTART.md)
 - Full local stack: [local-container/README.md](local-container/README.md)
 - Test automation: [testing/README.md](testing/README.md)
+- Draft IBM Code Engine deployment: [deployment/ibm-code-engine/README.md](deployment/ibm-code-engine/README.md)
 - Advanced deployment notes: [ai_generated_documentation/](ai_generated_documentation/)
 
 ![](./images/galaxim-travel-usage.gif)

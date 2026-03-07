@@ -245,12 +245,6 @@ compose_prepare() {
     fail_step "Docker is not running or not accessible"
   fi
 
-  export HR_DATABASE_DOCKER_CONTEXT="${SCRIPT_DIR}/../HR_database"
-  export BOOKING_SYSTEM_REST_DOCKER_CONTEXT="${SCRIPT_DIR}/../booking_system_rest"
-  export WEB_APP_DOCKER_CONTEXT="${SCRIPT_DIR}/../galaxium-booking-web-app"
-  export BOOKING_SYSTEM_MCP_DOCKER_CONTEXT="${SCRIPT_DIR}/../booking_system_mcp"
-  export APP_USER="${APP_USER:-local}"
-
   cd "${SCRIPT_DIR}"
   docker compose -f "${COMPOSE_FILE}" build booking_system booking_system_mcp web_app
   docker compose -f "${COMPOSE_FILE}" up -d --force-recreate keycloak booking_system booking_system_mcp web_app

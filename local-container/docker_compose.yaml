@@ -1,4 +1,3 @@
-version: "2.15.1"
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -13,20 +12,16 @@ services:
       - ./keycloak/realm:/opt/keycloak/data/import
 
   hr_database:
-    build: 
-      context: ${HR_DATABASE_DOCKER_CONTEXT}
-      dockerfile: ${HR_DATABASE_DOCKER_CONTEXT}/Dockerfile
+    build:
+      context: ../HR_database
     image: hr_database:1.0.0
     container_name: hr_database
     ports:
       - 8081:8081
-    environment:
-      - APP_USER=${APP_USER} #NOT USED
   
   booking_system:
-    build: 
-      context: ${BOOKING_SYSTEM_REST_DOCKER_CONTEXT}
-      dockerfile: ${BOOKING_SYSTEM_REST_DOCKER_CONTEXT}/Dockerfile
+    build:
+      context: ../booking_system_rest
     image: booking_system_rest:1.0.0
     container_name: booking_system_rest
     ports:
@@ -34,15 +29,13 @@ services:
     depends_on:
       - keycloak
     environment:
-      - APP_USER=${APP_USER} #NOT USED
       - AUTH_ENABLED=true
       - OIDC_ISSUER=http://keycloak:8080/realms/galaxium
       - OIDC_AUDIENCE=booking-api
 
   booking_system_mcp:
-    build: 
-      context: ${BOOKING_SYSTEM_MCP_DOCKER_CONTEXT}
-      dockerfile: ${BOOKING_SYSTEM_MCP_DOCKER_CONTEXT}/Dockerfile
+    build:
+      context: ../booking_system_mcp
     image: booking_system_mcp:1.0.0
     container_name: booking_system_mcp
     ports:
@@ -55,9 +48,8 @@ services:
       - OIDC_AUDIENCE=booking-api
       - OIDC_AUTHORIZATION_SERVER_URL=http://localhost:8080/realms/galaxium
   web_app:
-    build: 
-      context: ${WEB_APP_DOCKER_CONTEXT}
-      dockerfile: ${WEB_APP_DOCKER_CONTEXT}/Dockerfile
+    build:
+      context: ../galaxium-booking-web-app
     image: web_app:1.0.0
     container_name: web_app
     ports:

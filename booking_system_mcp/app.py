@@ -1,3 +1,10 @@
+"""Legacy FastAPI reference app.
+
+The active MCP server entry point in this directory is `mcp_server.py`.
+This file is kept only as a historical reference and is not used by the
+compose stack or the quickstart flow.
+"""
+
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models import User, Flight, Booking

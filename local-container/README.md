@@ -1,263 +1,91 @@
-# Start all server applications
+# Local Compose Stack
 
->**Custom Docker Compose** in watsonx Orchestrate is not officially supported: https://developer.watson-orchestrate.ibm.com/developer_edition/custom_yaml
->**Important Note**: _Before starting watsonx Orchestrate Developer Edition with a custom Docker Compose file, make sure you understand every change in your configuration. The ADK does not officially support custom Compose setups, so you are responsible for troubleshooting any issues that arise._
+Use this folder when you want the full demo running locally with the smallest amount of setup.
 
-* Simplified architecture for local containers in Compose
+## Start
 
-![](/images/run-containers-03.png)
-
-1. Run the following commands
+From this directory run:
 
 ```sh
-cd local-container
+docker compose up --build
+```
+
+Optional thin wrappers are still available:
+
+```sh
 bash start-build-containers.sh
+bash start-containers-detach.sh
 ```
 
-* Example output:
+## Local URLs
 
-```sh
-...
-[+] Running 4/4
- ✔ Container keycloak             Created                                                                  0.0s 
- ✔ Container web_app              Created                                                                  0.0s 
- ✔ Container booking_system_rest  Created                                                                  0.0s 
- ✔ Container hr_database          Created                                                                  0.0s 
-Attaching to keycloak, booking_system_rest, hr_database, web_app
-web_app              |  * Serving Flask app 'app'
-web_app              |  * Debug mode: on
-web_app              | WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
-web_app              |  * Running on all addresses (0.0.0.0)
-web_app              |  * Running on http://127.0.0.1:8083
-web_app              |  * Running on http://172.18.0.2:8083
-web_app              | Press CTRL+C to quit
-web_app              |  * Restarting with stat
-web_app              |  * Debugger is active!
-web_app              |  * Debugger PIN: 626-306-471
-booking_system_rest  | INFO:     Started server process [1]
-booking_system_rest  | INFO:     Waiting for application startup.
-booking_system_rest  | INFO:     Application startup complete.
-booking_system_rest  | INFO:     Uvicorn running on http://0.0.0.0:8082 (Press CTRL+C to quit)
-hr_database          | INFO:     Started server process [1]
-hr_database          | INFO:     Waiting for application startup.
-hr_database          | INFO:     Application startup complete.
-hr_database          | INFO:     Uvicorn running on http://0.0.0.0:8081 (Press CTRL+C to quit)
-...
-```
+- Keycloak: `http://localhost:8080`
+- HR API docs: `http://localhost:8081/docs`
+- Booking REST API docs: `http://localhost:8082/docs`
+- Web app: `http://localhost:8083`
+- MCP endpoint: `http://localhost:8084/mcp`
 
-The following image show the running server applications.
+## Built-In Credentials
 
-![](/images/run-containers-01.png)
+- Keycloak admin: `admin` / `admin`
+- Traveler login: `demo-user` / `demo-user-password`
 
-## OAuth2/OIDC with Keycloak
+The compose file imports the realm automatically from `keycloak/realm/galaxium-realm.json`.
 
-The compose setup now starts a local Keycloak server for OAuth2/OIDC:
+## Verification
 
-- URL: `http://localhost:8080`
-- Admin user: `admin`
-- Admin password: `admin`
-- Realm imported at startup: `galaxium`
-
-### Automated setup (default)
-
-The setup is automated through realm import:
-
-- Compose mounts [`keycloak/realm/galaxium-realm.json`](./keycloak/realm/galaxium-realm.json) into Keycloak.
-- Keycloak starts with `start-dev --import-realm`.
-- Realm `galaxium` and the required clients are created automatically.
-
-Verify realm import:
-
-```sh
-curl -s http://localhost:8080/realms/galaxium/.well-known/openid-configuration
-```
-
-If this returns JSON, import worked.
-If this returns `Realm does not exist`, follow the manual setup below.
-
-### Verify End-to-End OAuth for UI + REST + MCP (Recommended)
-
-From `local-container/` run:
+Run the complete auth smoke test:
 
 ```sh
 bash verify-keycloak-auth-e2e.sh
 ```
 
-This single command validates all three surfaces in one compose session:
-
-1. Sync + verify Keycloak client config for Inspector OAuth compatibility.
-2. UI auth enforcement (`/` redirects to `/login`, unauthenticated APIs return `401`, login enables session APIs).
-3. REST auth enforcement (`/flights` returns `401` without token and `200` with Keycloak traveler token).
-4. MCP auth enforcement via protocol JSON-RPC (`initialize`/`tools/list` return `401` without token and `200` with token).
-
-If this script passes, local compose auth is working concurrently for UI, REST, and MCP.
-Reports are saved automatically in `local-container/test-results/` as:
-- `oauth-e2e-<scope>-<timestamp>.md`
-- `oauth-e2e-<scope>-<timestamp>.json`
-- `oauth-e2e-<scope>-<timestamp>.log`
-
-Scope examples:
-
-```sh
-# UI + REST only
-bash verify-keycloak-auth.sh
-
-# MCP only (includes Inspector CLI check)
-bash verify-keycloak-auth-mcp.sh
-```
-
-### Focused Checks (Optional)
-
-From `local-container/` run:
+Run focused checks:
 
 ```sh
 bash verify-keycloak-auth.sh
-```
-
-This wrapper runs: `bash verify-keycloak-auth-e2e.sh --scope ui-rest`
-
-### Verify MCP Server Auth with MCP Inspector (Local + Containerized)
-
-From `local-container/` run:
-
-```sh
 bash verify-keycloak-auth-mcp.sh
 ```
 
-This wrapper runs: `bash verify-keycloak-auth-e2e.sh --scope mcp --with-inspector-cli`
-
-Use these focused checks when `verify-keycloak-auth-e2e.sh` fails and you want to isolate UI/REST vs MCP issues.
-
-### MCP Test App (CLI)
-
-Use this if you want to verify MCP connectivity without Inspector UI.
+Run the lightweight MCP CLI test:
 
 ```sh
-cd local-container
 python3 mcp_test_app.py
 ```
 
-What it does:
-1. Gets a Keycloak token (prefers `docker exec web_app`).
-2. Calls MCP `initialize`.
-3. Calls MCP `tools/list`.
-4. Calls MCP `tools/call` for `list_flights`.
+Reports from the verification scripts are written to `test-results/`.
 
-Useful options:
+## MCP Inspector
 
-```sh
-python3 mcp_test_app.py --skip-tool-call
-python3 mcp_test_app.py --token-source http
-python3 mcp_test_app.py --token "<access_token>"
-python3 mcp_test_app.py --mcp-url http://localhost:8084/mcp
-```
+If you want to inspect the MCP server interactively:
 
-### Manual MCP Inspector Test (Local)
+1. Start the compose stack.
+2. Run `bash start-mcp-inspector-ui.sh`.
+3. Open the exact browser URL printed by Inspector.
+4. In the UI, set `Streamable HTTP`, `http://localhost:8084/mcp`, and `Via Proxy`.
+5. If you follow the manual Inspector UI flow, use the OAuth screens first to register the Inspector client in Keycloak.
+6. After that bootstrap step, use `Authentication` -> `Custom Headers`, enable the header row toggle, and add your bearer token as `Authorization: Bearer <token>`.
+7. Use the container-based token command for the final MCP connection. Do not replace it with a browser-issued `localhost` token.
 
-Use this short 3-terminal flow to validate MCP auth in Inspector.
+Optional helper scripts for the OAuth registration/bootstrap path:
 
-1. Terminal 1: start the full local stack:
+   ```sh
+   bash sync-keycloak-inspector-client.sh
+   bash verify-keycloak-inspector-client.sh
+   ```
 
-```sh
-cd local-container
-bash start-build-containers.sh
-```
+Use `/mcp`, not `/msp`. The `/msp` path is only kept as a compatibility redirect.
 
-If you changed MCP auth/discovery code, rebuild and recreate MCP first:
+## Stop
 
 ```sh
-docker compose -f docker_compose.yaml build booking_system_mcp
-docker compose -f docker_compose.yaml up -d --force-recreate booking_system_mcp
+docker compose down
 ```
 
-2. Terminal 2: start MCP Inspector UI:
+## Related Docs
 
-```sh
-bash start-mcp-inspector-ui.sh
-```
-
-Open the browser URL printed by Inspector (usually `http://localhost:6274/...`).
-If you test OAuth registration in the UI, click `Open Auth Settings` there.
-Use `http://localhost:6274` (not `http://localhost:62744`).
-
-If `npx` is missing, install Node.js first:
-
-```sh
-brew install node
-```
-
-3. Terminal 3: generate the bearer token for Custom Header JSON:
-
-```sh
-TOKEN="$(
-  docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
-)"
-TOKEN="$(echo "${TOKEN}" | tr -d '\r\n')"
-printf '{"Authorization":"Bearer %s"}\n' "${TOKEN}"
-```
-
-4. In Inspector UI, connect to MCP:
-- Connection type: `Streamable HTTP`
-- URL: `http://localhost:8084/mcp`
-- Important: use `/mcp` (not `/msp`)
-- Auth mode: `Custom Headers` (recommended local mode)
-- Paste the JSON from terminal 3:
-
-```json
-{"Authorization":"Bearer <TOKEN>"}
-```
-
-5. Press `Connect` in Inspector UI.
-
-6. Run `tools/list`.
-Expected result: `list_flights`, `book_flight`, `get_bookings`, `cancel_booking`, `register_user`, `get_user_id`.
-
-7. Run `tools/call` with tool name `list_flights` to verify end-to-end MCP access.
-
-### MCP Inspector OAuth Mode (Optional)
-
-If you use Inspector OAuth flow (instead of Custom Headers), configure:
-
-1. MCP URL: `http://localhost:8084/mcp`
-2. OAuth Client ID: `web-app-proxy`
-3. OAuth Client Secret: `web-app-proxy-secret`
-4. Scope: `openid profile email`
-
-Before launching Inspector OAuth flow, sync and verify Keycloak client settings:
-
-```sh
-cd local-container
-bash sync-keycloak-inspector-client.sh
-bash verify-keycloak-inspector-client.sh
-```
-
-Important:
-- Local realm import is configured with `standardFlowEnabled=true` and Inspector redirect URIs for `web-app-proxy`.
-- If your running Keycloak was started before this change, recreate Keycloak so realm import is re-applied:
-
-```sh
-docker compose -f docker_compose.yaml down
-docker compose -f docker_compose.yaml up -d --force-recreate keycloak booking_system_mcp web_app booking_system
-```
-
-Troubleshooting:
-- If Inspector UI shows `Connection Error - Check if your MCP server is running and proxy token is correct`:
-  1. Stop Inspector.
-  2. Start again with `bash start-mcp-inspector-ui.sh`.
-  3. Open the exact browser URL printed by Inspector (do not type localhost manually).
-  4. Use the generated `Custom Header JSON` from the saved config file.
-
-- If OAuth flow shows `Failed to discover OAuth metadata`:
-  1. Rebuild/recreate MCP container (commands above).
-  2. Run `bash start-mcp-inspector-ui.sh` and confirm metadata preflight passes.
-  3. Verify these endpoints return `200`:
-     - `http://localhost:8084/.well-known/oauth-protected-resource`
-     - `http://localhost:8084/.well-known/oauth-authorization-server`
-  4. If still failing, use `Custom Headers` mode to continue testing and inspect `booking_system_mcp` logs.
-
-- If OAuth flow shows `Client Registration -> Load failed`:
-  1. Rebuild/recreate MCP container (commands above).
-  2. Run `bash start-mcp-inspector-ui.sh` and confirm client-registration preflight passes.
+- Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)
+- Advanced deployment notes: [../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md](../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
   3. Verify registration endpoint from metadata:
      - `curl -s http://localhost:8084/.well-known/oauth-authorization-server | jq -r .registration_endpoint`
   4. Test registration endpoint manually (expect `201`):

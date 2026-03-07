@@ -17,6 +17,15 @@ engine = create_engine(
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
+@pytest.fixture(autouse=True)
+def disable_auth(monkeypatch):
+    """Keep API tests isolated from compose or shell auth settings."""
+    monkeypatch.setenv("AUTH_ENABLED", "false")
+    monkeypatch.delenv("OIDC_ISSUER", raising=False)
+    monkeypatch.delenv("OIDC_AUDIENCE", raising=False)
+    monkeypatch.delenv("OIDC_JWKS_URL", raising=False)
+
 @pytest.fixture(scope="function")
 def db_session():
     """Create a fresh database session for each test."""

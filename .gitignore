@@ -135,6 +135,7 @@ Thumbs.db
 desktop.ini 
 
 .env
+.tmp-fastmcp-venv/
 
 ### Additional files
 HR_database/.venv/
@@ -143,5 +144,6 @@ galaxium-booking-web-app/.venv/
 architecture/.$galaxim-travel-infrastructure.drawio.dtmp
 architecture/.$galaxim-travel-infrastructure.drawio.bkp
 local-container/test-results/
+testing/results/generated/
 architecture/.$galaxium-static-dynamic-dependencies.drawio.bkp
 optimize_existing_github_projects.code-workspace

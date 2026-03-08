@@ -27,8 +27,9 @@ All remaining commands in this file assume you are inside `galaxium-travels-infr
    - Keycloak: `http://localhost:8080`
    - HR API docs: `http://localhost:8081/docs`
    - Booking REST API docs: `http://localhost:8082/docs`
-   - Web app: `http://localhost:8083`
+   - Web app (REST-backed): `http://localhost:8083`
    - MCP endpoint: `http://localhost:8084/mcp`
+   - Web app (direct MCP client): `http://localhost:8085`
 
    Important:
    The Swagger page at `http://localhost:8082/docs` is available for inspection, but the booking REST endpoints themselves require a Keycloak bearer token in this compose setup.
@@ -291,7 +292,7 @@ python mcp_server.py
 
 Default endpoint: `http://localhost:8084/mcp`
 
-### 3. Web App
+### 3. Web App (REST-backed)
 
 ```sh
 cd galaxium-travels-infrastructure-tsuedbro
@@ -312,7 +313,32 @@ The template starts the web app in the simplest local mode:
 - `OAUTH2_ENABLED=false`
 - `FRONTEND_AUTH_REQUIRED=false`
 
-### 4. HR API
+### 4. Web App (Direct MCP Client)
+
+```sh
+cd galaxium-travels-infrastructure-tsuedbro
+cd galaxium-booking-web-app-mcp
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r app/requirements.txt
+cd app
+export MCP_SERVER_URL=http://localhost:8084/mcp
+export OAUTH2_ENABLED=true
+export FRONTEND_AUTH_REQUIRED=true
+export OIDC_TOKEN_URL=http://localhost:8080/realms/galaxium/protocol/openid-connect/token
+export OIDC_CLIENT_ID=web-app-proxy
+export OIDC_CLIENT_SECRET=web-app-proxy-secret
+export OIDC_SCOPE="openid profile email"
+export FLASK_SECRET_KEY=local-dev-secret-key
+python app.py
+```
+
+Default URL: `http://localhost:8085`
+
+This app keeps the same traveler UI, but the Flask service layer explicitly calls MCP tools instead of proxying REST endpoints.
+It always requires OAuth and traveler login.
+
+### 5. HR API
 
 ```sh
 cd galaxium-travels-infrastructure-tsuedbro
@@ -331,6 +357,7 @@ Default URL: `http://localhost:8081/docs`
 - `booking_system_rest/`: FastAPI booking backend with tests.
 - `booking_system_mcp/`: MCP version of the booking backend. The active entry point is `mcp_server.py`.
 - `galaxium-booking-web-app/`: Flask UI that talks to the REST API.
+- `galaxium-booking-web-app-mcp/`: Flask UI that calls booking tools through a direct Python MCP client.
 - `HR_database/`: small markdown-backed HR API.
 - `local-container/`: compose setup for the full stack with Keycloak.
 - `architecture/`: draw.io diagrams.

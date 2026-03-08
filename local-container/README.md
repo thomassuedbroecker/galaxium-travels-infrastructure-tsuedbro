@@ -22,8 +22,9 @@ bash start-containers-detach.sh
 - Keycloak: `http://localhost:8080`
 - HR API docs: `http://localhost:8081/docs`
 - Booking REST API docs: `http://localhost:8082/docs`
-- Web app: `http://localhost:8083`
+- Web app (REST-backed): `http://localhost:8083`
 - MCP endpoint: `http://localhost:8084/mcp`
+- Web app (direct MCP client): `http://localhost:8085`
 
 ## Built-In Credentials
 
@@ -110,7 +111,7 @@ bash verify-keycloak-inspector-client.sh
 
 ```sh
 docker compose -f docker_compose.yaml down
-docker compose -f docker_compose.yaml up -d --force-recreate keycloak web_app booking_system booking_system_mcp
+docker compose -f docker_compose.yaml up -d --force-recreate keycloak web_app web_app_mcp booking_system booking_system_mcp
 bash verify-keycloak-inspector-client.sh
 ```
 

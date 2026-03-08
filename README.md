@@ -3,7 +3,7 @@
 # Galaxium Travels Infrastructure
 
 This repository is a small demo stack for the fictional company Galaxium Travels.
-It combines a booking REST API, an MCP server, a Flask web UI, a markdown-backed HR API, and a local Keycloak-based compose setup.
+It combines a booking REST API, an MCP server, two Flask web UIs, a markdown-backed HR API, and a local Keycloak-based compose setup.
 
 ![](./images/galaxim-travel-infrastructure-container-architecture.png)
 
@@ -24,6 +24,7 @@ It combines a booking REST API, an MCP server, a Flask web UI, a markdown-backed
 | `booking_system_rest/` | FastAPI booking backend with SQLite | `8082` | `app.py` |
 | `booking_system_mcp/` | MCP server for the same booking domain | `8084` | `mcp_server.py` |
 | `galaxium-booking-web-app/` | Flask UI that talks to the REST API | `8083` | `app/app.py` |
+| `galaxium-booking-web-app-mcp/` | Flask UI that calls booking tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `HR_database/` | Small HR API backed by `data/employees.md` | `8081` | `app.py` |
 | `local-container/` | Docker Compose stack with Keycloak and verification scripts | n/a | `docker_compose.yaml` |
 
@@ -53,6 +54,7 @@ It combines a booking REST API, an MCP server, a Flask web UI, a markdown-backed
 ├── booking_system_mcp/
 ├── booking_system_rest/
 ├── galaxium-booking-web-app/
+├── galaxium-booking-web-app-mcp/
 ├── local-container/
 └── ai_generated_documentation/
 ```

@@ -1,0 +1,237 @@
+:root {
+  --galaxium-forest: #21543d;
+  --galaxium-gold: #f2b84b;
+  --galaxium-night: #07121d;
+  --galaxium-slate: #173047;
+  --galaxium-text: #102032;
+  --galaxium-border: rgba(255, 255, 255, 0.16);
+  --galaxium-card: rgba(255, 255, 255, 0.94);
+  --galaxium-card-shadow: 0 18px 42px rgba(3, 11, 20, 0.32);
+  --galaxium-overlay: linear-gradient(
+      135deg,
+      rgba(5, 11, 22, 0.78) 0%,
+      rgba(10, 26, 44, 0.58) 42%,
+      rgba(20, 83, 45, 0.52) 100%
+    ),
+    url("galaxium-travels-background.png") center center / cover no-repeat fixed;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.portal-page,
+.login-page {
+  background: var(--galaxium-overlay);
+}
+
+.portal-shell {
+  max-width: 1180px;
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
+}
+
+.portal-hero {
+  padding: 1.5rem 1.6rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--galaxium-border);
+  border-radius: 24px;
+  background: linear-gradient(
+    135deg,
+    rgba(7, 18, 29, 0.84) 0%,
+    rgba(14, 35, 52, 0.64) 50%,
+    rgba(24, 84, 62, 0.62) 100%
+  );
+  box-shadow: 0 20px 48px rgba(3, 11, 20, 0.28);
+  color: #f8fafc;
+  backdrop-filter: blur(8px);
+}
+
+.portal-kicker {
+  margin-bottom: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.portal-hero h1 {
+  margin: 0;
+  color: #fff8e1;
+  font-weight: 700;
+}
+
+.portal-subtitle {
+  max-width: 60ch;
+  margin: 0.35rem 0 0;
+  color: rgba(248, 250, 252, 0.82);
+}
+
+.portal-card {
+  border: 0;
+  border-radius: 20px;
+  background: var(--galaxium-card);
+  box-shadow: var(--galaxium-card-shadow);
+}
+
+.portal-card h5 {
+  color: var(--galaxium-text);
+  font-weight: 700;
+}
+
+.portal-page .table {
+  margin-bottom: 0;
+}
+
+.portal-page .table thead {
+  background: linear-gradient(90deg, var(--galaxium-slate) 0%, var(--galaxium-forest) 100%);
+  color: #fff;
+}
+
+.portal-page .table > :not(caption) > * > * {
+  border-color: rgba(16, 32, 50, 0.08);
+}
+
+.portal-page .form-control,
+.login-page .form-control {
+  border-radius: 12px;
+  border-color: rgba(23, 48, 71, 0.18);
+  min-height: 44px;
+}
+
+.portal-page .form-control:focus,
+.login-page .form-control:focus {
+  border-color: rgba(33, 84, 61, 0.45);
+  box-shadow: 0 0 0 0.22rem rgba(33, 84, 61, 0.16);
+}
+
+.portal-page .form-control[readonly] {
+  background: #edf5f1;
+}
+
+.portal-page .btn-primary,
+.login-page .btn-primary {
+  border: 0;
+  background: linear-gradient(90deg, var(--galaxium-slate) 0%, var(--galaxium-forest) 100%);
+}
+
+.portal-page .btn-primary:hover,
+.login-page .btn-primary:hover,
+.portal-page .btn-primary:focus,
+.login-page .btn-primary:focus {
+  background: linear-gradient(90deg, #10283d 0%, #193f2e 100%);
+}
+
+.portal-page .btn-outline-primary {
+  border-color: rgba(23, 48, 71, 0.28);
+  color: var(--galaxium-slate);
+}
+
+.portal-page .btn-outline-primary:hover,
+.portal-page .btn-outline-primary:focus {
+  background: rgba(23, 48, 71, 0.08);
+  color: var(--galaxium-slate);
+  border-color: rgba(23, 48, 71, 0.34);
+}
+
+.portal-page footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(248, 250, 252, 0.82);
+}
+
+.status-booked {
+  color: #198754;
+  font-weight: 700;
+}
+
+.status-cancelled {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+.login-shell {
+  width: min(100%, 460px);
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: 100%;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--galaxium-text);
+  box-shadow: 0 24px 56px rgba(4, 11, 20, 0.34);
+  padding: 1.75rem;
+  backdrop-filter: blur(10px);
+}
+
+.login-eyebrow {
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--galaxium-forest);
+}
+
+.login-title {
+  margin-bottom: 0.4rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  margin-bottom: 0;
+  color: #516174;
+}
+
+.login-brand {
+  display: block;
+  width: 100%;
+  max-height: 190px;
+  margin: 1.1rem auto 1.35rem;
+  border-radius: 18px;
+  object-fit: cover;
+  object-position: center;
+  box-shadow: 0 14px 28px rgba(8, 19, 31, 0.2);
+}
+
+.login-help {
+  margin-top: 1rem;
+  color: #5f6d7f;
+}
+
+@media (max-width: 767.98px) {
+  .portal-shell {
+    padding-top: 1.15rem;
+  }
+
+  .portal-hero {
+    padding: 1.2rem;
+  }
+
+  .portal-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .portal-subtitle {
+    max-width: none;
+  }
+
+  .login-shell {
+    padding: 1rem;
+  }
+
+  .login-card {
+    padding: 1.25rem;
+    border-radius: 20px;
+  }
+
+  .login-title {
+    font-size: 1.65rem;
+  }
+}

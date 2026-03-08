@@ -20,6 +20,13 @@ WEB_APP_TRAVELER_URL="http://localhost:8083/api/traveler"
 WEB_APP_FLIGHTS_URL="http://localhost:8083/api/flights"
 WEB_APP_BOOKINGS_URL="http://localhost:8083/api/bookings"
 WEB_APP_BOOK_URL="http://localhost:8083/api/book"
+WEB_APP_MCP_ROOT_URL="http://localhost:8085/"
+WEB_APP_MCP_LOGIN_URL="http://localhost:8085/login"
+WEB_APP_MCP_HEALTH_URL="http://localhost:8085/api/health"
+WEB_APP_MCP_TRAVELER_URL="http://localhost:8085/api/traveler"
+WEB_APP_MCP_FLIGHTS_URL="http://localhost:8085/api/flights"
+WEB_APP_MCP_BOOKINGS_URL="http://localhost:8085/api/bookings"
+WEB_APP_MCP_BOOK_URL="http://localhost:8085/api/book"
 MCP_ROOT_URL="http://localhost:8084/"
 MCP_ENDPOINT_URL="http://localhost:8084/mcp"
 MCP_OAUTH_PROTECTED_RESOURCE_URL="http://localhost:8084/.well-known/oauth-protected-resource"
@@ -33,6 +40,12 @@ TMP_WEB_TRAVELER_BODY="/tmp/galaxium_e2e_web_traveler_body.json"
 TMP_WEB_FLIGHTS_BODY="/tmp/galaxium_e2e_web_flights_body.json"
 TMP_WEB_BOOKINGS_BODY="/tmp/galaxium_e2e_web_bookings_body.json"
 TMP_WEB_BOOK_BODY="/tmp/galaxium_e2e_web_book_body.json"
+TMP_WEB_MCP_ROOT_HEADERS="/tmp/galaxium_e2e_web_mcp_root_headers.txt"
+TMP_WEB_MCP_UNAUTH_BODY="/tmp/galaxium_e2e_web_mcp_unauth_body.json"
+TMP_WEB_MCP_TRAVELER_BODY="/tmp/galaxium_e2e_web_mcp_traveler_body.json"
+TMP_WEB_MCP_FLIGHTS_BODY="/tmp/galaxium_e2e_web_mcp_flights_body.json"
+TMP_WEB_MCP_BOOKINGS_BODY="/tmp/galaxium_e2e_web_mcp_bookings_body.json"
+TMP_WEB_MCP_BOOK_BODY="/tmp/galaxium_e2e_web_mcp_book_body.json"
 TMP_MCP_NO_TOKEN_BODY="/tmp/galaxium_e2e_mcp_no_token_body.json"
 TMP_MCP_INIT_BODY="/tmp/galaxium_e2e_mcp_initialize_body.json"
 TMP_MCP_INIT_HEADERS="/tmp/galaxium_e2e_mcp_initialize_headers.txt"
@@ -45,6 +58,7 @@ TMP_MCP_OAUTH_REGISTRATION_BODY="/tmp/galaxium_e2e_mcp_oauth_registration.json"
 TMP_MCP_NO_TOKEN_OUT="/tmp/galaxium_e2e_mcp_inspector_no_token.out"
 TMP_MCP_WITH_TOKEN_OUT="/tmp/galaxium_e2e_mcp_inspector_with_token.out"
 WEB_COOKIE_FILE="/tmp/galaxium_e2e_web_cookies.txt"
+WEB_MCP_COOKIE_FILE="/tmp/galaxium_e2e_web_mcp_cookies.txt"
 
 MCP_INITIALIZE_PAYLOAD='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"local-e2e-auth-check","version":"1.0.0"}}}'
 MCP_TOOLS_LIST_PAYLOAD='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
@@ -246,8 +260,8 @@ compose_prepare() {
   fi
 
   cd "${SCRIPT_DIR}"
-  docker compose -f "${COMPOSE_FILE}" build booking_system booking_system_mcp web_app
-  docker compose -f "${COMPOSE_FILE}" up -d --force-recreate keycloak booking_system booking_system_mcp web_app
+  docker compose -f "${COMPOSE_FILE}" build booking_system booking_system_mcp web_app web_app_mcp
+  docker compose -f "${COMPOSE_FILE}" up -d --force-recreate keycloak booking_system booking_system_mcp web_app web_app_mcp
 }
 
 obtain_traveler_token() {
@@ -308,6 +322,49 @@ run_ui_and_rest_tests() {
     fail_step "web app booking call unexpectedly returned frontend auth challenge"
   fi
   pass_step "Traveler login + UI session API checks passed"
+
+  start_step "E2E-003B" "Traveler login succeeds and MCP web app session APIs work"
+  local web_mcp_root_status web_mcp_unauth_status login_status_mcp traveler_status_mcp
+  local web_mcp_flights_status web_mcp_bookings_status web_mcp_book_status
+  rm -f "${WEB_MCP_COOKIE_FILE}"
+
+  web_mcp_root_status="$(curl -s -o /tmp/galaxium_e2e_web_mcp_root_body.html -D "${TMP_WEB_MCP_ROOT_HEADERS}" -w '%{http_code}' "${WEB_APP_MCP_ROOT_URL}")"
+  assert_status "302" "${web_mcp_root_status}" "MCP web app root without login"
+  if ! grep -qi '^location: /login' "${TMP_WEB_MCP_ROOT_HEADERS}"; then
+    fail_step "MCP web app root did not redirect to /login"
+  fi
+
+  web_mcp_unauth_status="$(curl -s -o "${TMP_WEB_MCP_UNAUTH_BODY}" -w '%{http_code}' "${WEB_APP_MCP_FLIGHTS_URL}")"
+  assert_status "401" "${web_mcp_unauth_status}" "MCP web app API without traveler session"
+  assert_contains "${TMP_WEB_MCP_UNAUTH_BODY}" "frontend_auth_required" "MCP web app unauthenticated API response"
+
+  login_status_mcp="$(curl -s -o /tmp/galaxium_e2e_login_mcp_body.html -c "${WEB_MCP_COOKIE_FILE}" -b "${WEB_MCP_COOKIE_FILE}" -w '%{http_code}' \
+    -X POST "${WEB_APP_MCP_LOGIN_URL}" \
+    --data-urlencode "username=demo-user" \
+    --data-urlencode "password=demo-user-password" \
+    --data-urlencode "next=/")"
+  assert_status "302" "${login_status_mcp}" "Traveler login via MCP web app"
+
+  traveler_status_mcp="$(curl -s -o "${TMP_WEB_MCP_TRAVELER_BODY}" -b "${WEB_MCP_COOKIE_FILE}" -w '%{http_code}' "${WEB_APP_MCP_TRAVELER_URL}")"
+  assert_status "200" "${traveler_status_mcp}" "MCP web app traveler session endpoint"
+  assert_contains "${TMP_WEB_MCP_TRAVELER_BODY}" '"traveler_id"' "MCP web app traveler payload"
+
+  web_mcp_flights_status="$(curl -s -o "${TMP_WEB_MCP_FLIGHTS_BODY}" -b "${WEB_MCP_COOKIE_FILE}" -w '%{http_code}' "${WEB_APP_MCP_FLIGHTS_URL}")"
+  assert_status "200" "${web_mcp_flights_status}" "MCP web app flights endpoint with traveler session"
+  assert_contains "${TMP_WEB_MCP_FLIGHTS_BODY}" '"flight_id"' "MCP web app flights payload"
+
+  web_mcp_bookings_status="$(curl -s -o "${TMP_WEB_MCP_BOOKINGS_BODY}" -b "${WEB_MCP_COOKIE_FILE}" -w '%{http_code}' "${WEB_APP_MCP_BOOKINGS_URL}")"
+  assert_status "200" "${web_mcp_bookings_status}" "MCP web app bookings endpoint with traveler session"
+
+  web_mcp_book_status="$(curl -s -o "${TMP_WEB_MCP_BOOK_BODY}" -b "${WEB_MCP_COOKIE_FILE}" -w '%{http_code}' \
+    -H "Content-Type: application/json" \
+    -X POST "${WEB_APP_MCP_BOOK_URL}" \
+    -d '{"flight_id":1}')"
+  assert_status "200" "${web_mcp_book_status}" "MCP web app booking endpoint with traveler session"
+  if grep -q 'frontend_auth_required' "${TMP_WEB_MCP_BOOK_BODY}"; then
+    fail_step "MCP web app booking call unexpectedly returned frontend auth challenge"
+  fi
+  pass_step "Traveler login + direct MCP web app checks passed"
 
   start_step "E2E-004" "REST endpoint rejects missing bearer token"
   local rest_no_token_status
@@ -617,6 +674,7 @@ compose_prepare
 wait_for_url "Keycloak" "${KEYCLOAK_OPENID_CONFIG_URL}"
 wait_for_url "Booking API" "${BOOKING_HEALTH_URL}"
 wait_for_url "Web app" "${WEB_APP_HEALTH_URL}"
+wait_for_url "MCP web app" "${WEB_APP_MCP_HEALTH_URL}"
 wait_for_url "MCP root" "${MCP_ROOT_URL}"
 pass_step "Compose services are reachable"
 

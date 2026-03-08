@@ -66,3 +66,25 @@ services:
       - OIDC_CLIENT_SECRET=web-app-proxy-secret
       - OIDC_SCOPE=openid profile email
       - FLASK_SECRET_KEY=local-dev-secret-key
+
+  web_app_mcp:
+    build:
+      context: ../galaxium-booking-web-app-mcp
+    image: web_app_mcp:1.0.0
+    container_name: web_app_mcp
+    ports:
+      - 8085:8085
+    depends_on:
+      - keycloak
+      - booking_system_mcp
+    environment:
+      - PORT=8085
+      - MCP_SERVER_URL=http://booking_system_mcp:8084/mcp
+      - MCP_TIMEOUT_SECONDS=10
+      - OAUTH2_ENABLED=true
+      - FRONTEND_AUTH_REQUIRED=true
+      - OIDC_TOKEN_URL=http://keycloak:8080/realms/galaxium/protocol/openid-connect/token
+      - OIDC_CLIENT_ID=web-app-proxy
+      - OIDC_CLIENT_SECRET=web-app-proxy-secret
+      - OIDC_SCOPE=openid profile email
+      - FLASK_SECRET_KEY=local-dev-secret-key

@@ -59,10 +59,10 @@ bash testing/automation/run-mcp-integration-tests.sh
 
 UI behavior checks:
 
-- `/` redirects to `/login` when traveler auth is required
+- the REST-backed UI and the direct-MCP UI both redirect `/` to `/login` when traveler auth is required
 - unauthenticated UI APIs return `401`
-- traveler login creates a usable session
-- authenticated UI calls can list flights, view bookings, and book a flight
+- traveler login creates a usable session in both apps
+- authenticated UI calls can list flights, view bookings, and book a flight in both apps
 
 MCP integration checks:
 

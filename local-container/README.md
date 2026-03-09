@@ -17,6 +17,126 @@ bash start-build-containers.sh
 bash start-containers-detach.sh
 ```
 
+## VM / LAN OAuth Option
+
+Use [`docker_compose.vm-oauth.yaml`](./docker_compose.vm-oauth.yaml) when the protected stack runs on the host machine and OAuth clients connect from a VM or another machine over the LAN path.
+
+This is the split-topology option:
+
+- the Galaxium stack runs in Docker Compose on the host machine
+- a second application or agent stack runs in another Docker Compose inside a VM on that same machine
+- the VM-side containers connect to Keycloak and MCP through the host machine LAN IP or DNS name
+
+This variant keeps Docker backchannel traffic on `http://keycloak:8080`, but it changes the token issuer and MCP discovery metadata to host-LAN-reachable URLs.
+That avoids the current split where externally issued tokens use one issuer and container-issued tokens use another.
+
+Source diagram: [network-configuration.drawio](../../network-configuration.drawio)
+
+```mermaid
+flowchart LR
+  subgraph network["LAN with local machine"]
+    subgraph host["Local machine"]
+      subgraph vm["VM"]
+        subgraph vm_compose["VM compose"]
+          vm_app["Agent / app container"]
+        end
+      end
+
+      subgraph host_compose["Host compose"]
+        mcp["Booking MCP server\nhttp://HOST_IP:8084/mcp"]
+        tools["Booking tools"]
+        kc["Keycloak\nhttp://HOST_IP:8080"]
+      end
+    end
+  end
+
+  vm_app -->|"MCP calls over LAN\ninitialize, tools/list, tools/call"| mcp
+  vm_app -->|"OAuth authorize / token over LAN"| kc
+  mcp -->|"internal Docker backchannel\nJWKS fetch"| kc
+  mcp --> tools
+```
+
+How this works:
+
+1. The VM-side app connects to `MCP_PUBLIC_BASE_URL` on the host machine, not to `localhost`.
+2. MCP OAuth discovery returns the host-LAN-reachable Keycloak issuer and the host-LAN-reachable MCP registration endpoint.
+3. The VM-side app gets a token from `KEYCLOAK_PUBLIC_BASE_URL`, so the token `iss` claim becomes the host-LAN Keycloak URL.
+4. REST and MCP validate against that same public issuer because `OIDC_ISSUER` is overridden to `${KEYCLOAK_PUBLIC_BASE_URL}/realms/galaxium`.
+5. REST and MCP still download JWKS from `http://keycloak:8080/...` inside Docker, so signature verification stays on the internal container network.
+6. The host-side web apps still use `http://keycloak:8080` for their own backchannel token requests because they are in the same compose network as Keycloak.
+
+Why this fixes the OAuth problem:
+
+- Without the override, externally minted tokens can carry issuer `http://HOST_IP:8080/...` while the services expect `http://keycloak:8080/...`, which causes `invalid_token`.
+- With the override, the public issuer and the validated issuer are the same value.
+- Only the JWKS fetch stays internal. That is safe because JWKS retrieval does not need to match the token `iss` hostname.
+- A separate Docker daemon inside the VM cannot join the host Docker network, so LAN URLs are the correct boundary between the two compose stacks.
+
+1. Copy the template and set the VM-reachable URLs:
+
+```sh
+cp vm-oauth.env.template vm-oauth.env
+```
+
+2. Edit `vm-oauth.env` and set concrete public URLs, for example:
+
+```sh
+KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8080
+MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
+```
+
+Here `192.168.1.50` must be the host machine IP that the VM can reach.
+Do not use `localhost` for this split host+VM setup.
+
+3. Start the stack with both compose files:
+
+```sh
+docker compose --env-file vm-oauth.env \
+  -f docker_compose.yaml \
+  -f docker_compose.vm-oauth.yaml \
+  up --build -d
+```
+
+What changes in this mode:
+
+- Keycloak is started with a fixed public hostname via `--hostname=${KEYCLOAK_PUBLIC_BASE_URL}`.
+- REST and MCP validate `iss=${KEYCLOAK_PUBLIC_BASE_URL}/realms/galaxium`.
+- REST and MCP still fetch JWKS from the internal Docker URL `http://keycloak:8080/.../certs`.
+- MCP discovery advertises `MCP_PUBLIC_BASE_URL` and the public Keycloak realm URL.
+- The second compose inside the VM must call the host machine over LAN URLs. It cannot join the host Docker network.
+- `GALAXIUM_SHARED_NETWORK` only helps when both compose projects use the same Docker daemon.
+
+Recommended verification from another machine or from the VM host:
+
+```sh
+export BOOKING_API_BASE_URL=http://192.168.1.50:8082
+export KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+export OIDC_CLIENT_ID=web-app-proxy
+export OIDC_CLIENT_SECRET=web-app-proxy-secret
+bash verify-keycloak-auth-remote.sh
+```
+
+For the compose running inside the VM, point its OAuth and MCP settings to the same host-LAN URLs, for example:
+
+```sh
+KEYCLOAK_BASE_URL=http://192.168.1.50:8080
+KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+MCP_SERVER_URL=http://192.168.1.50:8084/mcp
+```
+
+Metadata sanity checks for this mode:
+
+```sh
+curl -s http://192.168.1.50:8080/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
+curl -s http://192.168.1.50:8084/.well-known/oauth-authorization-server | jq .
+```
+
+Expected:
+
+- Keycloak `issuer` is `http://192.168.1.50:8080/realms/galaxium`
+- MCP metadata `issuer` points to the same Keycloak realm URL
+- MCP `registration_endpoint` points to `http://192.168.1.50:8084/oauth/register`
+
 ## Local URLs
 
 - Keycloak: `http://localhost:8080`

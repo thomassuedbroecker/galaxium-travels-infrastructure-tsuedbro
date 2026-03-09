@@ -1,0 +1,59 @@
+# Compose override for VM or external-agent scenarios.
+# Usage:
+#   docker compose --env-file vm-oauth.env \
+#     -f docker_compose.yaml \
+#     -f docker_compose.vm-oauth.yaml \
+#     up --build -d
+#
+# Main topology:
+# - this compose runs on the host machine
+# - an agent or another compose may run inside a VM
+# - the VM reaches Keycloak and MCP through the host machine LAN IP / DNS name
+# - Docker-internal backchannel traffic stays on keycloak:8080
+
+services:
+  keycloak:
+    command:
+      - start-dev
+      - --import-realm
+      - --http-port=8080
+      - --hostname=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}
+      - --hostname-strict=false
+    environment:
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    networks:
+      - galaxium_vm_oauth
+
+  hr_database:
+    networks:
+      - galaxium_vm_oauth
+
+  booking_system:
+    environment:
+      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}/realms/galaxium
+      OIDC_JWKS_URL: http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs
+    networks:
+      - galaxium_vm_oauth
+
+  booking_system_mcp:
+    environment:
+      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}/realms/galaxium
+      OIDC_JWKS_URL: http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs
+      OIDC_AUTHORIZATION_SERVER_URL: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}/realms/galaxium
+      MCP_PUBLIC_BASE_URL: ${MCP_PUBLIC_BASE_URL:-http://localhost:8084}
+      OIDC_INSPECTOR_REDIRECT_URIS: ${OIDC_INSPECTOR_REDIRECT_URIS:-http://localhost:6274/oauth/callback,http://localhost:6274/oauth/callback/debug,http://127.0.0.1:6274/oauth/callback,http://127.0.0.1:6274/oauth/callback/debug}
+    networks:
+      - galaxium_vm_oauth
+
+  web_app:
+    networks:
+      - galaxium_vm_oauth
+
+  web_app_mcp:
+    networks:
+      - galaxium_vm_oauth
+
+networks:
+  galaxium_vm_oauth:
+    name: ${GALAXIUM_SHARED_NETWORK:-galaxium-vm-oauth}

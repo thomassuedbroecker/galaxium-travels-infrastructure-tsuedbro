@@ -53,6 +53,12 @@ OIDC_SCOPE = (os.getenv("OIDC_SCOPE") or LOGIN_SCOPE_DEFAULT).strip()
 
 FLASK_SECRET_KEY = (os.getenv("FLASK_SECRET_KEY") or "").strip()
 
+FRONTEND_MODE_ID = "rest"
+FRONTEND_MODE_LABEL = "REST API"
+FRONTEND_MODE_SUMMARY = "This frontend proxies booking requests to the REST backend."
+BACKEND_LABEL = "REST API backend"
+INTEGRATION_MODE = "rest_api_proxy"
+
 TOKEN_CACHE = {
     "access_token": None,
     "expires_at_epoch": 0,
@@ -108,6 +114,15 @@ elif OAUTH2_ENABLED:
     )
 else:
     logger.warning("OAuth2 disabled: backend calls have no bearer token.")
+
+
+def _frontend_template_context() -> dict[str, str]:
+    return {
+        "frontend_mode_id": FRONTEND_MODE_ID,
+        "frontend_mode_label": FRONTEND_MODE_LABEL,
+        "frontend_mode_summary": FRONTEND_MODE_SUMMARY,
+        "backend_label": BACKEND_LABEL,
+    }
 
 
 def _decode_jwt_payload(token: str) -> dict[str, Any]:
@@ -372,7 +387,12 @@ def login():
             except Exception as exc:
                 error_message = f"Login request failed: {str(exc)}"
 
-    return render_template("login.html", error=error_message, next_path=next_path)
+    return render_template(
+        "login.html",
+        error=error_message,
+        next_path=next_path,
+        **_frontend_template_context(),
+    )
 
 
 @app.route("/logout", methods=["GET"])
@@ -412,6 +432,7 @@ def index():
         backend_url=BACKEND_URL,
         frontend_auth_required=FRONTEND_AUTH_REQUIRED,
         traveler=traveler,
+        **_frontend_template_context(),
     )
 
 
@@ -572,6 +593,8 @@ def health():
     return jsonify(
         {
             "status": "ok",
+            "integration_mode": INTEGRATION_MODE,
+            "frontend_mode": FRONTEND_MODE_ID,
             "proxy_to": BACKEND_URL,
             "oauth2_enabled": OAUTH2_ENABLED,
             "frontend_auth_required": FRONTEND_AUTH_REQUIRED,

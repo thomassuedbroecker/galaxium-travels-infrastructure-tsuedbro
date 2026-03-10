@@ -15,6 +15,10 @@
       <div>
         <h1>Galaxium Traveler Portal</h1>
         <p class="portal-subtitle">Review traveler context, browse routes, and manage bookings from a single authenticated flight desk.</p>
+        <div class="portal-mode-strip">
+          <span class="portal-mode-badge portal-mode-{{ frontend_mode_id }}">{{ frontend_mode_label }}</span>
+          <span class="portal-mode-copy">{{ frontend_mode_summary }}</span>
+        </div>
       </div>
       {% if frontend_auth_required %}
         <a href="/logout" class="btn btn-warning btn-sm align-self-start mt-1">Logout</a>
@@ -86,7 +90,7 @@
   </div>
 
   <footer class="mt-4">
-    Proxy backend: <span id="backendUrl"></span>
+    {{ backend_label }}: <span id="backendUrl"></span>
   </footer>
 </div>
 

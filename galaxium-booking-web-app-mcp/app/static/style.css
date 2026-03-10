@@ -70,6 +70,41 @@ body {
   color: rgba(248, 250, 252, 0.82);
 }
 
+.portal-mode-strip,
+.login-mode-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.95rem;
+}
+
+.portal-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.portal-mode-rest {
+  background: rgba(59, 130, 246, 0.92);
+}
+
+.portal-mode-mcp {
+  background: rgba(168, 85, 247, 0.92);
+}
+
+.portal-mode-copy,
+.login-mode-copy {
+  font-size: 0.95rem;
+  color: rgba(248, 250, 252, 0.82);
+}
+
 .portal-card {
   border: 0;
   border-radius: 20px;
@@ -189,6 +224,10 @@ body {
   color: #516174;
 }
 
+.login-mode-copy {
+  color: #425264;
+}
+
 .login-brand {
   display: block;
   width: 100%;
@@ -220,6 +259,11 @@ body {
 
   .portal-subtitle {
     max-width: none;
+  }
+
+  .portal-mode-strip,
+  .login-mode-strip {
+    gap: 0.5rem;
   }
 
   .login-shell {

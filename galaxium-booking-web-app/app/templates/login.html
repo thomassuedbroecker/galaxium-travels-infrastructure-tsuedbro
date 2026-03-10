@@ -13,6 +13,10 @@
       <p class="login-eyebrow">Galaxium access</p>
       <h1 class="login-title">Traveler Authentication</h1>
       <p class="login-subtitle">Sign in with your Keycloak traveler account to continue to the flight desk.</p>
+      <div class="login-mode-strip">
+        <span class="portal-mode-badge portal-mode-{{ frontend_mode_id }}">{{ frontend_mode_label }}</span>
+        <span class="login-mode-copy">{{ frontend_mode_summary }}</span>
+      </div>
       <img
         class="login-brand"
         src="{{ url_for('static', filename='galaxium-travels-logo.png') }}"

@@ -63,6 +63,12 @@ FLASK_SECRET_KEY = (os.getenv("FLASK_SECRET_KEY") or "").strip()
 MCP_TIMEOUT_SECONDS = _as_float(os.getenv("MCP_TIMEOUT_SECONDS"), default=10.0)
 APP_PORT = _as_int(os.getenv("PORT"), 8085)
 
+FRONTEND_MODE_ID = "mcp"
+FRONTEND_MODE_LABEL = "MCP"
+FRONTEND_MODE_SUMMARY = "This frontend executes booking actions through MCP tool calls."
+BACKEND_LABEL = "MCP server"
+INTEGRATION_MODE = "direct_python_mcp_client"
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = FLASK_SECRET_KEY or "dev-secret-change-me"
 logger = logging.getLogger(__name__)
@@ -74,6 +80,15 @@ booking_service = BookingMcpService(
     server_url=MCP_SERVER_URL,
     timeout_seconds=MCP_TIMEOUT_SECONDS,
 )
+
+
+def _frontend_template_context() -> dict[str, str]:
+    return {
+        "frontend_mode_id": FRONTEND_MODE_ID,
+        "frontend_mode_label": FRONTEND_MODE_LABEL,
+        "frontend_mode_summary": FRONTEND_MODE_SUMMARY,
+        "backend_label": BACKEND_LABEL,
+    }
 
 
 def validate_runtime_settings() -> None:
@@ -277,7 +292,12 @@ def login():
             except Exception as exc:
                 error_message = f"Login request failed: {str(exc)}"
 
-    return render_template("login.html", error=error_message, next_path=next_path)
+    return render_template(
+        "login.html",
+        error=error_message,
+        next_path=next_path,
+        **_frontend_template_context(),
+    )
 
 
 @app.route("/logout", methods=["GET"])
@@ -313,6 +333,7 @@ def index():
         backend_url=MCP_SERVER_URL,
         frontend_auth_required=FRONTEND_AUTH_REQUIRED,
         traveler=traveler,
+        **_frontend_template_context(),
     )
 
 
@@ -466,7 +487,8 @@ def health():
     return jsonify(
         {
             "status": "ok",
-            "integration_mode": "direct_python_mcp_client",
+            "integration_mode": INTEGRATION_MODE,
+            "frontend_mode": FRONTEND_MODE_ID,
             "proxy_to": MCP_SERVER_URL,
             "oauth2_enabled": True,
             "frontend_auth_required": True,

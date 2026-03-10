@@ -28,6 +28,16 @@ Docs: `http://localhost:8081/docs`
 - This service is intentionally simple and demo-oriented.
 - Error responses are written to be readable by people and agents.
 
+## Compose Usage
+
+Compose service name: `hr_database`
+
+Run only this service from the repository root:
+
+```sh
+docker compose -f local-container/docker_compose.yaml up --build hr_database
+```
+
 ## Related Docs
 
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)

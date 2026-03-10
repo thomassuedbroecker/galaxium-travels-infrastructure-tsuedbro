@@ -47,7 +47,21 @@ Optional metadata overrides:
 - Run `bash ../local-container/verify-keycloak-auth-mcp.sh`.
 - Optionally use `python ../local-container/mcp_test_app.py`.
 
+## Compose Usage
+
+Compose service name: `booking_system_mcp`
+
+- Local compose stack: see [../QUICKSTART.md](../QUICKSTART.md), option 1.
+- VM/LAN OAuth host stack: see [../QUICKSTART.md](../QUICKSTART.md), option 2.
+- MCP-backed frontend path only:
+
+  ```sh
+  docker compose -f ../local-container/docker_compose.yaml up --build \
+    keycloak booking_system_mcp web_app_mcp
+  ```
+
 ## Related Docs
 
 - Error-handling notes: [../booking_system_rest/docs/error-handling-guide.md](../booking_system_rest/docs/error-handling-guide.md)
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)
+- Compose flow: [../local-container/README.md](../local-container/README.md)

@@ -53,8 +53,22 @@ Set these variables to require bearer tokens:
 
 Compose injects the container-internal variants automatically.
 
+## Compose Usage
+
+Compose service name: `booking_system`
+
+- Local compose stack: see [../QUICKSTART.md](../QUICKSTART.md), option 1.
+- VM/LAN OAuth host stack: see [../QUICKSTART.md](../QUICKSTART.md), option 2.
+- REST-backed frontend path only:
+
+  ```sh
+  docker compose -f ../local-container/docker_compose.yaml up --build \
+    keycloak booking_system web_app
+  ```
+
 ## Related Docs
 
 - Shared error-handling notes: [docs/error-handling-guide.md](docs/error-handling-guide.md)
 - Examples: [docs/error-handling-examples.md](docs/error-handling-examples.md)
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)
+- Compose flow: [../local-container/README.md](../local-container/README.md)

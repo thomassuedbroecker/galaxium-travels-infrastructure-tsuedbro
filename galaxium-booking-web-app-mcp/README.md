@@ -96,6 +96,21 @@ The service layer calls these booking backend tools directly:
 
 The local compose stack sets the Keycloak-enabled values automatically.
 
+## Compose Usage
+
+Compose service name: `web_app_mcp`
+
+- Local compose stack: see [../QUICKSTART.md](../QUICKSTART.md), option 1.
+- VM/LAN OAuth host stack: see [../QUICKSTART.md](../QUICKSTART.md), option 2.
+- MCP-backed frontend path only:
+
+  ```sh
+  docker compose -f ../local-container/docker_compose.yaml up --build \
+    keycloak booking_system_mcp web_app_mcp
+  ```
+
+Default compose URL: `http://localhost:8085`
+
 ## Related Docs
 
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)

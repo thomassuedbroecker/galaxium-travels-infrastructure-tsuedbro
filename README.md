@@ -10,7 +10,7 @@ It combines a booking REST API, an MCP server, two Flask web UIs, a markdown-bac
 ## Start Here
 
 - New user setup: [QUICKSTART.md](QUICKSTART.md)
-- Full local stack: [local-container/README.md](local-container/README.md)
+- Full local stack and VM/LAN OAuth host stack: [local-container/README.md](local-container/README.md)
 - Test automation: [testing/README.md](testing/README.md)
 - Draft IBM Code Engine deployment: [deployment/ibm-code-engine/README.md](deployment/ibm-code-engine/README.md)
 - Advanced deployment notes: [ai_generated_documentation/](ai_generated_documentation/)
@@ -26,7 +26,7 @@ It combines a booking REST API, an MCP server, two Flask web UIs, a markdown-bac
 | `galaxium-booking-web-app/` | Flask UI that talks to the REST API | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls booking tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `HR_database/` | Small HR API backed by `data/employees.md` | `8081` | `app.py` |
-| `local-container/` | Docker Compose stack with Keycloak and verification scripts | n/a | `docker_compose.yaml` |
+| `local-container/` | Docker Compose stack with Keycloak, frontend variants, and verification scripts | n/a | `docker_compose.yaml`, `docker_compose.vm-oauth.yaml` |
 
 ## Recommended Validation
 

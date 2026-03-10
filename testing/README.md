@@ -8,6 +8,9 @@ This folder is the entry point for repository test automation and test result do
 - UI behavior checks against the compose stack
 - MCP integration checks against the compose stack
 
+This README covers the local compose-based automation path.
+For the host-stack VM/LAN OAuth verification path, use `local-container/verify-keycloak-auth-remote.sh` as documented in [../QUICKSTART.md](../QUICKSTART.md) and [../local-container/README.md](../local-container/README.md).
+
 ## Structure
 
 ```text

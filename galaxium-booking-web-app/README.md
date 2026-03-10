@@ -45,6 +45,21 @@ Default URL: `http://localhost:8083`
 
 The local compose stack sets the Keycloak-enabled values automatically.
 
+## Compose Usage
+
+Compose service name: `web_app`
+
+- Local compose stack: see [../QUICKSTART.md](../QUICKSTART.md), option 1.
+- VM/LAN OAuth host stack: see [../QUICKSTART.md](../QUICKSTART.md), option 2.
+- REST-backed frontend path only:
+
+  ```sh
+  docker compose -f ../local-container/docker_compose.yaml up --build \
+    keycloak booking_system web_app
+  ```
+
+Default compose URL: `http://localhost:8083`
+
 ## Related Docs
 
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)

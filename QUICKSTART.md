@@ -2,7 +2,7 @@
 
 Use this guide when you want a new clone running quickly.
 
-## Fastest Path
+## Option 1: Local Compose Stack
 
 Prerequisite: Docker Desktop or a local Docker Engine with Compose enabled.
 
@@ -14,7 +14,9 @@ cd galaxium-travels-infrastructure-tsuedbro
 
 All remaining commands in this file assume you are inside `galaxium-travels-infrastructure-tsuedbro/`.
 
-1. Start the full stack:
+1. Start the stack with Docker Compose.
+
+   Start the full local stack:
 
    ```sh
    docker compose -f local-container/docker_compose.yaml up --build
@@ -22,25 +24,59 @@ All remaining commands in this file assume you are inside `galaxium-travels-infr
 
    If you prefer to work inside `local-container/`, then `cd local-container && docker compose up --build` also works there.
 
+   Start only the REST-backed frontend path:
+
+   ```sh
+   docker compose -f local-container/docker_compose.yaml up --build \
+     keycloak booking_system web_app
+   ```
+
+   This starts:
+
+   - `keycloak`
+   - `booking_system` (REST backend)
+   - `web_app` (REST-backed frontend)
+
+   Start only the MCP-backed frontend path:
+
+   ```sh
+   docker compose -f local-container/docker_compose.yaml up --build \
+     keycloak booking_system_mcp web_app_mcp
+   ```
+
+   This starts:
+
+   - `keycloak`
+   - `booking_system_mcp` (MCP backend)
+   - `web_app_mcp` (MCP-backed frontend)
+
 2. Open the local services:
 
    - Keycloak: `http://localhost:8080`
    - HR API docs: `http://localhost:8081/docs`
    - Booking REST API docs: `http://localhost:8082/docs`
-   - Web app (REST-backed): `http://localhost:8083`
+   - Web app example (REST-backed): `http://localhost:8083`
    - MCP endpoint: `http://localhost:8084/mcp`
-   - Web app (direct MCP client): `http://localhost:8085`
+   - MCP example (direct MCP client): `http://localhost:8085`
 
    Important:
    The Swagger page at `http://localhost:8082/docs` is available for inspection, but the booking REST endpoints themselves require a Keycloak bearer token in this compose setup.
    The public exception is `http://localhost:8082/health`.
+   If you started only one frontend path, only the matching backend and frontend URLs are expected to be available.
 
-3. Use the built-in demo credentials:
+3. Choose the example you want to start with:
+
+   - Start with the REST-backed example at `http://localhost:8083`.
+   - Start with the MCP example at `http://localhost:8085`.
+
+   The MCP example uses the same traveler UI pattern, but the Flask app calls MCP tools through `http://localhost:8084/mcp` instead of calling the REST API directly.
+
+4. Use the built-in demo credentials:
 
    - Keycloak admin: `admin` / `admin`
    - Traveler login: `demo-user` / `demo-user-password`
 
-4. Run the end-to-end auth check:
+5. Run the end-to-end auth check:
 
    ```sh
    bash local-container/verify-keycloak-auth-e2e.sh
@@ -48,15 +84,96 @@ All remaining commands in this file assume you are inside `galaxium-travels-infr
 
    This verifies that the REST API returns `401` without a token and works with a valid Keycloak token.
 
-5. Stop the stack when finished:
+6. Stop the stack when finished:
 
    ```sh
    docker compose -f local-container/docker_compose.yaml down
    ```
 
+## Option 2: Host Stack for VM / LAN OAuth
+
+Use this when the protected Galaxium stack runs on the host machine, but an application or agent runs in a separate compose inside a VM or on another machine in the LAN.
+
+1. Copy the VM/LAN env template:
+
+   ```sh
+   cp local-container/vm-oauth.env.template local-container/vm-oauth.env
+   ```
+
+2. Edit `local-container/vm-oauth.env` and set the host-machine IP or DNS name that the VM can reach:
+
+   ```sh
+   KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8080
+   MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
+   ```
+
+3. Start the host stack with the override.
+
+   Start the full host stack:
+
+   ```sh
+   docker compose --env-file local-container/vm-oauth.env \
+     -f local-container/docker_compose.yaml \
+     -f local-container/docker_compose.vm-oauth.yaml \
+     up --build -d
+   ```
+
+   Start only the REST-backed frontend path on the host:
+
+   ```sh
+   docker compose --env-file local-container/vm-oauth.env \
+     -f local-container/docker_compose.yaml \
+     -f local-container/docker_compose.vm-oauth.yaml \
+     up --build -d keycloak booking_system web_app
+   ```
+
+   Start only the MCP-backed frontend path on the host:
+
+   ```sh
+   docker compose --env-file local-container/vm-oauth.env \
+     -f local-container/docker_compose.yaml \
+     -f local-container/docker_compose.vm-oauth.yaml \
+     up --build -d keycloak booking_system_mcp web_app_mcp
+   ```
+
+4. From the VM-side compose, point the OAuth and MCP settings to the same host-LAN URLs:
+
+   ```sh
+   KEYCLOAK_BASE_URL=http://192.168.1.50:8080
+   KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+   MCP_SERVER_URL=http://192.168.1.50:8084/mcp
+   ```
+
+   If you want to start with the MCP example in that split topology, use `MCP_SERVER_URL=http://192.168.1.50:8084/mcp` and the same Keycloak token URL in the VM-side application.
+   If you started only one frontend path on the host, only the matching backend and frontend URLs are expected to be available there.
+
+5. Verify the LAN-facing setup:
+
+   ```sh
+   export BOOKING_API_BASE_URL=http://192.168.1.50:8082
+   export KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+   export OIDC_CLIENT_ID=web-app-proxy
+   export OIDC_CLIENT_SECRET=web-app-proxy-secret
+   export WEB_APP_BASE_URL=http://192.168.1.50:8083
+   export TRAVELER_USERNAME=demo-user
+   export TRAVELER_PASSWORD=demo-user-password
+   bash local-container/verify-keycloak-auth-remote.sh
+   ```
+
+6. Stop the host stack when finished:
+
+   ```sh
+   docker compose --env-file local-container/vm-oauth.env \
+     -f local-container/docker_compose.yaml \
+     -f local-container/docker_compose.vm-oauth.yaml \
+     down
+   ```
+
+For the detailed topology diagram and the explanation of why the issuer/JWKS split works in this mode, see [local-container/README.md](./local-container/README.md).
+
 ## Access the MCP Server with MCP Inspector
 
-Use this flow after the compose stack is running.
+Use this flow after option 1 is running locally.
 
 1. Keep the stack running in one terminal:
 
@@ -87,6 +204,8 @@ Use this flow after the compose stack is running.
    - Transport: `Streamable HTTP`
    - URL: `http://localhost:8084/mcp`
    - Connection type: `Via Proxy`
+
+   For option 2, replace `http://localhost:8084/mcp` with `http://<HOST_IP>:8084/mcp`.
 
    If `npx` is missing, install Node.js first.
 

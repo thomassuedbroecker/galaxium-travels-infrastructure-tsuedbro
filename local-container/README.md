@@ -10,6 +10,20 @@ From this directory run:
 docker compose up --build
 ```
 
+Start only the REST-backed frontend path:
+
+```sh
+docker compose up --build keycloak booking_system web_app
+```
+
+Start only the MCP-backed frontend path:
+
+```sh
+docker compose up --build keycloak booking_system_mcp web_app_mcp
+```
+
+If you start only one frontend path, only the matching backend and frontend URLs are expected to be available.
+
 Optional thin wrappers are still available:
 
 ```sh
@@ -96,6 +110,26 @@ docker compose --env-file vm-oauth.env \
   -f docker_compose.vm-oauth.yaml \
   up --build -d
 ```
+
+Start only the REST-backed frontend path on the host:
+
+```sh
+docker compose --env-file vm-oauth.env \
+  -f docker_compose.yaml \
+  -f docker_compose.vm-oauth.yaml \
+  up --build -d keycloak booking_system web_app
+```
+
+Start only the MCP-backed frontend path on the host:
+
+```sh
+docker compose --env-file vm-oauth.env \
+  -f docker_compose.yaml \
+  -f docker_compose.vm-oauth.yaml \
+  up --build -d keycloak booking_system_mcp web_app_mcp
+```
+
+If you start only one frontend path on the host, only the matching backend and frontend URLs are expected to be available.
 
 What changes in this mode:
 

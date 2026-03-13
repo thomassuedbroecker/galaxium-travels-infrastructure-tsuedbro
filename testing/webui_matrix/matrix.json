@@ -1,0 +1,67 @@
+{
+  "credentials": {
+    "traveler_username": "demo-user",
+    "traveler_password": "demo-user-password",
+    "oidc_client_id": "web-app-proxy",
+    "oidc_client_secret": "web-app-proxy-secret",
+    "oidc_scope": "openid profile email"
+  },
+  "environments": {
+    "local_machine_network": {
+      "label": "Local Machine Network",
+      "description": "Compose stack and tests run on the same machine and use localhost-reachable URLs.",
+      "public_host_default": "localhost",
+      "uses_vm_oauth_override": false,
+      "public_host_env": ""
+    },
+    "local_machine_local_network_prepare": {
+      "label": "Local Machine Local Network (Prepare)",
+      "description": "Compose stack runs on the host machine and advertises LAN-reachable issuer and MCP URLs for a VM or another machine.",
+      "public_host_default": "",
+      "uses_vm_oauth_override": true,
+      "public_host_env": "WEBUI_TEST_PUBLIC_HOST"
+    }
+  },
+  "backends": {
+    "rest": {
+      "label": "REST API",
+      "frontend_service": "web_app",
+      "backend_service": "booking_system",
+      "frontend_port": 8083,
+      "backend_port": 8082,
+      "frontend_login_path": "/login",
+      "frontend_health_path": "/api/health",
+      "backend_health_path": "/health",
+      "backend_flights_path": "/flights"
+    },
+    "mcp": {
+      "label": "MCP",
+      "frontend_service": "web_app_mcp",
+      "backend_service": "booking_system_mcp",
+      "frontend_port": 8085,
+      "backend_port": 8084,
+      "frontend_login_path": "/login",
+      "frontend_health_path": "/api/health",
+      "backend_health_path": "/",
+      "backend_flights_path": "/mcp",
+      "mcp_endpoint_path": "/mcp",
+      "mcp_openid_configuration_path": "/.well-known/openid-configuration",
+      "mcp_authorization_server_path": "/.well-known/oauth-authorization-server",
+      "mcp_protected_resource_path": "/.well-known/oauth-protected-resource"
+    }
+  },
+  "oauth_modes": {
+    "backend_and_ui_oauth": {
+      "label": "Backend and UI OAuth",
+      "backend_auth_enabled": true,
+      "frontend_oauth_enabled": true,
+      "frontend_auth_required": true
+    },
+    "ui_oauth": {
+      "label": "UI OAuth",
+      "backend_auth_enabled": false,
+      "frontend_oauth_enabled": true,
+      "frontend_auth_required": true
+    }
+  }
+}

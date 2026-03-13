@@ -136,6 +136,10 @@ desktop.ini
 
 .env
 .tmp-fastmcp-venv/
+local-container/*.env
+!local-container/*.env.template
+testing/webui_matrix/*.env
+!testing/webui_matrix/*.env.template
 
 ### Additional files
 HR_database/.venv/

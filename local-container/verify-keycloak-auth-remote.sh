@@ -12,6 +12,47 @@ set -euo pipefail
 # - WEB_APP_BASE_URL (example: https://web-app....codeengine.appdomain.cloud)
 # - TRAVELER_USERNAME / TRAVELER_PASSWORD (to verify post-login web app calls)
 
+ENV_FILE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env-file)
+      if [[ $# -lt 2 ]]; then
+        echo "ERROR: --env-file requires a path"
+        exit 1
+      fi
+      ENV_FILE="$2"
+      shift 2
+      ;;
+    -h|--help)
+      cat <<'EOF'
+Usage:
+  bash verify-keycloak-auth-remote.sh [--env-file <path>]
+
+Environment file support:
+  Use --env-file to source a shell-style KEY=VALUE file before validation.
+EOF
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unsupported argument: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -n "${ENV_FILE}" ]]; then
+  if [[ ! -f "${ENV_FILE}" ]]; then
+    echo "ERROR: env file not found: ${ENV_FILE}"
+    exit 1
+  fi
+
+  set -a
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  set +a
+fi
+
 BOOKING_API_BASE_URL="${BOOKING_API_BASE_URL:-}"
 KEYCLOAK_TOKEN_URL="${KEYCLOAK_TOKEN_URL:-}"
 OIDC_CLIENT_ID="${OIDC_CLIENT_ID:-}"

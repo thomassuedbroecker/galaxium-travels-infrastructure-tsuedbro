@@ -1,483 +1,191 @@
 # Quickstart
 
-Use this guide when you want a new clone running quickly.
+This guide helps you get the example running fast.
 
-## Option 1: Local Compose Stack
-
-Prerequisite: Docker Desktop or a local Docker Engine with Compose enabled.
-
-Start from the workspace root, then move into the runnable project directory:
+Start in the repository root:
 
 ```sh
 cd galaxium-travels-infrastructure-tsuedbro
 ```
 
-All remaining commands in this file assume you are inside `galaxium-travels-infrastructure-tsuedbro/`.
-
-1. Start the stack with Docker Compose.
-
-   Start the full local stack:
-
-   ```sh
-   docker compose -f local-container/docker_compose.yaml up --build
-   ```
-
-   If you prefer to work inside `local-container/`, then `cd local-container && docker compose up --build` also works there.
-
-   Start only the REST-backed frontend path:
-
-   ```sh
-   docker compose -f local-container/docker_compose.yaml up --build \
-     keycloak booking_system web_app
-   ```
-
-   This starts:
-
-   - `keycloak`
-   - `booking_system` (REST backend)
-   - `web_app` (REST-backed frontend)
-
-   Start only the MCP-backed frontend path:
-
-   ```sh
-   docker compose -f local-container/docker_compose.yaml up --build \
-     keycloak booking_system_mcp web_app_mcp
-   ```
-
-   This starts:
-
-   - `keycloak`
-   - `booking_system_mcp` (MCP backend)
-   - `web_app_mcp` (MCP-backed frontend)
-
-2. Open the local services:
-
-   - Keycloak: `http://localhost:8080`
-   - HR API docs: `http://localhost:8081/docs`
-   - Booking REST API docs: `http://localhost:8082/docs`
-   - Web app example (REST-backed): `http://localhost:8083`
-   - MCP endpoint: `http://localhost:8084/mcp`
-   - MCP example (direct MCP client): `http://localhost:8085`
-
-   Important:
-   The Swagger page at `http://localhost:8082/docs` is available for inspection, but the booking REST endpoints themselves require a Keycloak bearer token in this compose setup.
-   The public exception is `http://localhost:8082/health`.
-   If you started only one frontend path, only the matching backend and frontend URLs are expected to be available.
-
-3. Choose the example you want to start with:
-
-   - Start with the REST-backed example at `http://localhost:8083`.
-   - Start with the MCP example at `http://localhost:8085`.
-
-   The MCP example uses the same traveler UI pattern, but the Flask app calls MCP tools through `http://localhost:8084/mcp` instead of calling the REST API directly.
-
-4. Use the built-in demo credentials:
-
-   - Keycloak admin: `admin` / `admin`
-   - Traveler login: `demo-user` / `demo-user-password`
-
-5. Run the end-to-end auth check:
-
-   ```sh
-   bash local-container/verify-keycloak-auth-e2e.sh
-   ```
-
-   This verifies that the REST API returns `401` without a token and works with a valid Keycloak token.
-
-6. Stop the stack when finished:
-
-   ```sh
-   docker compose -f local-container/docker_compose.yaml down
-   ```
-
-## Option 2: Host Stack for VM / LAN OAuth
-
-Use this when the protected Galaxium stack runs on the host machine, but an application or agent runs in a separate compose inside a VM or on another machine in the LAN.
-
-1. Copy the VM/LAN env template:
-
-   ```sh
-   cp local-container/vm-oauth.env.template local-container/vm-oauth.env
-   ```
-
-2. Edit `local-container/vm-oauth.env` and set the host-machine IP or DNS name that the VM can reach:
-
-   ```sh
-   KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8080
-   MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
-   ```
-
-3. Start the host stack with the override.
-
-   Start the full host stack:
-
-   ```sh
-   docker compose --env-file local-container/vm-oauth.env \
-     -f local-container/docker_compose.yaml \
-     -f local-container/docker_compose.vm-oauth.yaml \
-     up --build -d
-   ```
-
-   Start only the REST-backed frontend path on the host:
-
-   ```sh
-   docker compose --env-file local-container/vm-oauth.env \
-     -f local-container/docker_compose.yaml \
-     -f local-container/docker_compose.vm-oauth.yaml \
-     up --build -d keycloak booking_system web_app
-   ```
-
-   Start only the MCP-backed frontend path on the host:
-
-   ```sh
-   docker compose --env-file local-container/vm-oauth.env \
-     -f local-container/docker_compose.yaml \
-     -f local-container/docker_compose.vm-oauth.yaml \
-     up --build -d keycloak booking_system_mcp web_app_mcp
-   ```
-
-4. From the VM-side compose, point the OAuth and MCP settings to the same host-LAN URLs:
-
-   ```sh
-   KEYCLOAK_BASE_URL=http://192.168.1.50:8080
-   KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
-   MCP_SERVER_URL=http://192.168.1.50:8084/mcp
-   ```
-
-   If you want to start with the MCP example in that split topology, use `MCP_SERVER_URL=http://192.168.1.50:8084/mcp` and the same Keycloak token URL in the VM-side application.
-   If you started only one frontend path on the host, only the matching backend and frontend URLs are expected to be available there.
-
-5. Verify the LAN-facing setup:
-
-   ```sh
-   export BOOKING_API_BASE_URL=http://192.168.1.50:8082
-   export KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
-   export OIDC_CLIENT_ID=web-app-proxy
-   export OIDC_CLIENT_SECRET=web-app-proxy-secret
-   export WEB_APP_BASE_URL=http://192.168.1.50:8083
-   export TRAVELER_USERNAME=demo-user
-   export TRAVELER_PASSWORD=demo-user-password
-   bash local-container/verify-keycloak-auth-remote.sh
-   ```
-
-6. Stop the host stack when finished:
-
-   ```sh
-   docker compose --env-file local-container/vm-oauth.env \
-     -f local-container/docker_compose.yaml \
-     -f local-container/docker_compose.vm-oauth.yaml \
-     down
-   ```
-
-For the detailed topology diagram and the explanation of why the issuer/JWKS split works in this mode, see [local-container/README.md](./local-container/README.md).
-
-## Access the MCP Server with MCP Inspector
-
-Use this flow after option 1 is running locally.
-
-1. Keep the stack running in one terminal:
-
-   ```sh
-   cd galaxium-travels-infrastructure-tsuedbro
-   docker compose -f local-container/docker_compose.yaml up --build
-   ```
-
-2. Ensure the MCP Inspector is not running.
-
-   ```sh
-   lsof -ti tcp:6274 -ti tcp:6277 | xargs kill -9
-   ```
-
-3. In a second terminal, start MCP Inspector:
-
-   ```sh
-   cd galaxium-travels-infrastructure-tsuedbro
-   bash local-container/start-mcp-inspector-ui.sh
-   ```
-
-   The script checks the MCP OAuth metadata first and writes a helper file to `local-container/test-results/`.
-
-4. Open the exact browser URL printed by Inspector, then verify the settings.
-
-   Use these settings:
-
-   - Transport: `Streamable HTTP`
-   - URL: `http://localhost:8084/mcp`
-   - Connection type: `Via Proxy`
-
-   For option 2, replace `http://localhost:8084/mcp` with `http://<HOST_IP>:8084/mcp`.
-
-   If `npx` is missing, install Node.js first.
-
-   Important:
-   In this manual flow, the Inspector OAuth screens are used first so the Inspector client gets registered in Keycloak.
-   The final MCP connection in this local setup still uses `Authentication` -> `Custom Headers` with a bearer token.
-
-5. In the browser you will see `Open Auth Settings`
-   ![](./images/mcp-inspector-ui-1.jpg)
-
-6. Follow the `Quick OAuth Flow` to register the Inspector client.
-   ![](./images/mcp-inspector-ui-2.jpg)
-
-7. Press `Continue`
-   ![](./images/mcp-inspector-ui-3.jpg)
-
-8. Verify the result for the `Metadata Discovery` step.
-   ![](./images/mcp-inspector-ui-4.jpg)
-
-   * Example: Resource Metadata
-      ```json
-      {
-      "resource": "http://localhost:8084/mcp",
-      "authorization_servers": [
-         "http://localhost:8084",
-         "http://localhost:8080/realms/galaxium"
-      ],
-      "scopes_supported": [
-         "openid",
-         "profile",
-         "email"
-      ]
-      }
-      ```
-    * Example: Authorization Server Metadata
-      ```json
-      {
-         "issuer": "http://localhost:8080/realms/galaxium",
-         "authorization_endpoint": "http://localhost:8080/realms/galaxium/protocol/openid-connect/auth",
-         "token_endpoint": "http://localhost:8080/realms/galaxium/protocol/openid-connect/token",
-         "registration_endpoint": "http://localhost:8084/oauth/register",
-         "scopes_supported": [
-            "openid",
-            "profile",
-            "email"
-         ],
-         "response_types_supported": [
-            "code"
-         ],
-         "grant_types_supported": [
-            "authorization_code",
-            "refresh_token",
-            "client_credentials",
-            "password"
-         ],
-         "token_endpoint_auth_methods_supported": [
-            "client_secret_basic",
-            "client_secret_post"
-         ],
-         "code_challenge_methods_supported": [
-            "S256"
-         ],
-         "jwks_uri": "http://localhost:8080/realms/galaxium/protocol/openid-connect/certs"
-         }
-         ```
-
-9. Press `Continue`
-
-10. Now the Inspector client will be registered in Keycloak and you can verify the configuration.
-   ![](./images/mcp-inspector-ui-5.jpg)
-
-   * Example Registered Client Information:
-
-   ```json
-   {
-      "redirect_uris": [
-         "http://localhost:6274/oauth/callback/debug"
-      ],
-      "token_endpoint_auth_method": "none",
-      "grant_types": [
-         "authorization_code",
-         "refresh_token"
-      ],
-      "response_types": [
-         "code"
-      ],
-      "scope": "openid profile email",
-      "client_id": "web-app-proxy",
-      "client_secret": "web-app-proxy-secret",
-      "client_id_issued_at": 1772886533,
-      "client_secret_expires_at": 0
-   }
-   ```
-
-11. Press `Continue`
-
-12. `Preparing Authorization`
-
-   In this step, you get a URL that you must open in a browser.
-   ![](./images/mcp-inspector-ui-6.jpg)
-
-13. Copy the content from `Auth Debugger` and insert it into `Request Authorization and Acquire Authorization Code`.
-
-   1. Log in to Keycloak: `demo-user/demo-user-password`
-     ![](./images/mcp-inspector-ui-7.jpg)
-
-
-   2. Copy the content from the page.
-     ![](./images/mcp-inspector-ui-8.jpg)
-
-   3. Insert the content into `Request Authorization and Acquire Authorization Code`.
-      ![](./images/mcp-inspector-ui-9.jpg)
-
-   4. Press `Continue`
-
-   
-14. Now an `Auth Token` will be requested when you press `Continue` again.
-    ![](./images/mcp-inspector-ui-10.jpg)
-
-15. Now the initial auth bootstrap is complete.
-    ![](./images/mcp-inspector-ui-11.jpg)
-
-16. In a third terminal, generate the bearer token for the final `Custom Headers` connection:
-
-   ```sh
-   TOKEN="$(
-     docker exec web_app python -c 'import requests; r=requests.post("http://keycloak:8080/realms/galaxium/protocol/openid-connect/token", data={"grant_type":"password","client_id":"web-app-proxy","client_secret":"web-app-proxy-secret","username":"demo-user","password":"demo-user-password"}, timeout=10); r.raise_for_status(); print(r.json().get("access_token",""))'
-   )"
-   TOKEN="$(echo "${TOKEN}" | tr -d '\r\n')"
-   printf '{"Authorization":"Bearer %s"}\n' "${TOKEN}"
-   ```
-
-   Important:
-   Use the token command above exactly as shown.
-   This final MCP bearer token comes from inside the `web_app` container via `http://keycloak:8080/...`.
-   Do not replace it with a token copied from the browser OAuth flow.
-
-17. In MCP Inspector, open `Authentication`.
-
-18. Under `Custom Headers`, enable the header row toggle, then paste the JSON from step 16 into the `JSON` editor or fill the row manually:
-
-   - Header Name: `Authorization`
-   - Header Value: `Bearer <token>`
-
-   ![](./images/mcp-inspector-ui-12.jpg)
-
-19. Press `Connect`.
-
-20. Now you can see the MCP server content.
-   ![](./images/mcp-inspector-ui-13.jpg)
-   
-21. Open `Tools` and run `tools/list`.
-
-   Expected tools:
-
-   - `list_flights`
-   - `book_flight`
-   - `get_bookings`
-   - `cancel_booking`
-   - `register_user`
-   - `get_user_id`
-
-22. Run `tools/call` with `list_flights` to confirm end-to-end MCP access.
-
-Optional OAuth-mode validation:
-
-```sh
-bash local-container/sync-keycloak-inspector-client.sh
-bash local-container/verify-keycloak-inspector-client.sh
+## Choose Your Path
+
+```mermaid
+flowchart TD
+    Start["Start here"] --> Local["Option 1<br/>Local machine"]
+    Start --> Lan["Option 2<br/>Host machine + VM/LAN OAuth"]
+    Local --> Rest["REST UI<br/>http://localhost:8083"]
+    Local --> Mcp["MCP UI<br/>http://localhost:8085"]
+    Lan --> Public["Use host IP or DNS name<br/>for Keycloak and MCP"]
 ```
 
-## Local Development Without Docker
+## Option 1: Local Machine
 
-Use this when you want to work on one service at a time.
+Use this option when everything runs on one machine.
 
-### 1. Booking REST API
+### 1. Start the stack
 
-```sh
-cd galaxium-travels-infrastructure-tsuedbro
-cd booking_system_rest
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app:app --reload --port 8082
-```
-
-Run the tests:
+Start the full stack:
 
 ```sh
-python3 -m pytest tests -q
+docker compose -f local-container/docker_compose.yaml up --build
 ```
 
-### 2. MCP Server
+Start only the REST path:
 
 ```sh
-cd galaxium-travels-infrastructure-tsuedbro
-cd booking_system_mcp
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python mcp_server.py
+docker compose -f local-container/docker_compose.yaml up --build \
+  keycloak booking_system web_app
 ```
 
-Default endpoint: `http://localhost:8084/mcp`
-
-### 3. Web App (REST-backed)
+Start only the MCP path:
 
 ```sh
-cd galaxium-travels-infrastructure-tsuedbro
-cd galaxium-booking-web-app
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r app/requirements.txt
-source .env-template
-cd app
-python app.py
+docker compose -f local-container/docker_compose.yaml up --build \
+  keycloak booking_system_mcp web_app_mcp
 ```
 
-Default URL: `http://localhost:8083`
+### 2. Open the URLs
 
-The template starts the web app in the simplest local mode:
+- Keycloak: `http://localhost:8080`
+- HR API docs: `http://localhost:8081/docs`
+- Booking REST API docs: `http://localhost:8082/docs`
+- REST web UI: `http://localhost:8083`
+- MCP endpoint: `http://localhost:8084/mcp`
+- MCP web UI: `http://localhost:8085`
 
-- `BACKEND_URL=http://localhost:8082/docs`
-- `OAUTH2_ENABLED=false`
-- `FRONTEND_AUTH_REQUIRED=false`
+If you start only one path, only the matching backend and frontend URLs will be available.
 
-### 4. Web App (Direct MCP Client)
+### 3. Log in
+
+- Keycloak admin: `admin` / `admin`
+- Traveler user: `demo-user` / `demo-user-password`
+
+### 4. Pick the example you want
+
+- Use the REST example at `http://localhost:8083`
+- Use the MCP example at `http://localhost:8085`
+
+Both UIs have the same traveler flow.
+The difference is the backend path:
+
+- REST UI calls the REST API
+- MCP UI calls MCP tools through the MCP server
+
+### 5. Run the local smoke test
 
 ```sh
-cd galaxium-travels-infrastructure-tsuedbro
-cd galaxium-booking-web-app-mcp
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r app/requirements.txt
-cd app
-export MCP_SERVER_URL=http://localhost:8084/mcp
-export OAUTH2_ENABLED=true
-export FRONTEND_AUTH_REQUIRED=true
-export OIDC_TOKEN_URL=http://localhost:8080/realms/galaxium/protocol/openid-connect/token
-export OIDC_CLIENT_ID=web-app-proxy
-export OIDC_CLIENT_SECRET=web-app-proxy-secret
-export OIDC_SCOPE="openid profile email"
-export FLASK_SECRET_KEY=local-dev-secret-key
-python app.py
+bash local-container/verify-keycloak-auth-e2e.sh
 ```
 
-Default URL: `http://localhost:8085`
-
-This app keeps the same traveler UI, but the Flask service layer explicitly calls MCP tools instead of proxying REST endpoints.
-It always requires OAuth and traveler login.
-
-### 5. HR API
+### 6. Stop the stack
 
 ```sh
-cd galaxium-travels-infrastructure-tsuedbro
-cd HR_database
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install pandas
-python app.py
+docker compose -f local-container/docker_compose.yaml down
 ```
 
-Default URL: `http://localhost:8081/docs`
+## Option 2: Host Machine With VM / LAN OAuth
 
-## Repository Map
+Use this option when the Galaxium stack runs on the host machine, but another app, agent, or compose stack runs in a VM or on another machine in the LAN.
 
-- `booking_system_rest/`: FastAPI booking backend with tests.
-- `booking_system_mcp/`: MCP version of the booking backend. The active entry point is `mcp_server.py`.
-- `galaxium-booking-web-app/`: Flask UI that talks to the REST API.
-- `galaxium-booking-web-app-mcp/`: Flask UI that calls booking tools through a direct Python MCP client.
-- `HR_database/`: small markdown-backed HR API.
-- `local-container/`: compose setup for the full stack with Keycloak.
-- `architecture/`: draw.io diagrams.
-- `ai_generated_documentation/`: advanced and historical notes that are not required for local startup.
+### 1. Prepare the host env file
+
+```sh
+cp local-container/vm-oauth.env.template local-container/vm-oauth.env
+```
+
+Edit `local-container/vm-oauth.env` and set the host IP or DNS name that the VM can reach:
+
+```sh
+KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8080
+MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
+```
+
+Do not use `localhost` in this option.
+
+### 2. Start the host stack
+
+Start the full host stack:
+
+```sh
+docker compose --env-file local-container/vm-oauth.env \
+  -f local-container/docker_compose.yaml \
+  -f local-container/docker_compose.vm-oauth.yaml \
+  up --build -d
+```
+
+Start only the REST path:
+
+```sh
+docker compose --env-file local-container/vm-oauth.env \
+  -f local-container/docker_compose.yaml \
+  -f local-container/docker_compose.vm-oauth.yaml \
+  up --build -d keycloak booking_system web_app
+```
+
+Start only the MCP path:
+
+```sh
+docker compose --env-file local-container/vm-oauth.env \
+  -f local-container/docker_compose.yaml \
+  -f local-container/docker_compose.vm-oauth.yaml \
+  up --build -d keycloak booking_system_mcp web_app_mcp
+```
+
+### 3. Prepare the VM-side client settings
+
+```sh
+cp local-container/vm-client.env.template local-container/vm-client.env
+```
+
+Edit `local-container/vm-client.env`:
+
+```sh
+KEYCLOAK_BASE_URL=http://192.168.1.50:8080
+KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+MCP_SERVER_URL=http://192.168.1.50:8084/mcp
+```
+
+### 4. Verify the LAN-facing setup
+
+```sh
+cp local-container/verify-keycloak-auth-remote.env.template local-container/verify-keycloak-auth-remote.env
+bash local-container/verify-keycloak-auth-remote.sh --env-file local-container/verify-keycloak-auth-remote.env
+```
+
+### 5. Stop the host stack
+
+```sh
+docker compose --env-file local-container/vm-oauth.env \
+  -f local-container/docker_compose.yaml \
+  -f local-container/docker_compose.vm-oauth.yaml \
+  down
+```
+
+For the detailed diagram and the explanation of why this OAuth setup works, see [local-container/README.md](./local-container/README.md).
+
+## Run The Tests
+
+Run the WebUI auth matrix with the local template:
+
+```sh
+cp testing/webui_matrix/local-machine-network.env.template testing/webui_matrix/local-machine-network.env
+bash testing/automation/run-webui-auth-matrix.sh --env-file testing/webui_matrix/local-machine-network.env
+```
+
+Run the full cross-environment matrix:
+
+```sh
+cp testing/webui_matrix/full-matrix.env.template testing/webui_matrix/full-matrix.env
+bash testing/automation/run-webui-auth-matrix.sh --env-file testing/webui_matrix/full-matrix.env
+```
+
+## Optional: MCP Inspector
+
+If you want to inspect the MCP server manually, use:
+
+```sh
+bash local-container/start-mcp-inspector-ui.sh
+```
+
+For the full Inspector flow, use [local-container/README.md](./local-container/README.md).

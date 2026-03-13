@@ -3,49 +3,84 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Galaxium Traveler Login</title>
+  <title>Galaxium Traveler Login - {{ frontend_mode_label }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"/>
 </head>
-<body class="login-page">
-  <div class="login-shell">
-    <div class="login-card">
-      <p class="login-eyebrow">Galaxium access</p>
-      <h1 class="login-title">Traveler Authentication</h1>
-      <p class="login-subtitle">Sign in with your Keycloak traveler account to continue to the flight desk.</p>
-      <div class="login-mode-strip">
-        <span class="portal-mode-badge portal-mode-{{ frontend_mode_id }}">{{ frontend_mode_label }}</span>
-        <span class="login-mode-copy">{{ frontend_mode_summary }}</span>
+<body class="login-page" data-mode="{{ frontend_mode_id }}">
+  <main class="login-stage">
+    <section class="login-panel login-panel-brand">
+      <div class="login-copy-shell">
+        <p class="login-eyebrow">Galaxium access</p>
+        <h1 class="login-title">Traveler Authentication</h1>
+        <p class="login-subtitle">Sign in with your Keycloak traveler account to continue to the flight desk.</p>
+        <div class="login-mode-strip">
+          <span class="portal-mode-badge portal-mode-{{ frontend_mode_id }}">{{ frontend_mode_label }}</span>
+          <span class="login-mode-copy">{{ frontend_mode_summary }}</span>
+        </div>
       </div>
-      <img
-        class="login-brand"
-        src="{{ url_for('static', filename='galaxium-travels-logo.png') }}"
-        alt="Galaxium Travels artwork"
-      />
 
-      {% if error %}
-        <div class="alert alert-danger" role="alert">{{ error }}</div>
-      {% endif %}
+      <div class="login-brand-frame">
+        <img
+          class="login-brand"
+          src="{{ url_for('static', filename='galaxium-travels-logo.png') }}"
+          alt="Galaxium Travels artwork"
+        />
+      </div>
 
-      <form method="post" action="/login" class="d-grid gap-2">
-        <input type="hidden" name="next" value="{{ next_path }}"/>
-        <div>
-          <label class="form-label">Username</label>
-          <input name="username" class="form-control" autocomplete="username" required/>
+      <div class="login-feature-grid">
+        <article class="login-feature-card">
+          <span class="login-feature-label">Traveler desk</span>
+          <strong>Flights, identity, and bookings in one place</strong>
+          <p>Move from sign-in to route selection without switching tools or pages.</p>
+        </article>
+        <article class="login-feature-card">
+          <span class="login-feature-label">Protected flow</span>
+          <strong>Keycloak-backed browser session</strong>
+          <p>Traveler access is established before the UI sends any booking action to the secured backend.</p>
+        </article>
+        <article class="login-feature-card">
+          <span class="login-feature-label">Backend mode</span>
+          <strong>{{ frontend_mode_label }}</strong>
+          <p>{{ frontend_mode_summary }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="login-panel login-panel-form">
+      <div class="login-form-shell">
+        <div class="login-form-header">
+          <p class="login-form-kicker">Traveler sign-in</p>
+          <h2>Use your realm account</h2>
+          <p>Start with the imported demo user or authenticate with another traveler account in the Galaxium realm.</p>
         </div>
-        <div>
-          <label class="form-label">Password</label>
-          <input name="password" type="password" class="form-control" autocomplete="current-password" required/>
-        </div>
-        <button class="btn btn-primary mt-2" type="submit">Login</button>
-      </form>
 
-      <hr/>
-      <p class="small login-help mb-0">
-        Demo credentials (local realm import):<br/>
-        <code>demo-user / demo-user-password</code>
-      </p>
-    </div>
-  </div>
+        {% if error %}
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/login" class="login-form-grid">
+          <input type="hidden" name="next" value="{{ next_path }}"/>
+          <div class="login-field">
+            <label class="form-label">Username</label>
+            <input name="username" class="form-control" autocomplete="username" placeholder="demo-user" required/>
+          </div>
+          <div class="login-field">
+            <label class="form-label">Password</label>
+            <input name="password" type="password" class="form-control" autocomplete="current-password" placeholder="Enter password" required/>
+          </div>
+          <button class="btn btn-primary login-submit" type="submit">Continue to portal</button>
+        </form>
+
+        <div class="login-demo-card">
+          <span class="login-demo-label">Local demo credentials</span>
+          <code>demo-user / demo-user-password</code>
+        </div>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

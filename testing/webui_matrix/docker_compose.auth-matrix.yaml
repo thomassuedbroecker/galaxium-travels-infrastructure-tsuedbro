@@ -1,0 +1,27 @@
+services:
+  booking_system:
+    environment:
+      AUTH_ENABLED: ${REST_BACKEND_AUTH_ENABLED:-true}
+      OIDC_ISSUER: ${REST_BACKEND_OIDC_ISSUER:-http://keycloak:8080/realms/galaxium}
+      OIDC_JWKS_URL: ${REST_BACKEND_OIDC_JWKS_URL:-http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs}
+
+  booking_system_mcp:
+    environment:
+      AUTH_ENABLED: ${MCP_BACKEND_AUTH_ENABLED:-true}
+      OIDC_ISSUER: ${MCP_BACKEND_OIDC_ISSUER:-http://keycloak:8080/realms/galaxium}
+      OIDC_JWKS_URL: ${MCP_BACKEND_OIDC_JWKS_URL:-http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs}
+      OIDC_AUTHORIZATION_SERVER_URL: ${MCP_AUTHORIZATION_SERVER_URL:-http://localhost:8080/realms/galaxium}
+
+  web_app:
+    environment:
+      OAUTH2_ENABLED: ${REST_UI_OAUTH_ENABLED:-true}
+      FRONTEND_AUTH_REQUIRED: ${REST_UI_AUTH_REQUIRED:-true}
+      OIDC_TOKEN_URL: ${REST_UI_OIDC_TOKEN_URL:-http://keycloak:8080/realms/galaxium/protocol/openid-connect/token}
+      OIDC_SCOPE: ${REST_UI_OIDC_SCOPE:-openid profile email}
+
+  web_app_mcp:
+    environment:
+      OAUTH2_ENABLED: ${MCP_UI_OAUTH_ENABLED:-true}
+      FRONTEND_AUTH_REQUIRED: ${MCP_UI_AUTH_REQUIRED:-true}
+      OIDC_TOKEN_URL: ${MCP_UI_OIDC_TOKEN_URL:-http://keycloak:8080/realms/galaxium/protocol/openid-connect/token}
+      OIDC_SCOPE: ${MCP_UI_OIDC_SCOPE:-openid profile email}

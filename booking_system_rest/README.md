@@ -47,9 +47,9 @@ Auth is off by default.
 Set these variables to require bearer tokens:
 
 - `AUTH_ENABLED=true`
-- `OIDC_ISSUER=http://localhost:8080/realms/galaxium`
+- `OIDC_ISSUER=http://localhost:8086/realms/galaxium`
 - `OIDC_AUDIENCE=booking-api`
-- `OIDC_JWKS_URL=http://localhost:8080/realms/galaxium/protocol/openid-connect/certs`
+- `OIDC_JWKS_URL=http://localhost:8086/realms/galaxium/protocol/openid-connect/certs`
 
 Compose injects the container-internal variants automatically.
 

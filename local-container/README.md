@@ -45,7 +45,7 @@ If you start only one path, only the matching backend and frontend URLs will be 
 
 ### Local URLs
 
-- Keycloak: `http://localhost:8080`
+- Keycloak: `http://localhost:8086`
 - HR API docs: `http://localhost:8081/docs`
 - Booking REST API docs: `http://localhost:8082/docs`
 - REST web UI: `http://localhost:8083`
@@ -74,7 +74,7 @@ flowchart LR
   subgraph lan["LAN"]
     subgraph host["Host machine"]
       subgraph host_compose["Host docker compose"]
-        kc["Keycloak<br/>http://HOST_IP:8080"]
+        kc["Keycloak<br/>http://HOST_IP:8086"]
         rest["REST backend<br/>:8082"]
         mcp["MCP server<br/>http://HOST_IP:8084/mcp"]
       end
@@ -97,8 +97,8 @@ The main problem in split host and VM setups is the token issuer.
 
 Without the override:
 
-- the VM gets a token from `http://HOST_IP:8080`
-- the token issuer becomes `http://HOST_IP:8080/realms/galaxium`
+- the VM gets a token from `http://HOST_IP:8086`
+- the token issuer becomes `http://HOST_IP:8086/realms/galaxium`
 - but containers may still validate against `http://keycloak:8080/realms/galaxium`
 - that causes `invalid_token`
 
@@ -125,7 +125,8 @@ cp vm-oauth.env.template vm-oauth.env
 2. Edit `vm-oauth.env`:
 
 ```sh
-KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8080
+KEYCLOAK_PUBLIC_HOSTNAME=192.168.1.50
+KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8086
 MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
 ```
 
@@ -167,8 +168,8 @@ cp vm-client.env.template vm-client.env
 Edit `vm-client.env`:
 
 ```sh
-KEYCLOAK_BASE_URL=http://192.168.1.50:8080
-KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+KEYCLOAK_BASE_URL=http://192.168.1.50:8086
+KEYCLOAK_TOKEN_URL=http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
 MCP_SERVER_URL=http://192.168.1.50:8084/mcp
 ```
 
@@ -184,13 +185,13 @@ bash verify-keycloak-auth-remote.sh --env-file verify-keycloak-auth-remote.env
 Useful manual checks:
 
 ```sh
-curl -s http://192.168.1.50:8080/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
+curl -s http://192.168.1.50:8086/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
 curl -s http://192.168.1.50:8084/.well-known/oauth-authorization-server | jq .
 ```
 
 Expected:
 
-- Keycloak issuer uses `http://192.168.1.50:8080/realms/galaxium`
+- Keycloak issuer uses `http://192.168.1.50:8086/realms/galaxium`
 - MCP metadata uses the same issuer
 - MCP registration endpoint uses `http://192.168.1.50:8084/oauth/register`
 

@@ -10,7 +10,7 @@ services:
       AUTH_ENABLED: ${MCP_BACKEND_AUTH_ENABLED:-true}
       OIDC_ISSUER: ${MCP_BACKEND_OIDC_ISSUER:-http://keycloak:8080/realms/galaxium}
       OIDC_JWKS_URL: ${MCP_BACKEND_OIDC_JWKS_URL:-http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs}
-      OIDC_AUTHORIZATION_SERVER_URL: ${MCP_AUTHORIZATION_SERVER_URL:-http://localhost:8080/realms/galaxium}
+      OIDC_AUTHORIZATION_SERVER_URL: ${MCP_AUTHORIZATION_SERVER_URL:-http://localhost:8086/realms/galaxium}
 
   web_app:
     environment:

@@ -34,7 +34,7 @@ flowchart LR
     Agent["Agent or VM app"] --> MCP["MCP server :8084"]
     UIREST --> REST["REST backend :8082"]
     UIMCP --> MCP
-    REST --> KC["Keycloak :8080"]
+    REST --> KC["Keycloak host :8086<br/>container :8080"]
     MCP --> KC
     UIREST --> KC
     UIMCP --> KC
@@ -77,6 +77,23 @@ The current repository state was checked against the live WebUI auth matrix.
   - `ui_oauth`
 
 For the exact commands, see [testing/README.md](./testing/README.md).
+
+## Test Status Overview
+
+Status meaning:
+
+- `🟢`: executed and passed for the current change set
+- `🟡`: not rerun for the current change set
+- `🔴`: executed and failed for the current change set
+
+| Status | Scope | Result |
+| --- | --- | --- |
+| `🟢` | Local compose OAuth smoke test after Keycloak host-port change to `8086` | `bash local-container/verify-keycloak-auth-e2e.sh` passed end to end on `2026-03-15`, including REST auth, MCP auth, Inspector client sync, and OAuth metadata discovery. Report: `local-container/test-results/oauth-e2e-all-20260315T172529Z.md` |
+| `🟢` | WebUI matrix unit config checks after Keycloak host-port change to `8086` | `python3 -m unittest discover -s testing/webui_matrix/tests/unit -p 'test_*.py' -v` passed with `8/8` tests green |
+| `🟢` | Compose validation after Keycloak host-port change to `8086` | `docker compose ... config` resolved correctly for both `local-container/docker_compose.yaml` and the `vm-oauth` override path |
+| `🟡` | Full WebUI auth matrix after Keycloak host-port change to `8086` | Not rerun in this change set. Last documented repo-wide state remains `52 tests passed`, `0 skipped` |
+| `🟡` | VM / LAN remote auth verification after Keycloak host-port change to `8086` | Not rerun in this change set. Env templates and compose override were updated for `8086`, but no live remote-host verification was executed yet |
+| `🔴` | Current failing checks in this change set | None from the checks that were executed |
 
 ## Fast Validation
 

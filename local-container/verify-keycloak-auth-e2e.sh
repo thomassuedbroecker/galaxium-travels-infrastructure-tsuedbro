@@ -10,7 +10,7 @@ WITH_INSPECTOR_CLI="false"
 REPORTS_DIR="${REPORTS_DIR:-${RESULTS_DIR_DEFAULT}}"
 MCP_ACCEPT_HEADER="${MCP_ACCEPT_HEADER:-application/json, text/event-stream}"
 
-KEYCLOAK_OPENID_CONFIG_URL="http://localhost:8080/realms/galaxium/.well-known/openid-configuration"
+KEYCLOAK_OPENID_CONFIG_URL="http://localhost:8086/realms/galaxium/.well-known/openid-configuration"
 BOOKING_HEALTH_URL="http://localhost:8082/health"
 BOOKING_FLIGHTS_URL="http://localhost:8082/flights"
 WEB_APP_ROOT_URL="http://localhost:8083/"

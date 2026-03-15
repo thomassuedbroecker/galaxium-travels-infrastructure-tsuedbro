@@ -22,7 +22,7 @@
         <mxCell id="p_mcp" value="Booking System MCP&lt;br&gt;localhost:8084/mcp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="1090" y="40" width="250" height="48" as="geometry" />
         </mxCell>
-        <mxCell id="p_kc" value="Keycloak&lt;br&gt;localhost:8080 / keycloak:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="p_kc" value="Keycloak&lt;br&gt;localhost:8086 / keycloak:8080" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="1410" y="40" width="190" height="48" as="geometry" />
         </mxCell>
         <mxCell id="l_dev" value="" style="shape=line;strokeColor=#999999;dashed=1;direction=south;" vertex="1" parent="1">
@@ -52,7 +52,7 @@
         <mxCell id="phase3" value="Phase C: final authenticated MCP session via Custom Headers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="30" y="1130" width="1580" height="32" as="geometry" />
         </mxCell>
-        <mxCell id="note_top" value="Important local-compose nuance:&lt;br&gt;- Discovery metadata is exposed with host-reachable Keycloak URLs (`localhost:8080`).&lt;br&gt;- Final JWT validation inside the MCP container still uses the internal issuer (`keycloak:8080`)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
+        <mxCell id="note_top" value="Important local-compose nuance:&lt;br&gt;- Discovery metadata is exposed with host-reachable Keycloak URLs (`localhost:8086`).&lt;br&gt;- Final JWT validation inside the MCP container still uses the internal issuer (`keycloak:8080`)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
           <mxGeometry x="1065" y="170" width="545" height="84" as="geometry" />
         </mxCell>
         <mxCell id="note_proxy" value="`Via Proxy` mode sends:&lt;br&gt;- `X-MCP-Proxy-Auth` to the proxy&lt;br&gt;- `Authorization: Bearer ...` to the MCP server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacing=8;" vertex="1" parent="1">
@@ -145,7 +145,7 @@
             <mxPoint x="1215" y="770" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e15" value="Return issuer=`http://localhost:8080/realms/galaxium` + register endpoint" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <mxCell id="e15" value="Return issuer=`http://localhost:8086/realms/galaxium` + register endpoint" style="endArrow=classic;html=1;rounded=0;dashed=1;strokeWidth=2;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="1215" y="810" as="sourcePoint" />
             <mxPoint x="655" y="810" as="targetPoint" />

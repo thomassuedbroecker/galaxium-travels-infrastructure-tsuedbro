@@ -17,7 +17,7 @@ services:
       - start-dev
       - --import-realm
       - --http-port=8080
-      - --hostname=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}
+      - --hostname=${KEYCLOAK_PUBLIC_HOSTNAME:-localhost}
       - --hostname-strict=false
     environment:
       KC_HTTP_ENABLED: "true"
@@ -31,16 +31,16 @@ services:
 
   booking_system:
     environment:
-      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}/realms/galaxium
+      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium
       OIDC_JWKS_URL: http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs
     networks:
       - galaxium_vm_oauth
 
   booking_system_mcp:
     environment:
-      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}/realms/galaxium
+      OIDC_ISSUER: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium
       OIDC_JWKS_URL: http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs
-      OIDC_AUTHORIZATION_SERVER_URL: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8080}/realms/galaxium
+      OIDC_AUTHORIZATION_SERVER_URL: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium
       MCP_PUBLIC_BASE_URL: ${MCP_PUBLIC_BASE_URL:-http://localhost:8084}
       OIDC_INSPECTOR_REDIRECT_URIS: ${OIDC_INSPECTOR_REDIRECT_URIS:-http://localhost:6274/oauth/callback,http://localhost:6274/oauth/callback/debug,http://127.0.0.1:6274/oauth/callback,http://127.0.0.1:6274/oauth/callback/debug}
     networks:

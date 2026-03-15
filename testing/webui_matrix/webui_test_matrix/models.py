@@ -73,7 +73,7 @@ class Variant:
 
     @property
     def keycloak_base_url(self) -> str:
-        return f"http://{self.public_host}:8080"
+        return f"http://{self.public_host}:8086"
 
     @property
     def keycloak_realm_url(self) -> str:
@@ -177,7 +177,7 @@ class Variant:
     def compose_env(self) -> dict[str, str]:
         backend_issuer = self.keycloak_realm_url if self.environment.uses_vm_oauth_override else "http://keycloak:8080/realms/galaxium"
         backend_jwks_url = "http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs"
-        auth_server_url = self.keycloak_realm_url if self.environment.uses_vm_oauth_override else "http://localhost:8080/realms/galaxium"
+        auth_server_url = self.keycloak_realm_url if self.environment.uses_vm_oauth_override else "http://localhost:8086/realms/galaxium"
         rest_ui_token_url = self.keycloak_token_url if self.environment.uses_vm_oauth_override else "http://keycloak:8080/realms/galaxium/protocol/openid-connect/token"
         mcp_ui_token_url = self.keycloak_token_url if self.environment.uses_vm_oauth_override else "http://keycloak:8080/realms/galaxium/protocol/openid-connect/token"
 

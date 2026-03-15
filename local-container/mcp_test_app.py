@@ -195,7 +195,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--token-url",
-        default="http://localhost:8080/realms/galaxium/protocol/openid-connect/token",
+        default="http://localhost:8086/realms/galaxium/protocol/openid-connect/token",
     )
     parser.add_argument("--client-id", default="web-app-proxy")
     parser.add_argument("--client-secret", default="web-app-proxy-secret")

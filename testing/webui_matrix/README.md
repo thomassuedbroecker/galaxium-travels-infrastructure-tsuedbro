@@ -52,7 +52,7 @@ flowchart LR
     end
 
     subgraph Compose["Docker Compose Stack"]
-        KC[Keycloak :8080]
+        KC[Keycloak host :8086 / container :8080]
         REST[booking_system :8082]
         UIREST[web_app :8083]
         MCP[booking_system_mcp :8084]
@@ -176,7 +176,7 @@ Integration coverage:
 - LAN-prepare metadata issuer and registration endpoint assertions
 
 Note:
-In plain local compose, the backend validates the internal issuer `http://keycloak:8080/...`, while host-side token requests use `http://localhost:8080/...`.
+In plain local compose, the backend validates the internal issuer `http://keycloak:8080/...`, while host-side token requests use `http://localhost:8086/...`.
 That means positive direct-backend token assertions are most accurate in the LAN-prepare topology.
 The successful authenticated flow for plain local compose is still covered end-to-end through the frontends, which obtain tokens over the container-internal Keycloak URL.
 
@@ -277,7 +277,7 @@ bash testing/automation/run-webui-auth-matrix.sh --env-file testing/webui_matrix
 
 What this verifies:
 
-- Keycloak issuer becomes `http://<PUBLIC_HOST>:8080/realms/galaxium`
+- Keycloak issuer becomes `http://<PUBLIC_HOST>:8086/realms/galaxium`
 - MCP metadata points registration and auth discovery to `http://<PUBLIC_HOST>:8084`
 - the same frontend login flow still works
 - the backend auth toggle still behaves correctly in LAN-facing mode

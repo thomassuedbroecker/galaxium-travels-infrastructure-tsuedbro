@@ -53,7 +53,7 @@
 
   <rect class="actor" x="1500" y="120" width="260" height="60" fill="#fee2e2" />
   <text class="actor-text" x="1630" y="148">Keycloak</text>
-  <text class="actor-text" x="1630" y="168">localhost:8080 / keycloak:8080</text>
+  <text class="actor-text" x="1630" y="168">localhost:8086 / keycloak:8080</text>
 
   <line class="lifeline" x1="150" y1="200" x2="150" y2="2380" />
   <line class="lifeline" x1="420" y1="200" x2="420" y2="2380" />
@@ -97,7 +97,7 @@
 
   <rect class="note" x="1080" y="845" width="760" height="120" />
   <text class="note-title" x="1105" y="875">Local compose nuance</text>
-  <text class="note-text" x="1105" y="905">Discovery metadata is exposed with host-reachable Keycloak URLs (`localhost:8080`).</text>
+  <text class="note-text" x="1105" y="905">Discovery metadata is exposed with host-reachable Keycloak URLs (`localhost:8086`).</text>
   <text class="note-text" x="1105" y="930">Final token validation inside the MCP container still uses the internal issuer (`keycloak:8080`).</text>
 
   <rect x="40" y="1010" width="1820" height="42" rx="12" ry="12" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" />

@@ -45,7 +45,7 @@ class ConfigTests(unittest.TestCase):
                 "ui_oauth",
                 public_host="192.168.1.50",
             )
-        self.assertEqual(variant.keycloak_base_url, "http://192.168.1.50:8080")
+        self.assertEqual(variant.keycloak_base_url, "http://192.168.1.50:8086")
         self.assertEqual(variant.compose_env["MCP_PUBLIC_BASE_URL"], "http://192.168.1.50:8084")
 
     def test_selected_variants_support_dimension_expansion(self) -> None:
@@ -73,15 +73,15 @@ class ConfigTests(unittest.TestCase):
             )
         self.assertEqual(
             variant.compose_env["MCP_BACKEND_OIDC_ISSUER"],
-            "http://192.168.1.50:8080/realms/galaxium",
+            "http://192.168.1.50:8086/realms/galaxium",
         )
         self.assertEqual(
             variant.compose_env["MCP_UI_OIDC_TOKEN_URL"],
-            "http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token",
+            "http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token",
         )
         self.assertEqual(
             variant.compose_env["REST_UI_OIDC_TOKEN_URL"],
-            "http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token",
+            "http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token",
         )
 
     def test_local_machine_network_keeps_internal_compose_issuer_and_token_urls(self) -> None:

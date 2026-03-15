@@ -47,7 +47,7 @@ docker compose -f local-container/docker_compose.yaml up --build \
 
 ### 2. Open the URLs
 
-- Keycloak: `http://localhost:8080`
+- Keycloak: `http://localhost:8086`
 - HR API docs: `http://localhost:8081/docs`
 - Booking REST API docs: `http://localhost:8082/docs`
 - REST web UI: `http://localhost:8083`
@@ -97,7 +97,8 @@ cp local-container/vm-oauth.env.template local-container/vm-oauth.env
 Edit `local-container/vm-oauth.env` and set the host IP or DNS name that the VM can reach:
 
 ```sh
-KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8080
+KEYCLOAK_PUBLIC_HOSTNAME=192.168.1.50
+KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8086
 MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
 ```
 
@@ -141,8 +142,8 @@ cp local-container/vm-client.env.template local-container/vm-client.env
 Edit `local-container/vm-client.env`:
 
 ```sh
-KEYCLOAK_BASE_URL=http://192.168.1.50:8080
-KEYCLOAK_TOKEN_URL=http://192.168.1.50:8080/realms/galaxium/protocol/openid-connect/token
+KEYCLOAK_BASE_URL=http://192.168.1.50:8086
+KEYCLOAK_TOKEN_URL=http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
 MCP_SERVER_URL=http://192.168.1.50:8084/mcp
 ```
 

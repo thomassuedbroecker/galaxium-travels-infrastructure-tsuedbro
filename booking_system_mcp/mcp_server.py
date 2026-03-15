@@ -278,7 +278,7 @@ def _auth_server_url() -> str:
     # Local compose fallback: metadata should point to host-reachable Keycloak URL.
     # Internal in-network issuer (keycloak:8080) breaks Inspector discovery on host.
     if "://keycloak:8080/" in issuer:
-        return issuer.replace("://keycloak:8080/", "://localhost:8080/")
+        return issuer.replace("://keycloak:8080/", "://localhost:8086/")
     return issuer
 
 

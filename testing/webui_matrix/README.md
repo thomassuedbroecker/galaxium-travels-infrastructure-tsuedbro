@@ -182,6 +182,8 @@ Note:
 In plain local compose, the backend validates the internal issuer `http://keycloak:8080/...`, while host-side token requests use `http://localhost:8086/...`.
 That means positive direct-backend token assertions are most accurate in the LAN-prepare topology.
 The successful authenticated flow for plain local compose is still covered end-to-end through the frontends, which obtain tokens over the container-internal Keycloak URL.
+This same split also explains why some test helpers and `docker exec` utilities still contain `http://keycloak:8080/...` after the host-facing port changed to `8086`.
+Internal Docker-network callers must keep `keycloak:8080`, while host or LAN callers must use `localhost:8086` or `http://<PUBLIC_HOST>:8086`.
 
 End-to-end coverage:
 

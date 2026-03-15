@@ -107,7 +107,8 @@ With `docker_compose.vm-oauth.yaml`:
 1. Keycloak advertises the public host URL.
 2. REST and MCP validate the same public issuer.
 3. JWKS download still stays on the Docker network at `http://keycloak:8080/.../certs`.
-4. VM-side clients use the host IP or DNS name, not `localhost`.
+4. The REST and MCP web UIs use the public Keycloak token URL, so traveler login produces tokens with the LAN-facing issuer.
+5. VM-side clients use the host IP or DNS name, not `localhost`.
 
 This gives you:
 
@@ -187,6 +188,7 @@ Useful manual checks:
 ```sh
 curl -s http://192.168.1.50:8086/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
 curl -s http://192.168.1.50:8084/.well-known/oauth-authorization-server | jq .
+python3 mcp_test_app.py --mcp-url http://192.168.1.50:8084/mcp --token-source http --token-url http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
 ```
 
 Expected:
@@ -194,6 +196,7 @@ Expected:
 - Keycloak issuer uses `http://192.168.1.50:8086/realms/galaxium`
 - MCP metadata uses the same issuer
 - MCP registration endpoint uses `http://192.168.1.50:8084/oauth/register`
+- MCP token-authenticated initialize and `tools/list` calls succeed over the LAN URL
 
 ## Verification Scripts
 

@@ -19,8 +19,10 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
+MCP_ACCEPT_HEADER = "application/json, text/event-stream"
 
-def _http_post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> tuple[int, str]:
+
+def _http_post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> tuple[int, str, dict[str, str]]:
     request = urllib.request.Request(
         url=url,
         data=json.dumps(payload).encode("utf-8"),
@@ -30,10 +32,10 @@ def _http_post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) 
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
             body = response.read().decode("utf-8")
-            return response.status, body
+            return response.status, body, dict(response.headers.items())
     except urllib.error.HTTPError as error:
         body = error.read().decode("utf-8", errors="replace")
-        return error.code, body
+        return error.code, body, dict(error.headers.items())
 
 
 def _http_post_form(url: str, form: dict[str, str]) -> tuple[int, str]:
@@ -54,6 +56,9 @@ def _http_post_form(url: str, form: dict[str, str]) -> tuple[int, str]:
 
 
 def _token_via_docker() -> str:
+    # This helper runs inside the Docker network via `docker exec web_app`.
+    # That path must keep the container-internal Keycloak URL on :8080.
+    # Host- or LAN-side callers should use `--token-source http --token-url ...:8086/...` instead.
     command = [
         "docker",
         "exec",
@@ -89,6 +94,31 @@ def _token_via_docker() -> str:
     if not token:
         raise RuntimeError("Docker token retrieval returned empty token")
     return token
+
+
+def _extract_mcp_json(body: str) -> dict[str, Any]:
+    stripped = body.strip()
+    if not stripped:
+        raise RuntimeError("MCP response body is empty")
+
+    try:
+        parsed = json.loads(stripped)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+
+    data_lines: list[str] = []
+    for line in stripped.splitlines():
+        if line.startswith("data: "):
+            data_lines.append(line[6:])
+    if not data_lines:
+        raise RuntimeError(f"MCP response did not contain JSON payload: {body}")
+
+    parsed = json.loads(data_lines[-1])
+    if not isinstance(parsed, dict):
+        raise RuntimeError(f"MCP payload must be a JSON object: {parsed}")
+    return parsed
 
 
 def _token_via_http(
@@ -148,7 +178,8 @@ def _rpc(
     request_id: int,
     method: str,
     params: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+    session_id: str | None = None,
+) -> tuple[dict[str, Any], dict[str, str]]:
     payload: dict[str, Any] = {
         "jsonrpc": "2.0",
         "id": request_id,
@@ -157,23 +188,25 @@ def _rpc(
     if params is not None:
         payload["params"] = params
 
-    status, body = _http_post_json(
+    headers = {
+        "Accept": MCP_ACCEPT_HEADER,
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+        "MCP-Protocol-Version": "2025-11-25",
+    }
+    if session_id:
+        headers["MCP-Session-Id"] = session_id
+
+    status, body, response_headers = _http_post_json(
         mcp_url,
         payload,
-        {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-            "MCP-Protocol-Version": "2025-11-25",
-        },
+        headers,
     )
 
     if status != 200:
         raise RuntimeError(f"{method} failed with HTTP {status}: {body}")
 
-    try:
-        parsed = json.loads(body)
-    except json.JSONDecodeError as error:
-        raise RuntimeError(f"{method} returned non-JSON response: {body}") from error
+    parsed = _extract_mcp_json(body)
 
     if "error" in parsed:
         raise RuntimeError(f"{method} RPC error: {json.dumps(parsed['error'])}")
@@ -181,7 +214,7 @@ def _rpc(
     if "result" not in parsed:
         raise RuntimeError(f"{method} RPC response has no result: {body}")
 
-    return parsed["result"]
+    return parsed["result"], response_headers
 
 
 def main() -> int:
@@ -213,7 +246,7 @@ def main() -> int:
         token = _get_token(args)
         print(f"OK: token length={len(token)}")
 
-        init_result = _rpc(
+        init_result, init_headers = _rpc(
             mcp_url=args.mcp_url,
             token=token,
             request_id=1,
@@ -224,6 +257,7 @@ def main() -> int:
                 "clientInfo": {"name": "local-mcp-test-app", "version": "1.0.0"},
             },
         )
+        session_id = init_headers.get("Mcp-Session-Id") or init_headers.get("mcp-session-id")
         print(
             "OK: initialize",
             json.dumps(
@@ -233,13 +267,16 @@ def main() -> int:
                 }
             ),
         )
+        if session_id:
+            print(f"OK: session id acquired ({session_id})")
 
-        tools_result = _rpc(
+        tools_result, _ = _rpc(
             mcp_url=args.mcp_url,
             token=token,
             request_id=2,
             method="tools/list",
             params={},
+            session_id=session_id,
         )
         tools = tools_result.get("tools") or []
         names = [tool.get("name", "") for tool in tools]
@@ -247,12 +284,13 @@ def main() -> int:
         print("Tools:", ", ".join(names))
 
         if not args.skip_tool_call and "list_flights" in names:
-            call_result = _rpc(
+            call_result, _ = _rpc(
                 mcp_url=args.mcp_url,
                 token=token,
                 request_id=3,
                 method="tools/call",
                 params={"name": "list_flights", "arguments": {}},
+                session_id=session_id,
             )
             print("OK: tools/call(list_flights)")
             print("Result keys:", ", ".join(sorted(call_result.keys())))

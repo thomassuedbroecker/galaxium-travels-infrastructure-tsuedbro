@@ -47,10 +47,14 @@ services:
       - galaxium_vm_oauth
 
   web_app:
+    environment:
+      OIDC_TOKEN_URL: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium/protocol/openid-connect/token
     networks:
       - galaxium_vm_oauth
 
   web_app_mcp:
+    environment:
+      OIDC_TOKEN_URL: ${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium/protocol/openid-connect/token
     networks:
       - galaxium_vm_oauth
 

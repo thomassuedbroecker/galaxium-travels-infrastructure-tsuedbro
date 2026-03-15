@@ -21,6 +21,27 @@ flowchart TD
     E2E["End-to-end tests"] --> Flows["Traveler login, booking, authorization"]
 ```
 
+## Keycloak Port Model In Tests
+
+The repository uses two different Keycloak URLs during testing, and both are correct:
+
+- `http://keycloak:8080/...`
+  Used for container-to-container traffic on the Docker network.
+- `http://localhost:8086/...` or `http://<PUBLIC_HOST>:8086/...`
+  Used for host-side or LAN-side traffic.
+
+These URLs point to the same Keycloak instance.
+The host port mapping is `8086:8080`, so the tests must use the URL that matches where the caller is running.
+
+Examples:
+
+- Docker-backed helpers that run inside a container, or use `docker exec`, should keep `keycloak:8080`.
+- Host-side scripts such as `verify-keycloak-auth-e2e.sh` use `localhost:8086`.
+- LAN-prepare matrix runs and VM/LAN verification use `http://<PUBLIC_HOST>:8086`.
+
+Do not replace `keycloak:8080` with `8086` blindly in test code.
+If the caller runs inside Docker, `8080` is the correct target.
+
 ## Current Verified State
 
 Current WebUI auth matrix result:

@@ -94,7 +94,7 @@ Status meaning:
 | `🟢` | WebUI matrix unit config checks after Keycloak host-port change to `8086` | `python3 -m unittest discover -s testing/webui_matrix/tests/unit -p 'test_*.py' -v` passed with `8/8` tests green |
 | `🟢` | Compose validation after Keycloak host-port change to `8086` | `docker compose ... config` resolved correctly for both `local-container/docker_compose.yaml` and the `vm-oauth` override path |
 | `🟢` | Full WebUI auth matrix after Keycloak host-port change to `8086` | Rerun on `2026-03-15` with `WEBUI_TEST_PUBLIC_HOST=192.168.2.88`: `52` tests ran, `52` passed, `0` skipped |
-| `🟡` | VM / LAN remote auth verification after Keycloak host-port change to `8086` | No second-host verification was rerun yet. The local LAN-prepare matrix is green, but a separate external machine or VM check was not repeated in this change set |
+| `🟢` | VM / LAN remote auth verification after Keycloak host-port change to `8086` | Verified on `2026-03-15` against `192.168.2.88`: `verify-keycloak-auth-remote.sh` passed for REST plus traveler web login, Keycloak discovery returned the public issuer, MCP metadata returned the public issuer and registration endpoint, and `python3 local-container/mcp_test_app.py --mcp-url http://192.168.2.88:8084/mcp --token-source http --token-url http://192.168.2.88:8086/realms/galaxium/protocol/openid-connect/token` passed |
 | `🟢` | Current failing checks in this change set | None from the executed checks |
 
 ## Fast Validation

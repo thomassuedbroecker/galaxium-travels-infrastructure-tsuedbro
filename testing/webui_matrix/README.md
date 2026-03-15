@@ -31,8 +31,8 @@ Design goals:
 
 Current verified state:
 
-- full matrix result: `52 passed`
-- skipped tests: `0`
+- latest rerun date: `2026-03-15`
+- latest full matrix result: `52 tests passed`, `0 skipped`
 - environments covered:
   - `local_machine_network`
   - `local_machine_local_network_prepare`
@@ -42,6 +42,9 @@ Current verified state:
 - OAuth modes covered:
   - `backend_and_ui_oauth`
   - `ui_oauth`
+- fix that made the prepare slice green again:
+  - the matrix runner now exports `KEYCLOAK_PUBLIC_HOSTNAME` for LAN-prepare variants
+  - the VM/LAN compose override no longer falls back to `localhost`
 
 ```mermaid
 flowchart LR

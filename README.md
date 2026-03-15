@@ -62,10 +62,9 @@ flowchart LR
 
 ## Current Verified State
 
-The current repository state was checked against the live WebUI auth matrix.
+The latest live WebUI auth matrix rerun was executed on `2026-03-15` after fixing the LAN-prepare Keycloak hostname injection for the `8086` host-port change.
 
-- Full matrix result: `52 tests passed`
-- Skipped tests: `0`
+- Latest rerun result: `52 tests passed`, `0 skipped`
 - Verified environments:
   - `local_machine_network`
   - `local_machine_local_network_prepare`
@@ -75,6 +74,9 @@ The current repository state was checked against the live WebUI auth matrix.
 - Verified OAuth modes:
   - `backend_and_ui_oauth`
   - `ui_oauth`
+- Root cause fixed:
+  - the WebUI matrix LAN-prepare variants were not exporting `KEYCLOAK_PUBLIC_HOSTNAME`
+  - the VM/LAN compose override therefore fell back to `localhost`, which broke public issuer metadata and backend token validation
 
 For the exact commands, see [testing/README.md](./testing/README.md).
 
@@ -91,9 +93,9 @@ Status meaning:
 | `🟢` | Local compose OAuth smoke test after Keycloak host-port change to `8086` | `bash local-container/verify-keycloak-auth-e2e.sh` passed end to end on `2026-03-15`, including REST auth, MCP auth, Inspector client sync, and OAuth metadata discovery. Report: `local-container/test-results/oauth-e2e-all-20260315T172529Z.md` |
 | `🟢` | WebUI matrix unit config checks after Keycloak host-port change to `8086` | `python3 -m unittest discover -s testing/webui_matrix/tests/unit -p 'test_*.py' -v` passed with `8/8` tests green |
 | `🟢` | Compose validation after Keycloak host-port change to `8086` | `docker compose ... config` resolved correctly for both `local-container/docker_compose.yaml` and the `vm-oauth` override path |
-| `🟡` | Full WebUI auth matrix after Keycloak host-port change to `8086` | Not rerun in this change set. Last documented repo-wide state remains `52 tests passed`, `0 skipped` |
-| `🟡` | VM / LAN remote auth verification after Keycloak host-port change to `8086` | Not rerun in this change set. Env templates and compose override were updated for `8086`, but no live remote-host verification was executed yet |
-| `🔴` | Current failing checks in this change set | None from the checks that were executed |
+| `🟢` | Full WebUI auth matrix after Keycloak host-port change to `8086` | Rerun on `2026-03-15` with `WEBUI_TEST_PUBLIC_HOST=192.168.2.88`: `52` tests ran, `52` passed, `0` skipped |
+| `🟡` | VM / LAN remote auth verification after Keycloak host-port change to `8086` | No second-host verification was rerun yet. The local LAN-prepare matrix is green, but a separate external machine or VM check was not repeated in this change set |
+| `🟢` | Current failing checks in this change set | None from the executed checks |
 
 ## Fast Validation
 

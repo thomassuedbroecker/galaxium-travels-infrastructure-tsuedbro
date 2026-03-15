@@ -35,6 +35,7 @@ Current WebUI auth matrix result:
   python3 -m unittest discover -s testing/webui_matrix/tests -p 'test_*.py' -v
   ```
 
+- Date: `2026-03-15`
 - Result: `52 tests passed`
 - Skipped: `0`
 
@@ -43,7 +44,9 @@ This means:
 - both environments work
 - both backend modes work
 - both OAuth modes work
-- the test generator now runs only real applicable tests
+- the `8086` host-port change is verified across the full matrix
+- the regression was fixed by exporting `KEYCLOAK_PUBLIC_HOSTNAME` for LAN-prepare variants so Keycloak no longer falls back to `localhost`
+- the test generator still runs only real applicable tests
 
 ## Folder Structure
 

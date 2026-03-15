@@ -202,6 +202,7 @@ class Variant:
         if self.environment.uses_vm_oauth_override:
             env.update(
                 {
+                    "KEYCLOAK_PUBLIC_HOSTNAME": self.public_host,
                     "KEYCLOAK_PUBLIC_BASE_URL": self.keycloak_base_url,
                     "MCP_PUBLIC_BASE_URL": "http://{host}:8084".format(host=self.public_host),
                 }

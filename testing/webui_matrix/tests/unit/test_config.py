@@ -46,6 +46,7 @@ class ConfigTests(unittest.TestCase):
                 public_host="192.168.1.50",
             )
         self.assertEqual(variant.keycloak_base_url, "http://192.168.1.50:8086")
+        self.assertEqual(variant.compose_env["KEYCLOAK_PUBLIC_HOSTNAME"], "192.168.1.50")
         self.assertEqual(variant.compose_env["MCP_PUBLIC_BASE_URL"], "http://192.168.1.50:8084")
 
     def test_selected_variants_support_dimension_expansion(self) -> None:

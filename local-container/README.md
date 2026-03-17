@@ -33,6 +33,7 @@ docker compose up --build
 Start only the REST path:
 
 ```sh
+cd local-container
 export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build keycloak booking_system web_app
 ```
@@ -40,6 +41,7 @@ docker compose up --build keycloak booking_system web_app
 Start only the MCP path:
 
 ```sh
+cd local-container
 export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build keycloak booking_system_mcp web_app_mcp
 ```
@@ -123,6 +125,7 @@ This gives you:
 1. Copy the env template and get IP address:
 
 ```sh
+cd local-container
 export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp vm-oauth.env.template vm-oauth.env
 ```
@@ -138,6 +141,8 @@ MCP_PUBLIC_BASE_URL=http://${LOCAL_NET_IP):8084
 3. Start the stack:
 
 ```sh
+cd local-container
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
@@ -147,6 +152,8 @@ docker compose --env-file vm-oauth.env \
 Start only the REST path:
 
 ```sh
+cd local-container
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
@@ -156,6 +163,8 @@ docker compose --env-file vm-oauth.env \
 Start only the MCP path:
 
 ```sh
+cd local-container
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
@@ -191,8 +200,10 @@ bash verify-keycloak-auth-remote.sh --env-file verify-keycloak-auth-remote.env
 Useful manual checks:
 
 ```sh
-curl -s http://192.168.1.50:8086/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
-curl -s http://192.168.1.50:8084/.well-known/oauth-authorization-server | jq .
+cd local-container
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
+curl -s http://${LOCAL_NET_IP}:8086/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
+curl -s http://${LOCAL_NET_IP}:8084/.well-known/oauth-authorization-server | jq .
 python3 mcp_test_app.py --mcp-url http://192.168.1.50:8084/mcp --token-source http --token-url http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
 ```
 

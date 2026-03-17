@@ -75,6 +75,7 @@ The difference is the backend path:
 ### 5. Run the local smoke test
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 bash local-container/verify-keycloak-auth-e2e.sh
 ```
 
@@ -91,15 +92,16 @@ Use this option when the Galaxium stack runs on the host machine, but another ap
 ### 1. Prepare the host env file
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp local-container/vm-oauth.env.template local-container/vm-oauth.env
 ```
 
 Edit `local-container/vm-oauth.env` and set the host IP or DNS name that the VM can reach:
 
 ```sh
-KEYCLOAK_PUBLIC_HOSTNAME=192.168.1.50
-KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8086
-MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
+KEYCLOAK_PUBLIC_HOSTNAME=${LOCAL_NET_IP}
+KEYCLOAK_PUBLIC_BASE_URL=http://${LOCAL_NET_IP}:8086
+MCP_PUBLIC_BASE_URL=http://${LOCAL_NET_IP}:8084
 ```
 
 Do not use `localhost` in this option.
@@ -136,15 +138,16 @@ docker compose --env-file local-container/vm-oauth.env \
 ### 3. Prepare the VM-side client settings
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp local-container/vm-client.env.template local-container/vm-client.env
 ```
 
 Edit `local-container/vm-client.env`:
 
 ```sh
-KEYCLOAK_BASE_URL=http://192.168.1.50:8086
-KEYCLOAK_TOKEN_URL=http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
-MCP_SERVER_URL=http://192.168.1.50:8084/mcp
+KEYCLOAK_BASE_URL=http://${LOCAL_NET_IP}:8086
+KEYCLOAK_TOKEN_URL=http://${LOCAL_NET_IP}:8086/realms/galaxium/protocol/openid-connect/token
+MCP_SERVER_URL=http://${LOCAL_NET_IP}:8084/mcp
 ```
 
 ### 4. Verify the LAN-facing setup

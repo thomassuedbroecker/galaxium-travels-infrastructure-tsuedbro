@@ -111,6 +111,7 @@ Do not use `localhost` in this option.
 Start the full host stack:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -120,6 +121,7 @@ docker compose --env-file local-container/vm-oauth.env \
 Start only the REST path:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -129,6 +131,7 @@ docker compose --env-file local-container/vm-oauth.env \
 Start only the MCP path:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -160,6 +163,7 @@ bash local-container/verify-keycloak-auth-remote.sh --env-file local-container/v
 ### 5. Stop the host stack
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \

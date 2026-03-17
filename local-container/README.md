@@ -26,18 +26,21 @@ Use this when all services run on one machine.
 From this folder run:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build
 ```
 
 Start only the REST path:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build keycloak booking_system web_app
 ```
 
 Start only the MCP path:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build keycloak booking_system_mcp web_app_mcp
 ```
 
@@ -117,18 +120,19 @@ This gives you:
 
 ### Start The Host Stack
 
-1. Copy the env template:
+1. Copy the env template and get IP address:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp vm-oauth.env.template vm-oauth.env
 ```
 
 2. Edit `vm-oauth.env`:
 
 ```sh
-KEYCLOAK_PUBLIC_HOSTNAME=192.168.1.50
-KEYCLOAK_PUBLIC_BASE_URL=http://192.168.1.50:8086
-MCP_PUBLIC_BASE_URL=http://192.168.1.50:8084
+KEYCLOAK_PUBLIC_HOSTNAME=${LOCAL_NET_IP)
+KEYCLOAK_PUBLIC_BASE_URL=http://${LOCAL_NET_IP):8086
+MCP_PUBLIC_BASE_URL=http://${LOCAL_NET_IP):8084
 ```
 
 3. Start the stack:
@@ -160,18 +164,19 @@ docker compose --env-file vm-oauth.env \
 
 ### VM-Side Client Settings
 
-Copy the client template:
+Copy the env template and get IP address:
 
 ```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp vm-client.env.template vm-client.env
 ```
 
 Edit `vm-client.env`:
 
 ```sh
-KEYCLOAK_BASE_URL=http://192.168.1.50:8086
-KEYCLOAK_TOKEN_URL=http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
-MCP_SERVER_URL=http://192.168.1.50:8084/mcp
+KEYCLOAK_BASE_URL=http://${LOCAL_NET_IP):8086
+KEYCLOAK_TOKEN_URL=http://${LOCAL_NET_IP):8086/realms/galaxium/protocol/openid-connect/token
+MCP_SERVER_URL=http://${LOCAL_NET_IP):8084/mcp
 ```
 
 Do not use `localhost` for this option.

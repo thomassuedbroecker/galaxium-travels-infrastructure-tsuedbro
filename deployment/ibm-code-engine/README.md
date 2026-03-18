@@ -55,24 +55,36 @@ Important:
 - In `oauth2` mode, Keycloak is deployed in the same Code Engine project unless you explicitly set `KEYCLOAK_BASE_URL_OVERRIDE`.
 - Deployment order matters because Code Engine public URLs are only known after each app is created.
 
+This package also supports two deployment artifact modes:
+
+1. `DEPLOY_ARTIFACT_MODE=source_build`
+   - Code Engine builds the Galaxium service images from local or Git source
+   - Code Engine stores the resulting images in IBM Cloud Container Registry
+
+2. `DEPLOY_ARTIFACT_MODE=prebuilt_images`
+   - local container images are built for the Galaxium services
+   - the images are pushed to IBM Cloud Container Registry
+   - Code Engine deploys the applications from those pushed image references
+
 ## Deployment Model
 
 This draft uses:
 
-1. local source builds for repository services with `ibmcloud ce application create --build-source ...`
-2. direct image deployment for Keycloak with `quay.io/keycloak/keycloak:26.0`
-3. Code Engine secrets for app credentials
-4. a Code Engine configmap for the Keycloak realm import
+1. `source_build` mode with `ibmcloud ce application create --build-source ...`
+2. `prebuilt_images` mode with local image build, IBM Cloud Container Registry push, and `ibmcloud ce application create --image ...`
+3. direct image deployment for Keycloak with `quay.io/keycloak/keycloak:26.0`
+4. Code Engine secrets for app credentials
+5. a Code Engine configmap for the Keycloak realm import
 
 All of these steps are executed through the IBM Cloud CLI from bash scripts in `scripts/`.
 There is currently no Terraform state, Terraform module, or Terraform workflow in this folder.
 
 Important build detail:
 
-- This folder is intentionally centered on `Code Engine build from source`.
-- For local source builds, Code Engine automatically pushes the resulting image to IBM Cloud Container Registry.
-- This folder does not currently automate a separate `docker build` plus `docker push` flow for the Galaxium service images.
-- That distinction matters because registry compatibility is stricter than just "an image exists somewhere".
+- `source_build` remains the simplest path because Code Engine handles the image build and registry push.
+- `prebuilt_images` is now also automated in this folder for the five Galaxium service images.
+- Keycloak still uses the public `quay.io/keycloak/keycloak:26.0` image by default.
+- Registry compatibility is stricter than just "an image exists somewhere", so the prebuilt-image workflow keeps explicit registry settings and a default `linux/amd64` platform.
 
 The Keycloak realm file is reused from:
 
@@ -82,17 +94,12 @@ The Keycloak realm file is reused from:
 
 The older repository concern is valid: container build and upload behavior is not interchangeable.
 
-Current supported automation path in this folder:
+Current supported automation paths in this folder:
 
 1. Build from local or Git source with `ibmcloud ce application create|update --build-source ...`
 2. Let Code Engine create the image and upload it to IBM Cloud Container Registry
 3. Let the deployed application reference that resulting image automatically
-
-Not currently automated in this folder:
-
-1. build each Galaxium service image locally
-2. push those images manually to IBM Cloud Container Registry
-3. deploy the stack from those pushed image references
+4. Or switch to `DEPLOY_ARTIFACT_MODE=prebuilt_images`, build the Galaxium images locally, push them to IBM Cloud Container Registry, and deploy from those pushed image references
 
 Why this is documented explicitly:
 
@@ -103,8 +110,9 @@ Why this is documented explicitly:
 
 Practical rule for this repository:
 
-1. Keep using the Code Engine source-build path for the Galaxium services unless we add and validate a second prebuilt-image workflow.
-2. If a prebuilt-image workflow is added later, it must be restricted to registry-supported image formats and tested against both IBM Cloud Container Registry and Code Engine pull behavior.
+1. Use `source_build` when you want the smallest operator workflow.
+2. Use `prebuilt_images` when you need explicit image build, tagging, push, and reuse control.
+3. Keep the prebuilt-image workflow on supported image formats and a validated target platform.
 
 ## Deployment Order
 
@@ -139,11 +147,14 @@ This follows the same practical issue from older Code Engine automation: public 
 - [`scripts/01-project.sh`](./scripts/01-project.sh)
   - Target IBM Cloud and create or select the Code Engine project.
 - [`scripts/02-config-and-secrets.sh`](./scripts/02-config-and-secrets.sh)
-  - Create the Keycloak realm configmap and the required secrets.
+  - Create the Keycloak realm configmap, application secrets, and the Code Engine registry secret for prebuilt-image mode.
+- [`scripts/02b-build-and-push-images.sh`](./scripts/02b-build-and-push-images.sh)
+  - In `prebuilt_images` mode, build the five Galaxium service images locally and push them to IBM Cloud Container Registry.
 - [`scripts/03-deploy-keycloak.sh`](./scripts/03-deploy-keycloak.sh)
   - Deploy Keycloak inside the same Code Engine project for `oauth2` mode.
 - [`scripts/04-deploy-services.sh`](./scripts/04-deploy-services.sh)
   - Deploy HR, REST, and MCP first, then deploy REST UI and MCP UI with the resolved URLs.
+  - Uses either `--build-source` or `--image` depending on `DEPLOY_ARTIFACT_MODE`.
 - [`scripts/05-sync-keycloak-client.sh`](./scripts/05-sync-keycloak-client.sh)
   - Update the Keycloak `web-app-proxy` client with the final Code Engine UI origins and redirect URI patterns.
 - [`scripts/06-summary.sh`](./scripts/06-summary.sh)
@@ -159,6 +170,11 @@ Required local installs:
 4. `curl`
 5. `jq`
 
+Additional local installs for `DEPLOY_ARTIFACT_MODE=prebuilt_images`:
+
+1. IBM Cloud Container Registry plugin for the CLI
+2. `docker` or `podman`
+
 IBM Cloud login options:
 
 1. Non-interactive automation
@@ -172,7 +188,9 @@ Operator preparation:
 1. Copy `deploy.env.template` to `deploy.env`.
 2. Fill in the real secret values before running any script.
 3. Decide whether you will use `STACK_AUTH_MODE=oauth2` or `STACK_AUTH_MODE=basic`.
-4. If you use `oauth2`, decide whether Keycloak will be deployed in the same Code Engine project or provided externally through `KEYCLOAK_BASE_URL_OVERRIDE`.
+4. Decide whether you will use `DEPLOY_ARTIFACT_MODE=source_build` or `DEPLOY_ARTIFACT_MODE=prebuilt_images`.
+5. If you use `oauth2`, decide whether Keycloak will be deployed in the same Code Engine project or provided externally through `KEYCLOAK_BASE_URL_OVERRIDE`.
+6. If you use `prebuilt_images`, fill in the IBM Cloud Container Registry values such as `ICR_NAMESPACE`, `ICR_REGISTRY`, `IMAGE_TAG`, and the image repository names.
 
 Example:
 
@@ -203,6 +221,7 @@ Verified command families used by these scripts:
 5. `ibmcloud ce application create`, `update`, and `get --output url`
 6. `ibmcloud ce configmap create` and `update`
 7. `ibmcloud ce secret create` and `update`
+8. `ibmcloud cr region-set`, `namespace-list`, `namespace-add`, and `login`
 
 Version handling note:
 
@@ -218,6 +237,7 @@ Run the scripts in this order:
 bash scripts/00-prereqs.sh
 bash scripts/01-project.sh
 bash scripts/02-config-and-secrets.sh
+bash scripts/02b-build-and-push-images.sh
 bash scripts/03-deploy-keycloak.sh
 bash scripts/04-deploy-services.sh
 bash scripts/05-sync-keycloak-client.sh
@@ -226,6 +246,8 @@ bash scripts/06-summary.sh
 
 Notes:
 
+- In `DEPLOY_ARTIFACT_MODE=source_build`, `scripts/02b-build-and-push-images.sh` exits with a skip message.
+- In `DEPLOY_ARTIFACT_MODE=prebuilt_images`, run `scripts/02b-build-and-push-images.sh` before `scripts/04-deploy-services.sh`.
 - In `STACK_AUTH_MODE=basic`, `scripts/03-deploy-keycloak.sh` exits with a skip message.
 - In `STACK_AUTH_MODE=basic`, `scripts/05-sync-keycloak-client.sh` also exits with a skip message.
 - In `STACK_AUTH_MODE=oauth2`, Keycloak is deployed in the same Code Engine project by default.
@@ -239,6 +261,26 @@ Main variables in `deploy.env`:
   - Optional
   - Set it when you want the scripts to log in to IBM Cloud automatically
   - Leave it empty when you prefer an existing interactive `ibmcloud login` session
+
+- `DEPLOY_ARTIFACT_MODE`
+  - `source_build` or `prebuilt_images`
+  - `source_build` uses `--build-source`
+  - `prebuilt_images` uses local image build plus IBM Cloud Container Registry push
+
+- `ICR_REGION`
+  - Target IBM Cloud Container Registry region for the prebuilt-image workflow
+
+- `ICR_REGISTRY`
+  - Registry host such as `us.icr.io`
+
+- `ICR_NAMESPACE`
+  - Namespace that stores the pushed Galaxium images
+
+- `ICR_REGISTRY_SECRET_NAME`
+  - Code Engine registry secret used to pull the private images
+
+- `IMAGE_TAG`
+  - Shared tag that is applied to all pushed Galaxium service images
 
 - `STACK_AUTH_MODE`
   - `oauth2` or `basic`
@@ -263,6 +305,7 @@ Main variables in `deploy.env`:
 4. The MCP transport must not be changed from `Streamable HTTP`.
 5. The web UIs depend on public service URLs. This is simple, but it is not the most private or cost-efficient production setup.
 6. The imported Keycloak realm is local-dev shaped, so the client URL sync step is needed after the Code Engine UI URLs exist.
+7. The prebuilt-image path assumes a supported image manifest format and defaults to `CONTAINER_PLATFORM=linux/amd64` to reduce Code Engine compatibility risk.
 
 ## What Is Not Automated Yet
 
@@ -270,12 +313,13 @@ This folder does not currently automate:
 
 1. IBM Cloud CLI installation
 2. Code Engine plugin installation
-3. custom domains
-4. managed TLS certificate setup
-5. persistent data store creation and binding
-6. a prebuilt-image workflow that first pushes Galaxium service images to IBM Cloud Container Registry
-7. Terraform-based deployment
-8. production hardening of the Keycloak runtime
+3. IBM Cloud Container Registry plugin installation
+4. custom domains
+5. managed TLS certificate setup
+6. persistent data store creation and binding
+7. mirroring the Keycloak base image into IBM Cloud Container Registry
+8. Terraform-based deployment
+9. production hardening of the Keycloak runtime
 
 ## Local Validation Done In This Workspace
 

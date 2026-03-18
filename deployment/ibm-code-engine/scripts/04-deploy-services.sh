@@ -32,12 +32,16 @@ else
   require_var BASIC_AUTH_SECRET_NAME
 fi
 
+if prebuilt_image_mode_enabled; then
+  require_prebuilt_image_settings
+fi
+
 select_project
 
 deploy_hr_api() {
-  set_build_args "HR_database"
+  set_service_artifact_args "HR_database" "hr"
   local hr_args=(
-    "${BUILD_ARGS[@]}"
+    "${ARTIFACT_ARGS[@]}"
     --port 8081
     --cpu "${SERVICE_CPU}"
     --memory "${SERVICE_MEMORY}"
@@ -55,9 +59,9 @@ deploy_booking_api_oauth2() {
   local keycloak_realm_url="$1"
   local jwks_url="$2"
 
-  set_build_args "booking_system_rest"
+  set_service_artifact_args "booking_system_rest" "booking_api"
   ce_upsert_application "${BOOKING_API_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8082 \
     --cpu "${SERVICE_CPU}" \
     --memory "${SERVICE_MEMORY}" \
@@ -71,9 +75,9 @@ deploy_booking_api_oauth2() {
 }
 
 deploy_booking_api_basic() {
-  set_build_args "booking_system_rest"
+  set_service_artifact_args "booking_system_rest" "booking_api"
   ce_upsert_application "${BOOKING_API_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8082 \
     --cpu "${SERVICE_CPU}" \
     --memory "${SERVICE_MEMORY}" \
@@ -88,9 +92,9 @@ deploy_mcp_api_oauth2() {
   local keycloak_realm_url="$1"
   local jwks_url="$2"
 
-  set_build_args "booking_system_mcp"
+  set_service_artifact_args "booking_system_mcp" "mcp_api"
   ce_upsert_application "${MCP_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8084 \
     --cpu "${SERVICE_CPU}" \
     --memory "${SERVICE_MEMORY}" \
@@ -105,9 +109,9 @@ deploy_mcp_api_oauth2() {
 }
 
 deploy_mcp_api_basic() {
-  set_build_args "booking_system_mcp"
+  set_service_artifact_args "booking_system_mcp" "mcp_api"
   ce_upsert_application "${MCP_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8084 \
     --cpu "${SERVICE_CPU}" \
     --memory "${SERVICE_MEMORY}" \
@@ -122,9 +126,9 @@ deploy_rest_ui_oauth2() {
   local booking_api_url="$1"
   local token_url="$2"
 
-  set_build_args "galaxium-booking-web-app"
+  set_service_artifact_args "galaxium-booking-web-app" "web_app"
   ce_upsert_application "${WEB_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8083 \
     --cpu "${WEB_CPU}" \
     --memory "${WEB_MEMORY}" \
@@ -143,9 +147,9 @@ deploy_rest_ui_oauth2() {
 deploy_rest_ui_basic() {
   local booking_api_url="$1"
 
-  set_build_args "galaxium-booking-web-app"
+  set_service_artifact_args "galaxium-booking-web-app" "web_app"
   ce_upsert_application "${WEB_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8083 \
     --cpu "${WEB_CPU}" \
     --memory "${WEB_MEMORY}" \
@@ -163,9 +167,9 @@ deploy_mcp_ui_oauth2() {
   local mcp_base_url="$1"
   local token_url="$2"
 
-  set_build_args "galaxium-booking-web-app-mcp"
+  set_service_artifact_args "galaxium-booking-web-app-mcp" "web_app_mcp"
   ce_upsert_application "${WEB_APP_MCP_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8085 \
     --cpu "${WEB_CPU}" \
     --memory "${WEB_MEMORY}" \
@@ -186,9 +190,9 @@ deploy_mcp_ui_oauth2() {
 deploy_mcp_ui_basic() {
   local mcp_base_url="$1"
 
-  set_build_args "galaxium-booking-web-app-mcp"
+  set_service_artifact_args "galaxium-booking-web-app-mcp" "web_app_mcp"
   ce_upsert_application "${WEB_APP_MCP_APP_NAME}" \
-    "${BUILD_ARGS[@]}" \
+    "${ARTIFACT_ARGS[@]}" \
     --port 8085 \
     --cpu "${WEB_CPU}" \
     --memory "${WEB_MEMORY}" \
@@ -247,6 +251,7 @@ web_mcp_url="$(ce_app_url "${WEB_APP_MCP_APP_NAME}")"
 hr_url="$(ce_app_url "${HR_APP_NAME}")"
 
 echo "Stack auth mode: ${STACK_AUTH_MODE}"
+echo "Artifact mode:   ${DEPLOY_ARTIFACT_MODE}"
 if [[ -n "${keycloak_url}" ]]; then
   echo "Keycloak:       ${keycloak_url}"
 else

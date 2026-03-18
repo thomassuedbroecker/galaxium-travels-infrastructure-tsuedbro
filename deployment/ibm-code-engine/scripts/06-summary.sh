@@ -17,6 +17,10 @@ if [[ "${STACK_AUTH_MODE}" == "oauth2" ]]; then
   require_var OIDC_CLIENT_ID
 fi
 
+if prebuilt_image_mode_enabled; then
+  require_prebuilt_image_settings
+fi
+
 select_project
 
 hr_url="$(ce_app_url "${HR_APP_NAME}")"
@@ -38,6 +42,7 @@ Deployment summary
 Code Engine project: ${CE_PROJECT_NAME}
 Stack auth mode:     ${STACK_AUTH_MODE}
 Frontend login:      ${FRONTEND_AUTH_REQUIRED_RESOLVED}
+Artifact mode:       ${DEPLOY_ARTIFACT_MODE}
 
 Keycloak:            ${keycloak_url:-not deployed for this mode}
 HR API:              ${hr_url}
@@ -74,6 +79,21 @@ Suggested checks
      -H "MCP-Protocol-Version: 2025-11-25" \\
      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"code-engine-smoke","version":"1.0.0"}}}'
 EOF
+
+if prebuilt_image_mode_enabled; then
+  cat <<EOF
+
+Prebuilt image references
+-------------------------
+
+HR API image:         $(image_ref_for_service hr)
+Booking API image:    $(image_ref_for_service booking_api)
+MCP API image:        $(image_ref_for_service mcp_api)
+REST Web UI image:    $(image_ref_for_service web_app)
+MCP Web UI image:     $(image_ref_for_service web_app_mcp)
+Registry secret:      ${ICR_REGISTRY_SECRET_NAME}
+EOF
+fi
 
 if [[ "${STACK_AUTH_MODE}" == "oauth2" ]]; then
   cat <<EOF

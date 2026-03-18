@@ -32,6 +32,8 @@ if [[ -f "${ENV_FILE}" ]]; then
 fi
 
 ibm_cloud_api_key_resolved="${IBM_CLOUD_API_KEY:-${IBMCLOUD_API_KEY:-}}"
+deploy_artifact_mode="$(printf '%s' "${DEPLOY_ARTIFACT_MODE:-source_build}" | tr '[:upper:]' '[:lower:]')"
+container_client="$(printf '%s' "${CONTAINER_CLIENT:-docker}" | tr '[:upper:]' '[:lower:]')"
 
 echo "Prerequisite check"
 echo "=================="
@@ -51,6 +53,22 @@ echo
 ibmcloud plugin show code-engine
 echo
 
+if [[ "${deploy_artifact_mode}" == "prebuilt_images" ]]; then
+  if ! ibmcloud plugin show container-registry >/dev/null 2>&1; then
+    echo "ERROR: the IBM Cloud Container Registry plugin is not available."
+    echo "Install it with: ibmcloud plugin install container-registry"
+    exit 1
+  fi
+
+  require_command "${container_client}"
+
+  echo "Prebuilt image mode checks"
+  echo "--------------------------"
+  echo "container client: ${container_client} -> $(command -v "${container_client}")"
+  ibmcloud plugin show container-registry
+  echo
+fi
+
 if [[ "${env_loaded}" == "true" ]]; then
   echo "deploy.env"
   echo "----------"
@@ -59,6 +77,13 @@ if [[ "${env_loaded}" == "true" ]]; then
   echo "IBM_CLOUD_RESOURCE_GROUP: ${IBM_CLOUD_RESOURCE_GROUP:-<empty>}"
   echo "CE_PROJECT_NAME: ${CE_PROJECT_NAME:-<empty>}"
   echo "STACK_AUTH_MODE: ${STACK_AUTH_MODE:-<empty>}"
+  echo "DEPLOY_ARTIFACT_MODE: ${deploy_artifact_mode:-<empty>}"
+  if [[ "${deploy_artifact_mode}" == "prebuilt_images" ]]; then
+    echo "ICR_REGION: ${ICR_REGION:-<empty>}"
+    echo "ICR_REGISTRY: ${ICR_REGISTRY:-<empty>}"
+    echo "ICR_NAMESPACE: ${ICR_NAMESPACE:-<empty>}"
+    echo "IMAGE_TAG: ${IMAGE_TAG:-<empty>}"
+  fi
   echo
 else
   echo "deploy.env"

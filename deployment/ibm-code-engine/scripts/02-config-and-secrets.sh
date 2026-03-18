@@ -10,6 +10,10 @@ require_var CE_PROJECT_NAME
 require_var WEB_APP_SECRET_NAME
 require_var FLASK_SECRET_KEY
 
+if prebuilt_image_mode_enabled; then
+  require_prebuilt_image_settings
+fi
+
 select_project
 
 if should_deploy_keycloak; then
@@ -66,4 +70,17 @@ if [[ "${STACK_AUTH_MODE}" == "basic" ]]; then
     --from-literal "BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD}"
 
   echo "Updated secret: ${BASIC_AUTH_SECRET_NAME}"
+fi
+
+if prebuilt_image_mode_enabled; then
+  ensure_icr_namespace
+
+  ce_upsert_secret \
+    "${ICR_REGISTRY_SECRET_NAME}" \
+    --format registry \
+    --server "${ICR_REGISTRY}" \
+    --username "${ICR_REGISTRY_USERNAME_RESOLVED}" \
+    --password "${ICR_REGISTRY_PASSWORD_RESOLVED}"
+
+  echo "Updated registry secret: ${ICR_REGISTRY_SECRET_NAME}"
 fi

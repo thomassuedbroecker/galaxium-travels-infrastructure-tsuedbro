@@ -68,11 +68,13 @@ Current change-set smoke status as of `2026-03-18`:
 - Local OAuth smoke rerun passed on `2026-03-18`.
 - Local Basic Auth backend smoke rerun passed on `2026-03-18`.
 - Local Basic Auth frontend plus MCP Inspector smoke rerun passed on `2026-03-18`.
-- WebUI matrix unit config checks passed on `2026-03-18` with `8/8` tests green.
+- WebUI matrix unit config checks passed on `2026-03-18` with `11/11` tests green.
+- Full eight-variant WebUI auth matrix rerun passed on `2026-03-18`.
+- VM / LAN remote auth verification rerun passed on `2026-03-18` against `192.168.2.88`.
 
-The latest full eight-variant WebUI auth matrix rerun is still the `2026-03-15` run:
+The latest full eight-variant WebUI auth matrix rerun is the `2026-03-18` run:
 
-- Result: `52 tests passed`, `0 skipped`
+- Result: `55 tests passed`, `0 skipped`
 - Environments: `local_machine_network`, `local_machine_local_network_prepare`
 - Backend modes: `rest`, `mcp`
 - OAuth modes: `backend_and_ui_oauth`, `ui_oauth`
@@ -92,9 +94,9 @@ Status meaning:
 | `🟢` | Local compose OAuth smoke test | `bash local-container/verify-keycloak-auth-e2e.sh` passed end to end on `2026-03-18`, including REST auth, MCP auth, traveler web login, Inspector client sync, and OAuth metadata discovery. Report: `local-container/test-results/oauth-e2e-all-20260318T204838Z.md` |
 | `🟢` | Local Basic Auth backend smoke test | `bash local-container/verify-basic-auth-backends.sh` passed on `2026-03-18`, including REST `401/200` checks plus authenticated MCP `initialize`, `tools/list`, and `tools/call(list_flights)` |
 | `🟢` | Local Basic Auth frontend + MCP Inspector smoke test | `bash local-container/verify-basic-auth-frontends-and-inspector.sh` passed on `2026-03-18`, including REST UI guest flow, MCP UI guest flow, and Basic Auth Inspector config generation with `Streamable HTTP` |
-| `🟢` | WebUI matrix unit config checks | `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v` passed on `2026-03-18` with `8/8` tests green |
-| `🟡` | Full WebUI auth matrix | Latest full rerun is still the `2026-03-15` run: `52` tests ran, `52` passed, `0` skipped |
-| `🟡` | VM / LAN remote auth verification | Latest verified rerun is still the `2026-03-15` run against `192.168.2.88` |
+| `🟢` | WebUI matrix unit config checks | `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v` passed on `2026-03-18` with `11/11` tests green |
+| `🟢` | Full WebUI auth matrix | Rerun passed on `2026-03-18`: `55` tests ran, `55` passed, `0` skipped |
+| `🟢` | VM / LAN remote auth verification | Rerun passed on `2026-03-18` against `192.168.2.88`, including the repo remote verifier, MCP OAuth metadata checks, and authenticated `mcp_test_app.py` over `Streamable HTTP` |
 | `🟢` | Current failing checks in this change set | None from the executed checks |
 
 ## Fast Validation

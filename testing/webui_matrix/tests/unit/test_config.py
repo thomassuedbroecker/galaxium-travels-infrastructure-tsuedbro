@@ -100,3 +100,30 @@ class ConfigTests(unittest.TestCase):
             variant.compose_env["MCP_UI_OIDC_TOKEN_URL"],
             "http://keycloak:8080/realms/galaxium/protocol/openid-connect/token",
         )
+
+    def test_mcp_backend_and_ui_oauth_requires_mcp_metadata(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            variant = build_variant(
+                "local_machine_network",
+                "mcp",
+                "backend_and_ui_oauth",
+            )
+        self.assertTrue(variant.expects_mcp_oauth_metadata)
+
+    def test_mcp_ui_oauth_does_not_require_mcp_metadata(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            variant = build_variant(
+                "local_machine_network",
+                "mcp",
+                "ui_oauth",
+            )
+        self.assertFalse(variant.expects_mcp_oauth_metadata)
+
+    def test_rest_variants_do_not_require_mcp_metadata(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            variant = build_variant(
+                "local_machine_network",
+                "rest",
+                "backend_and_ui_oauth",
+            )
+        self.assertFalse(variant.expects_mcp_oauth_metadata)

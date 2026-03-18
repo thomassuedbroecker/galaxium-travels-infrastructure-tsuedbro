@@ -144,6 +144,10 @@ class Variant:
         return f"{self.backend_base_url}{self.backend.mcp_protected_resource_path}"
 
     @property
+    def expects_mcp_oauth_metadata(self) -> bool:
+        return self.backend.id == "mcp" and self.oauth.backend_auth_enabled
+
+    @property
     def compose_files(self) -> tuple[Path, ...]:
         files = [self.repo_root / "local-container" / "docker_compose.yaml"]
         if self.environment.uses_vm_oauth_override:

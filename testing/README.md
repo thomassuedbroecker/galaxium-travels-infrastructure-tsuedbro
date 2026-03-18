@@ -54,8 +54,8 @@ Current verified checks are split between smoke coverage and the last full matri
 - `2026-03-18`: `bash local-container/verify-basic-auth-frontends-and-inspector.sh`
   - passed for REST UI guest flow, MCP UI guest flow, and Basic Auth inspector config generation over `Streamable HTTP`
 - `2026-03-18`: `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v`
-  - passed with `8/8` tests green
-- `2026-03-15`: full eight-variant WebUI auth matrix
+  - passed with `11/11` tests green
+- `2026-03-18`: full eight-variant WebUI auth matrix
   - command:
 
     ```sh
@@ -65,8 +65,12 @@ Current verified checks are split between smoke coverage and the last full matri
     WEBUI_TEST_RUN_FULL_MATRIX=1 \
     python3 -m unittest discover -s testing/webui_matrix/tests -p 'test_*.py' -v
     ```
-  - result: `52 tests passed`
+  - result: `55 tests passed`
   - skipped: `0`
+- `2026-03-18`: VM / LAN remote auth verification against `192.168.2.88`
+  - `bash local-container/verify-keycloak-auth-remote.sh` passed for booking API bearer-token enforcement, traveler web login, and authenticated web app access
+  - MCP metadata checks passed for `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`
+  - `python3 local-container/mcp_test_app.py --mcp-url http://192.168.2.88:8084/mcp --token-source http --token-url http://192.168.2.88:8086/realms/galaxium/protocol/openid-connect/token` passed
 
 ## Folder Structure
 

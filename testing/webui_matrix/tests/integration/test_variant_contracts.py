@@ -119,7 +119,7 @@ class PrepareEnvironmentMetadataMixin:
             keycloak_config.json()["issuer"],
         )
 
-        if self.VARIANT.backend.id != "mcp":
+        if not self.VARIANT.expects_mcp_oauth_metadata:
             return
 
         auth_server = self.http_client().get(self.VARIANT.mcp_authorization_server_url)

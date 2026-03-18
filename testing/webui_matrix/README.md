@@ -31,8 +31,8 @@ Design goals:
 
 Current verified state:
 
-- latest rerun date: `2026-03-15`
-- latest full matrix result: `52 tests passed`, `0 skipped`
+- latest rerun date: `2026-03-18`
+- latest full matrix result: `55 tests passed`, `0 skipped`
 - environments covered:
   - `local_machine_network`
   - `local_machine_local_network_prepare`
@@ -42,9 +42,9 @@ Current verified state:
 - OAuth modes covered:
   - `backend_and_ui_oauth`
   - `ui_oauth`
-- fix that made the prepare slice green again:
-  - the matrix runner now exports `KEYCLOAK_PUBLIC_HOSTNAME` for LAN-prepare variants
-  - the VM/LAN compose override no longer falls back to `localhost`
+- latest fix that made the full matrix green again:
+  - MCP OAuth metadata readiness and metadata assertions now apply only to OAuth-protected MCP backend variants
+  - `MCP + UI OAuth` variants keep the traveler login flow but no longer wait for MCP OAuth metadata that the backend does not expose in that mode
 
 ```mermaid
 flowchart LR
@@ -152,13 +152,14 @@ Auth handling:
   Backend requires a valid Keycloak bearer token and the frontend requires traveler login.
 - `ui_oauth`
   Backend auth is disabled, but the frontend still requires traveler login and still carries a real user token through the UI flow.
+  For MCP variants, the backend readiness and metadata contract do not require the MCP OAuth metadata endpoints in this mode because the backend itself is not OAuth-protected.
 
 Local-network-prepare behavior:
 
 - tests call services through `http://<PUBLIC_HOST>:...`
 - compose loads `local-container/docker_compose.vm-oauth.yaml`
 - Keycloak advertises the public issuer
-- MCP metadata advertises the public auth server and public registration endpoint
+- when the MCP backend is OAuth-protected, MCP metadata advertises the public auth server and public registration endpoint
 - container-internal JWKS access remains on the Docker network
 
 ## 4. generated test code
@@ -176,7 +177,7 @@ Integration coverage:
 - REST backend: direct bearer-token success is validated in the LAN-prepare topology where the issuer is public
 - MCP backend: `initialize` and `tools/list` behavior with and without bearer tokens
 - frontend `/api/health` contract for REST and MCP mode reporting
-- LAN-prepare metadata issuer and registration endpoint assertions
+- LAN-prepare metadata issuer and registration endpoint assertions for OAuth-protected MCP variants
 
 Note:
 In plain local compose, the backend validates the internal issuer `http://keycloak:8080/...`, while host-side token requests use `http://localhost:8086/...`.

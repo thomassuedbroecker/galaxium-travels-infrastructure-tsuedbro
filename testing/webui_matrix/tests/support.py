@@ -69,7 +69,7 @@ def wait_for_variant_ready(variant: Variant) -> None:
     wait_for_url(client, variant.keycloak_openid_configuration_url)
     wait_for_url(client, variant.backend_health_url)
     wait_for_url(client, variant.frontend_health_url)
-    if variant.backend.id == "mcp":
+    if variant.expects_mcp_oauth_metadata:
         wait_for_url(client, variant.mcp_authorization_server_url)
 
 

@@ -130,14 +130,30 @@ This follows the same practical issue from older Code Engine automation: public 
 
 ## Current Service Mapping
 
-| Component | Artifact Source | Port | Notes |
+| Component | Artifact Source | Container Port | Notes |
 | --- | --- | --- | --- |
-| Keycloak | `quay.io/keycloak/keycloak:26.0` | `8080` | Deployed in the same Code Engine project by default for `oauth2` mode |
+| Keycloak | `quay.io/keycloak/keycloak:26.0` | `8080` | `8080` is the in-container listen port only. Public access uses the generated Code Engine app URL, not `:8080` |
 | HR API | local source `HR_database/` or prebuilt ICR image | `8081` | File-backed data is ephemeral without a mounted data store |
 | Booking REST API | local source `booking_system_rest/` or prebuilt ICR image | `8082` | Supports `AUTH_MODE=oauth2` or `AUTH_MODE=basic` |
 | Booking MCP server | local source `booking_system_mcp/` or prebuilt ICR image | `8084` | Public MCP endpoint stays `${MCP_URL}/mcp` with Streamable HTTP |
 | REST Web UI | local source `galaxium-booking-web-app/` or prebuilt ICR image | `8083` | Supports OAuth browser login or Basic Auth guest mode |
 | MCP Web UI | local source `galaxium-booking-web-app-mcp/` or prebuilt ICR image | `8085` | Uses the direct Python MCP client over Streamable HTTP |
+
+## Port Model in Code Engine
+
+The ports in the table above are container listen ports, not fixed public browser ports.
+
+For Keycloak specifically:
+
+- `scripts/03-deploy-keycloak.sh` deploys the container with `--port 8080` because Keycloak listens on `8080` inside the container.
+- Code Engine then exposes that container through a generated public HTTPS application URL.
+- The other Galaxium services do not call `https://...:8080`.
+- They use the resolved public Keycloak base URL returned by Code Engine, for example from `ce_app_url "${KEYCLOAK_APP_NAME}"`.
+
+So the Code Engine model is different from local Docker Compose:
+
+- local compose uses host `8086` mapped to container `8080`
+- Code Engine uses container `8080` behind a generated public route, with no separate public `8086`
 
 ## Files
 
@@ -333,11 +349,12 @@ Main variables in `deploy.env`:
 
 1. The Keycloak deployment is still demo-oriented because it uses `start-dev`.
 2. Keycloak and HR state are ephemeral unless you add persistent storage.
-3. The MCP server public base URL must point to the Code Engine public app URL, and public clients must call `/mcp`.
-4. The MCP transport must not be changed from `Streamable HTTP`.
-5. The web UIs depend on public service URLs. This is simple, but it is not the most private or cost-efficient production setup.
-6. The imported Keycloak realm is local-dev shaped, so the client URL sync step is needed after the Code Engine UI URLs exist.
-7. The prebuilt-image path assumes a supported image manifest format and defaults to `CONTAINER_PLATFORM=linux/amd64` to reduce Code Engine compatibility risk.
+3. In Code Engine, the listed service ports are container ports. Public access always uses the generated application URL.
+4. The MCP server public base URL must point to the Code Engine public app URL, and public clients must call `/mcp`.
+5. The MCP transport must not be changed from `Streamable HTTP`.
+6. The web UIs depend on public service URLs. This is simple, but it is not the most private or cost-efficient production setup.
+7. The imported Keycloak realm is local-dev shaped, so the client URL sync step is needed after the Code Engine UI URLs exist.
+8. The prebuilt-image path assumes a supported image manifest format and defaults to `CONTAINER_PLATFORM=linux/amd64` to reduce Code Engine compatibility risk.
 
 ## What Is Not Automated Yet
 

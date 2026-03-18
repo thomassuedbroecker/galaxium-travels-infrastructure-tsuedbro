@@ -10,6 +10,8 @@ require_var IBM_CLOUD_REGION
 require_var IBM_CLOUD_RESOURCE_GROUP
 require_var CE_PROJECT_NAME
 
+ensure_ibmcloud_session
+
 target_args=("-r" "${IBM_CLOUD_REGION}" "-g" "${IBM_CLOUD_RESOURCE_GROUP}")
 select_args=("--name" "${CE_PROJECT_NAME}")
 create_args=("--name" "${CE_PROJECT_NAME}")

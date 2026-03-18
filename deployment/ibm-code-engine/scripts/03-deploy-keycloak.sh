@@ -6,6 +6,17 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
 require_command ibmcloud
+select_project
+
+if ! should_deploy_keycloak; then
+  if [[ "${STACK_AUTH_MODE}" == "basic" ]]; then
+    echo "Skipping Keycloak deployment because STACK_AUTH_MODE=basic."
+  else
+    echo "Skipping Keycloak deployment because KEYCLOAK_BASE_URL_OVERRIDE is set to ${KEYCLOAK_BASE_URL_OVERRIDE}."
+  fi
+  exit 0
+fi
+
 require_var KEYCLOAK_APP_NAME
 require_var KEYCLOAK_REALM_CONFIGMAP_NAME
 require_var KEYCLOAK_ADMIN_SECRET_NAME
@@ -13,8 +24,6 @@ require_var KEYCLOAK_CPU
 require_var KEYCLOAK_MEMORY
 require_var KEYCLOAK_MIN_SCALE
 require_var KEYCLOAK_MAX_SCALE
-
-select_project
 
 args=(
   --image quay.io/keycloak/keycloak:26.0

@@ -129,13 +129,13 @@ class BookingMcpService:
         self.server_url = server_url
         self.timeout_seconds = timeout_seconds
 
-    def list_flights(self, bearer_token: str | None) -> list[dict[str, Any]]:
-        result = self._run_sync("list_flights", {}, bearer_token)
+    def list_flights(self, authorization_header: str | None) -> list[dict[str, Any]]:
+        result = self._run_sync("list_flights", {}, authorization_header)
         return result if isinstance(result, list) else []
 
     def register_user(
         self,
-        bearer_token: str | None,
+        authorization_header: str | None,
         *,
         name: str,
         email: str,
@@ -143,13 +143,13 @@ class BookingMcpService:
         result = self._run_sync(
             "register_user",
             {"name": name, "email": email},
-            bearer_token,
+            authorization_header,
         )
         return result if isinstance(result, dict) else {}
 
     def get_user_id(
         self,
-        bearer_token: str | None,
+        authorization_header: str | None,
         *,
         name: str,
         email: str,
@@ -157,13 +157,13 @@ class BookingMcpService:
         result = self._run_sync(
             "get_user_id",
             {"name": name, "email": email},
-            bearer_token,
+            authorization_header,
         )
         return result if isinstance(result, dict) else {}
 
     def book_flight(
         self,
-        bearer_token: str | None,
+        authorization_header: str | None,
         *,
         user_id: int,
         name: str,
@@ -176,34 +176,44 @@ class BookingMcpService:
                 "name": name,
                 "flight_id": flight_id,
             },
-            bearer_token,
+            authorization_header,
         )
         return result if isinstance(result, dict) else {}
 
     def get_bookings(
         self,
-        bearer_token: str | None,
+        authorization_header: str | None,
         user_id: int,
     ) -> list[dict[str, Any]]:
-        result = self._run_sync("get_bookings", {"user_id": user_id}, bearer_token)
+        result = self._run_sync(
+            "get_bookings",
+            {"user_id": user_id},
+            authorization_header,
+        )
         return result if isinstance(result, list) else []
 
     def cancel_booking(
         self,
-        bearer_token: str | None,
+        authorization_header: str | None,
         booking_id: int,
     ) -> dict[str, Any]:
-        result = self._run_sync("cancel_booking", {"booking_id": booking_id}, bearer_token)
+        result = self._run_sync(
+            "cancel_booking",
+            {"booking_id": booking_id},
+            authorization_header,
+        )
         return result if isinstance(result, dict) else {}
 
     def _run_sync(
         self,
         tool_name: str,
         arguments: dict[str, Any],
-        bearer_token: str | None,
+        authorization_header: str | None,
     ) -> Any:
         try:
-            return asyncio.run(self._call_tool(tool_name, arguments, bearer_token))
+            return asyncio.run(
+                self._call_tool(tool_name, arguments, authorization_header)
+            )
         except BaseException as exc:
             mapped_error = _find_booking_service_error(exc)
             if mapped_error:
@@ -214,11 +224,11 @@ class BookingMcpService:
         self,
         tool_name: str,
         arguments: dict[str, Any],
-        bearer_token: str | None,
+        authorization_header: str | None,
     ) -> Any:
         headers = {"Accept": "application/json, text/event-stream"}
-        if bearer_token:
-            headers["Authorization"] = f"Bearer {bearer_token}"
+        if authorization_header:
+            headers["Authorization"] = authorization_header
 
         async with AsyncExitStack() as stack:
             stream_kwargs = {}
@@ -235,7 +245,7 @@ class BookingMcpService:
                     )
                 )
                 stream_kwargs["http_client"] = http_client
-            elif bearer_token:
+            elif authorization_header:
                 raise RuntimeError(
                     "Installed mcp package does not support authenticated streamable HTTP client headers."
                 )

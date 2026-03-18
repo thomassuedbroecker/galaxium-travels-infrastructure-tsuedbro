@@ -37,14 +37,37 @@ def _as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def _resolve_backend_auth_mode(
+    explicit_mode: str | None,
+    *,
+    legacy_oauth_enabled: bool,
+) -> str:
+    if explicit_mode is None:
+        return "oauth2" if legacy_oauth_enabled else "none"
+
+    normalized = explicit_mode.strip().lower()
+    if normalized in {"none", "oauth2", "basic"}:
+        return normalized
+
+    raise RuntimeError(
+        "BACKEND_AUTH_MODE must be one of: none, oauth2, basic"
+    )
+
+
 BACKEND_URL = (os.getenv("BACKEND_URL") or "").strip()
-# Service-to-service OAuth2 toggle.
-OAUTH2_ENABLED = _as_bool(os.getenv("OAUTH2_ENABLED"), default=False)
+BACKEND_AUTH_MODE = _resolve_backend_auth_mode(
+    os.getenv("BACKEND_AUTH_MODE"),
+    legacy_oauth_enabled=_as_bool(os.getenv("OAUTH2_ENABLED"), default=False),
+)
+# Service-to-service OAuth2 toggle kept for backward-compatible health output.
+OAUTH2_ENABLED = BACKEND_AUTH_MODE == "oauth2"
 # Browser login requirement toggle.
 FRONTEND_AUTH_REQUIRED = _as_bool(
     os.getenv("FRONTEND_AUTH_REQUIRED"),
     default=OAUTH2_ENABLED,
 )
+BASIC_AUTH_USERNAME = (os.getenv("BASIC_AUTH_USERNAME") or "").strip()
+BASIC_AUTH_PASSWORD = os.getenv("BASIC_AUTH_PASSWORD") or ""
 
 OIDC_TOKEN_URL = (os.getenv("OIDC_TOKEN_URL") or "").strip()
 OIDC_CLIENT_ID = (os.getenv("OIDC_CLIENT_ID") or "").strip()
@@ -76,12 +99,24 @@ def validate_runtime_settings() -> None:
     if not BACKEND_URL:
         raise RuntimeError("BACKEND_URL must be set")
 
-    if FRONTEND_AUTH_REQUIRED and not OAUTH2_ENABLED:
+    if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE != "oauth2":
         raise RuntimeError(
-            "FRONTEND_AUTH_REQUIRED=true requires OAUTH2_ENABLED=true so user tokens can be validated by backend"
+            "FRONTEND_AUTH_REQUIRED=true requires BACKEND_AUTH_MODE=oauth2 so traveler bearer tokens can be sent to the backend"
         )
 
-    if not OAUTH2_ENABLED:
+    if BACKEND_AUTH_MODE == "none":
+        return
+
+    if BACKEND_AUTH_MODE == "basic":
+        missing = []
+        if not BASIC_AUTH_USERNAME:
+            missing.append("BASIC_AUTH_USERNAME")
+        if not BASIC_AUTH_PASSWORD:
+            missing.append("BASIC_AUTH_PASSWORD")
+        if missing:
+            raise RuntimeError(
+                "Basic Auth is enabled but missing settings: " + ", ".join(missing)
+            )
         return
 
     missing = []
@@ -108,12 +143,16 @@ if FRONTEND_AUTH_REQUIRED:
         "FRONTEND_AUTH_REQUIRED=true: browser users must log in with Keycloak. "
         "Backend calls use traveler user token."
     )
-elif OAUTH2_ENABLED:
+elif BACKEND_AUTH_MODE == "oauth2":
     logger.warning(
         "OAUTH2_ENABLED=true and FRONTEND_AUTH_REQUIRED=false: using service-to-service client credentials."
     )
+elif BACKEND_AUTH_MODE == "basic":
+    logger.warning(
+        "BACKEND_AUTH_MODE=basic and FRONTEND_AUTH_REQUIRED=false: using shared Basic Auth credentials for backend calls."
+    )
 else:
-    logger.warning("OAuth2 disabled: backend calls have no bearer token.")
+    logger.warning("BACKEND_AUTH_MODE=none: backend calls have no Authorization header.")
 
 
 def _frontend_template_context() -> dict[str, str]:
@@ -149,6 +188,47 @@ def _clear_user_session() -> None:
         "traveler_id",
     ]:
         session.pop(key, None)
+
+
+def _clear_guest_traveler_session() -> None:
+    for key in [
+        "guest_traveler_id",
+        "guest_traveler_name",
+        "guest_traveler_email",
+    ]:
+        session.pop(key, None)
+
+
+def _guest_traveler_from_session() -> dict[str, Any] | None:
+    traveler_id = _as_int(session.get("guest_traveler_id"), 0)
+    if traveler_id <= 0:
+        return None
+
+    return {
+        "traveler_id": traveler_id,
+        "name": str(session.get("guest_traveler_name") or ""),
+        "email": str(session.get("guest_traveler_email") or ""),
+        "frontend_auth_required": False,
+        "username": None,
+    }
+
+
+def _store_guest_traveler(
+    *,
+    traveler_id: int,
+    name: str,
+    email: str,
+) -> dict[str, Any]:
+    session["guest_traveler_id"] = traveler_id
+    session["guest_traveler_name"] = name
+    session["guest_traveler_email"] = email
+    return {
+        "traveler_id": traveler_id,
+        "name": name,
+        "email": email,
+        "frontend_auth_required": False,
+        "username": None,
+    }
 
 
 def _get_user_access_token() -> str | None:
@@ -193,7 +273,7 @@ def _profile_from_access_token(token: str) -> dict[str, str]:
 
 
 def _get_service_access_token() -> str | None:
-    if not OAUTH2_ENABLED:
+    if BACKEND_AUTH_MODE != "oauth2":
         return None
 
     now = int(time.time())
@@ -223,11 +303,25 @@ def _get_service_access_token() -> str | None:
     return str(token)
 
 
-def _backend_bearer_for_request() -> str | None:
+def _basic_auth_header() -> str | None:
+    if BACKEND_AUTH_MODE != "basic":
+        return None
+
+    encoded = base64.b64encode(
+        f"{BASIC_AUTH_USERNAME}:{BASIC_AUTH_PASSWORD}".encode("utf-8")
+    ).decode("ascii")
+    return f"Basic {encoded}"
+
+
+def _backend_authorization_header_for_request() -> str | None:
     if FRONTEND_AUTH_REQUIRED:
-        return _get_user_access_token()
-    if OAUTH2_ENABLED:
-        return _get_service_access_token()
+        bearer_token = _get_user_access_token()
+        return f"Bearer {bearer_token}" if bearer_token else None
+    if BACKEND_AUTH_MODE == "oauth2":
+        bearer_token = _get_service_access_token()
+        return f"Bearer {bearer_token}" if bearer_token else None
+    if BACKEND_AUTH_MODE == "basic":
+        return _basic_auth_header()
     return None
 
 
@@ -246,14 +340,14 @@ def _auth_challenge(api: bool) -> Response:
 def _backend_request(
     method: str,
     path: str,
-    bearer_token: str | None,
+    authorization_header: str | None,
     params: dict[str, Any] | None = None,
     json_body: dict[str, Any] | None = None,
 ) -> requests.Response:
     url = f"{BACKEND_URL}{path}"
     headers = {"Content-Type": "application/json"}
-    if bearer_token:
-        headers["Authorization"] = f"Bearer {bearer_token}"
+    if authorization_header:
+        headers["Authorization"] = authorization_header
 
     return requests.request(
         method=method,
@@ -269,9 +363,9 @@ def _proxy_backend_response(resp: requests.Response) -> Response:
     return Response(resp.content, status=resp.status_code, content_type="application/json")
 
 
-def _ensure_traveler_registration(bearer_token: str) -> dict[str, Any]:
-    if not bearer_token:
-        raise RuntimeError("Missing traveler token")
+def _ensure_traveler_registration(authorization_header: str) -> dict[str, Any]:
+    if not authorization_header:
+        raise RuntimeError("Missing traveler authorization header")
 
     name = (session.get("traveler_name") or "").strip()
     email = (session.get("traveler_email") or "").strip()
@@ -281,7 +375,7 @@ def _ensure_traveler_registration(bearer_token: str) -> dict[str, Any]:
     lookup_resp = _backend_request(
         "GET",
         "/user_id",
-        bearer_token,
+        authorization_header,
         params={"name": name, "email": email},
     )
     lookup_resp.raise_for_status()
@@ -296,7 +390,7 @@ def _ensure_traveler_registration(bearer_token: str) -> dict[str, Any]:
         register_resp = _backend_request(
             "POST",
             "/register",
-            bearer_token,
+            authorization_header,
             json_body={"name": name, "email": email},
         )
         register_resp.raise_for_status()
@@ -317,14 +411,14 @@ def _api_proxy(
     json_body: dict[str, Any] | None = None,
 ) -> Response:
     try:
-        bearer = _backend_bearer_for_request()
-        if FRONTEND_AUTH_REQUIRED and not bearer:
+        authorization_header = _backend_authorization_header_for_request()
+        if FRONTEND_AUTH_REQUIRED and not authorization_header:
             return _auth_challenge(api=True)
 
         resp = _backend_request(
             method=method,
             path=path,
-            bearer_token=bearer,
+            authorization_header=authorization_header,
             params=params,
             json_body=json_body,
         )
@@ -372,6 +466,7 @@ def login():
                         error_message = "Keycloak did not return an access token"
                     else:
                         _clear_user_session()
+                        _clear_guest_traveler_session()
                         profile = _profile_from_access_token(access_token)
                         expires_in = _as_int(token_payload.get("expires_in"), 60)
                         session["user_access_token"] = access_token
@@ -379,7 +474,7 @@ def login():
                         session["traveler_username"] = profile["username"]
                         session["traveler_name"] = profile["name"]
                         session["traveler_email"] = profile["email"]
-                        _ensure_traveler_registration(access_token)
+                        _ensure_traveler_registration(f"Bearer {access_token}")
 
                         if not next_path.startswith("/"):
                             next_path = "/"
@@ -398,6 +493,7 @@ def login():
 @app.route("/logout", methods=["GET"])
 def logout():
     _clear_user_session()
+    _clear_guest_traveler_session()
     if FRONTEND_AUTH_REQUIRED:
         return redirect(url_for("login"))
     return redirect(url_for("index"))
@@ -405,7 +501,7 @@ def logout():
 
 @app.route("/")
 def index():
-    traveler = None
+    traveler = _guest_traveler_from_session()
     if FRONTEND_AUTH_REQUIRED:
         token = _get_user_access_token()
         if not token:
@@ -419,7 +515,7 @@ def index():
                 "email": session.get("traveler_email"),
             }
             if not traveler.get("traveler_id"):
-                traveler = _ensure_traveler_registration(token)
+                traveler = _ensure_traveler_registration(f"Bearer {token}")
                 traveler["username"] = session.get("traveler_username")
             else:
                 traveler["traveler_id"] = _as_int(traveler.get("traveler_id"))
@@ -439,18 +535,22 @@ def index():
 @app.route("/api/traveler", methods=["GET"])
 def api_get_traveler():
     if not FRONTEND_AUTH_REQUIRED:
-        payload = {
-            "frontend_auth_required": False,
-            "detail": "Traveler login is disabled for this deployment",
-        }
-        return jsonify(payload)
+        traveler = _guest_traveler_from_session()
+        if traveler:
+            return jsonify(traveler)
+        return jsonify(
+            {
+                "frontend_auth_required": False,
+                "detail": "Traveler login is disabled for this deployment. Register or look up a traveler profile first.",
+            }
+        )
 
     token = _get_user_access_token()
     if not token:
         return _auth_challenge(api=True)
 
     try:
-        traveler = _ensure_traveler_registration(token)
+        traveler = _ensure_traveler_registration(f"Bearer {token}")
         traveler["username"] = session.get("traveler_username")
         return jsonify(traveler)
     except Exception as exc:
@@ -473,7 +573,7 @@ def api_register():
         if not token:
             return _auth_challenge(api=True)
         try:
-            traveler = _ensure_traveler_registration(token)
+            traveler = _ensure_traveler_registration(f"Bearer {token}")
             traveler["username"] = session.get("traveler_username")
             return jsonify(traveler)
         except Exception as exc:
@@ -483,8 +583,31 @@ def api_register():
                 content_type="application/json",
             )
 
-    body = request.get_json(force=True)
-    return _api_proxy("POST", "/register", json_body=body)
+    body = request.get_json(force=True) or {}
+    name = str(body.get("name") or "").strip()
+    email = str(body.get("email") or "").strip()
+    if not name or not email:
+        payload = {
+            "error": "invalid_request",
+            "detail": "name and email are required",
+        }
+        return Response(json.dumps(payload), status=400, content_type="application/json")
+
+    resp = _backend_request(
+        "POST",
+        "/register",
+        _backend_authorization_header_for_request(),
+        json_body={"name": name, "email": email},
+    )
+    payload = resp.json()
+    if isinstance(payload, dict) and payload.get("user_id"):
+        traveler = _store_guest_traveler(
+            traveler_id=_as_int(payload.get("user_id"), 0),
+            name=str(payload.get("name") or name),
+            email=str(payload.get("email") or email),
+        )
+        return jsonify(traveler)
+    return _proxy_backend_response(resp)
 
 
 @app.route("/api/get_user", methods=["GET"])
@@ -494,7 +617,7 @@ def api_get_user():
         if not token:
             return _auth_challenge(api=True)
         try:
-            traveler = _ensure_traveler_registration(token)
+            traveler = _ensure_traveler_registration(f"Bearer {token}")
             traveler["username"] = session.get("traveler_username")
             return jsonify(traveler)
         except Exception as exc:
@@ -504,10 +627,30 @@ def api_get_user():
                 content_type="application/json",
             )
 
-    name = request.args.get("name")
-    email = request.args.get("email")
+    name = (request.args.get("name") or "").strip()
+    email = (request.args.get("email") or "").strip()
+    if not name or not email:
+        payload = {
+            "error": "invalid_request",
+            "detail": "name and email query parameters are required",
+        }
+        return Response(json.dumps(payload), status=400, content_type="application/json")
     params = {"name": name, "email": email}
-    return _api_proxy("GET", "/user_id", params=params)
+    resp = _backend_request(
+        "GET",
+        "/user_id",
+        _backend_authorization_header_for_request(),
+        params=params,
+    )
+    payload = resp.json()
+    if isinstance(payload, dict) and payload.get("user_id"):
+        traveler = _store_guest_traveler(
+            traveler_id=_as_int(payload.get("user_id"), 0),
+            name=str(payload.get("name") or name),
+            email=str(payload.get("email") or email),
+        )
+        return jsonify(traveler)
+    return _proxy_backend_response(resp)
 
 
 @app.route("/api/book", methods=["POST"])
@@ -520,7 +663,7 @@ def api_book():
             return _auth_challenge(api=True)
 
         try:
-            traveler = _ensure_traveler_registration(token)
+            traveler = _ensure_traveler_registration(f"Bearer {token}")
             flight_id = _as_int(body.get("flight_id"), 0)
             if flight_id <= 0:
                 payload = {"error": "invalid_request", "detail": "flight_id must be a positive integer"}
@@ -539,7 +682,22 @@ def api_book():
                 content_type="application/json",
             )
 
-    return _api_proxy("POST", "/book", json_body=body)
+    guest_traveler = _guest_traveler_from_session()
+    user_id = _as_int(body.get("user_id"), guest_traveler["traveler_id"] if guest_traveler else 0)
+    name = str(body.get("name") or (guest_traveler["name"] if guest_traveler else "")).strip()
+    flight_id = _as_int(body.get("flight_id"), 0)
+    if user_id <= 0 or not name or flight_id <= 0:
+        payload = {
+            "error": "invalid_request",
+            "detail": "Register a traveler first or provide user_id, name, and flight_id.",
+        }
+        return Response(json.dumps(payload), status=400, content_type="application/json")
+
+    return _api_proxy(
+        "POST",
+        "/book",
+        json_body={"user_id": user_id, "name": name, "flight_id": flight_id},
+    )
 
 
 @app.route("/api/bookings", methods=["GET"])
@@ -549,7 +707,7 @@ def api_get_my_bookings():
         if not token:
             return _auth_challenge(api=True)
         try:
-            traveler = _ensure_traveler_registration(token)
+            traveler = _ensure_traveler_registration(f"Bearer {token}")
             return _api_proxy("GET", f"/bookings/{traveler['traveler_id']}")
         except Exception as exc:
             return Response(
@@ -558,9 +716,16 @@ def api_get_my_bookings():
                 content_type="application/json",
             )
 
-    user_id = _as_int(request.args.get("user_id"), 0)
+    guest_traveler = _guest_traveler_from_session()
+    user_id = _as_int(
+        request.args.get("user_id"),
+        guest_traveler["traveler_id"] if guest_traveler else 0,
+    )
     if user_id <= 0:
-        payload = {"error": "invalid_request", "detail": "user_id query parameter is required"}
+        payload = {
+            "error": "invalid_request",
+            "detail": "Register a traveler first or provide user_id.",
+        }
         return Response(json.dumps(payload), status=400, content_type="application/json")
     return _api_proxy("GET", f"/bookings/{user_id}")
 
@@ -577,6 +742,14 @@ def api_get_bookings(user_id: int):
             payload = {
                 "error": "forbidden",
                 "detail": "Traveler can only access own bookings",
+            }
+            return Response(json.dumps(payload), status=403, content_type="application/json")
+    else:
+        guest_traveler = _guest_traveler_from_session()
+        if guest_traveler and user_id != guest_traveler["traveler_id"]:
+            payload = {
+                "error": "forbidden",
+                "detail": "Guest traveler session can only access own bookings",
             }
             return Response(json.dumps(payload), status=403, content_type="application/json")
 
@@ -596,17 +769,21 @@ def health():
             "integration_mode": INTEGRATION_MODE,
             "frontend_mode": FRONTEND_MODE_ID,
             "proxy_to": BACKEND_URL,
+            "backend_auth_mode": BACKEND_AUTH_MODE,
             "oauth2_enabled": OAUTH2_ENABLED,
             "frontend_auth_required": FRONTEND_AUTH_REQUIRED,
             "frontend_user_login_enforced": FRONTEND_AUTH_REQUIRED,
             "auth_mode": (
                 "traveler-login-and-backend"
                 if FRONTEND_AUTH_REQUIRED
-                else "service-to-service"
-                if OAUTH2_ENABLED
+                else "service-to-service-oauth"
+                if BACKEND_AUTH_MODE == "oauth2"
+                else "basic-backend"
+                if BACKEND_AUTH_MODE == "basic"
                 else "none"
             ),
             "traveler_session_active": bool(_get_user_access_token()),
+            "guest_traveler_session_active": bool(_guest_traveler_from_session()),
         }
     )
 

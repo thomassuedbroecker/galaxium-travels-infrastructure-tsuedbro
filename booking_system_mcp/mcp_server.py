@@ -2,15 +2,23 @@ import os
 import json
 import logging
 from datetime import datetime
+from fastapi import HTTPException
 from fastmcp import FastMCP
 from fastmcp.server.auth import AccessToken, TokenVerifier
 from pydantic import BaseModel
 from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, RedirectResponse, Response
 
-from auth import auth_enabled, validate_access_token, validate_auth_configuration
+from auth import (
+    basic_auth_enabled,
+    oauth2_auth_enabled,
+    require_authorization_header,
+    validate_access_token,
+    validate_auth_configuration,
+)
 from db import SessionLocal, init_db
 from models import Booking, Flight, User
 from seed import seed
@@ -73,7 +81,7 @@ class KeycloakTokenVerifier(TokenVerifier):
 
 
 def _build_auth_provider() -> TokenVerifier | None:
-    if not auth_enabled():
+    if not oauth2_auth_enabled():
         return None
     return KeycloakTokenVerifier()
 
@@ -85,6 +93,31 @@ def _csv_values(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+class BasicAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if not basic_auth_enabled():
+            return await call_next(request)
+
+        if request.method.upper() == "OPTIONS":
+            return await call_next(request)
+
+        if request.url.path not in {"/mcp", "/mcp/", "/msp", "/msp/"}:
+            return await call_next(request)
+
+        try:
+            require_authorization_header(request.headers.get("Authorization"))
+        except HTTPException as exc:
+            return _with_cors(
+                JSONResponse(
+                    {"detail": exc.detail},
+                    status_code=exc.status_code,
+                    headers=exc.headers or {},
+                )
+            )
+
+        return await call_next(request)
+
+
 HTTP_MIDDLEWARE = [
     Middleware(
         CORSMiddleware,
@@ -92,7 +125,8 @@ HTTP_MIDDLEWARE = [
         allow_methods=_csv_values(CORS_ALLOW_METHODS),
         allow_headers=_csv_values(CORS_ALLOW_HEADERS),
         expose_headers=_csv_values(CORS_EXPOSE_HEADERS),
-    )
+    ),
+    Middleware(BasicAuthMiddleware),
 ]
 
 
@@ -346,6 +380,8 @@ def _inspector_client_secret() -> str:
 async def local_openid_configuration(request: Request) -> JSONResponse:
     if request.method.upper() == "OPTIONS":
         return _with_cors(PlainTextResponse("", status_code=204))
+    if not oauth2_auth_enabled():
+        return _with_cors(JSONResponse({"detail": "OAuth metadata is disabled"}, status_code=404))
     issuer = _auth_server_url()
     return _with_cors(JSONResponse(
         {
@@ -363,6 +399,8 @@ async def local_openid_configuration(request: Request) -> JSONResponse:
 async def local_oauth_authorization_server(request: Request) -> JSONResponse:
     if request.method.upper() == "OPTIONS":
         return _with_cors(PlainTextResponse("", status_code=204))
+    if not oauth2_auth_enabled():
+        return _with_cors(JSONResponse({"detail": "OAuth metadata is disabled"}, status_code=404))
     issuer = _auth_server_url()
     return _with_cors(JSONResponse(
         {
@@ -412,6 +450,8 @@ def _oauth_protected_resource_payload() -> dict[str, object]:
 async def local_oauth_protected_resource(request: Request) -> JSONResponse:
     if request.method.upper() == "OPTIONS":
         return _with_cors(PlainTextResponse("", status_code=204))
+    if not oauth2_auth_enabled():
+        return _with_cors(JSONResponse({"detail": "OAuth metadata is disabled"}, status_code=404))
     return _with_cors(JSONResponse(_oauth_protected_resource_payload()))
 
 
@@ -420,6 +460,8 @@ async def local_oauth_protected_resource(request: Request) -> JSONResponse:
 async def local_oauth_client_registration(request: Request) -> JSONResponse:
     if request.method.upper() == "OPTIONS":
         return _with_cors(PlainTextResponse("", status_code=204))
+    if not oauth2_auth_enabled():
+        return _with_cors(JSONResponse({"detail": "OAuth metadata is disabled"}, status_code=404))
 
     request_payload: dict[str, object] = {}
     try:

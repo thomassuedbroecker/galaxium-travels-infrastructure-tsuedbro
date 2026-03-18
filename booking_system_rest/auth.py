@@ -1,22 +1,47 @@
 import os
+import secrets
 from typing import Any
 
 import jwt
 from fastapi import HTTPException, Security, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBasic,
+    HTTPBasicCredentials,
+    HTTPBearer,
+)
 from jwt import InvalidTokenError, PyJWKClient
 
 
 http_bearer = HTTPBearer(auto_error=False)
+http_basic = HTTPBasic(auto_error=False)
 _jwks_client: PyJWKClient | None = None
+_VALID_AUTH_MODES = {"none", "oauth2", "basic"}
 
 
 def _as_bool(value: str | None) -> bool:
     return (value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def auth_mode() -> str:
+    explicit_mode = (os.getenv("AUTH_MODE") or "").strip().lower()
+    mode = explicit_mode or ("oauth2" if _as_bool(os.getenv("AUTH_ENABLED", "false")) else "none")
+    if mode not in _VALID_AUTH_MODES:
+        valid_modes = ", ".join(sorted(_VALID_AUTH_MODES))
+        raise RuntimeError(f"Unsupported AUTH_MODE '{mode}'. Use one of: {valid_modes}")
+    return mode
+
+
 def auth_enabled() -> bool:
-    return _as_bool(os.getenv("AUTH_ENABLED", "false"))
+    return auth_mode() != "none"
+
+
+def oauth2_auth_enabled() -> bool:
+    return auth_mode() == "oauth2"
+
+
+def basic_auth_enabled() -> bool:
+    return auth_mode() == "basic"
 
 
 def _issuer() -> str:
@@ -37,20 +62,55 @@ def _jwks_url() -> str:
     return f"{issuer}/protocol/openid-connect/certs"
 
 
+def _basic_username() -> str:
+    return (os.getenv("BASIC_AUTH_USERNAME") or "").strip()
+
+
+def _basic_password() -> str:
+    return os.getenv("BASIC_AUTH_PASSWORD") or ""
+
+
+def _basic_realm() -> str:
+    return (os.getenv("BASIC_AUTH_REALM") or "Galaxium Booking API").strip() or "Galaxium Booking API"
+
+
+def _basic_challenge_headers() -> dict[str, str]:
+    return {"WWW-Authenticate": f'Basic realm="{_basic_realm()}"'}
+
+
+def _bearer_challenge_headers() -> dict[str, str]:
+    return {"WWW-Authenticate": "Bearer"}
+
+
 def validate_auth_configuration() -> None:
-    if not auth_enabled():
+    mode = auth_mode()
+    if mode == "none":
+        return
+
+    if mode == "oauth2":
+        missing = []
+        if not _issuer():
+            missing.append("OIDC_ISSUER")
+        if not _jwks_url():
+            missing.append("OIDC_JWKS_URL")
+
+        if missing:
+            variables = ", ".join(missing)
+            raise RuntimeError(
+                f"OAuth2/OIDC is enabled but missing required configuration: {variables}"
+            )
         return
 
     missing = []
-    if not _issuer():
-        missing.append("OIDC_ISSUER")
-    if not _jwks_url():
-        missing.append("OIDC_JWKS_URL")
+    if not _basic_username():
+        missing.append("BASIC_AUTH_USERNAME")
+    if _basic_password() == "":
+        missing.append("BASIC_AUTH_PASSWORD")
 
     if missing:
         variables = ", ".join(missing)
         raise RuntimeError(
-            f"OAuth2/OIDC is enabled but missing required configuration: {variables}"
+            f"Basic Auth is enabled but missing required configuration: {variables}"
         )
 
 
@@ -76,16 +136,39 @@ def _decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, **decode_kwargs)
 
 
-def require_oauth2_token(
-    credentials: HTTPAuthorizationCredentials | None = Security(http_bearer),
+def _require_basic_credentials(
+    credentials: HTTPBasicCredentials | None,
 ) -> dict[str, Any]:
-    if not auth_enabled():
-        return {}
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing basic credentials",
+            headers=_basic_challenge_headers(),
+        )
 
+    username_ok = secrets.compare_digest(credentials.username, _basic_username())
+    password_ok = secrets.compare_digest(credentials.password, _basic_password())
+    if not username_ok or not password_ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid basic credentials",
+            headers=_basic_challenge_headers(),
+        )
+
+    return {
+        "sub": credentials.username,
+        "auth_mode": "basic",
+    }
+
+
+def _require_oauth2_credentials(
+    credentials: HTTPAuthorizationCredentials | None,
+) -> dict[str, Any]:
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing bearer token",
+            headers=_bearer_challenge_headers(),
         )
 
     token = credentials.credentials
@@ -95,9 +178,30 @@ def require_oauth2_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {str(exc)}",
+            headers=_bearer_challenge_headers(),
         ) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Token validation failed: {str(exc)}",
+            headers=_bearer_challenge_headers(),
         ) from exc
+
+
+def require_authenticated_request(
+    bearer_credentials: HTTPAuthorizationCredentials | None = Security(http_bearer),
+    basic_credentials: HTTPBasicCredentials | None = Security(http_basic),
+) -> dict[str, Any]:
+    mode = auth_mode()
+    if mode == "none":
+        return {}
+    if mode == "basic":
+        return _require_basic_credentials(basic_credentials)
+    return _require_oauth2_credentials(bearer_credentials)
+
+
+def require_oauth2_token(
+    bearer_credentials: HTTPAuthorizationCredentials | None = Security(http_bearer),
+    basic_credentials: HTTPBasicCredentials | None = Security(http_basic),
+) -> dict[str, Any]:
+    return require_authenticated_request(bearer_credentials, basic_credentials)

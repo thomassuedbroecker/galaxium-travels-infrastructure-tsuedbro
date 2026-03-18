@@ -2,7 +2,7 @@
 """Small MCP connectivity test app for local containerized setup.
 
 This script:
-1) Acquires a Keycloak access token (docker-internal by default)
+1) Acquires a Keycloak access token or builds a Basic Auth header
 2) Calls MCP JSON-RPC initialize
 3) Calls tools/list
 4) Calls tools/call for list_flights (if available)
@@ -11,7 +11,9 @@ This script:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -174,7 +176,7 @@ def _get_token(args: argparse.Namespace) -> str:
 
 def _rpc(
     mcp_url: str,
-    token: str,
+    authorization_header: str,
     request_id: int,
     method: str,
     params: dict[str, Any] | None = None,
@@ -191,7 +193,7 @@ def _rpc(
     headers = {
         "Accept": MCP_ACCEPT_HEADER,
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {token}",
+        "Authorization": authorization_header,
         "MCP-Protocol-Version": "2025-11-25",
     }
     if session_id:
@@ -221,6 +223,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Local MCP server connectivity test app")
     parser.add_argument("--mcp-url", default="http://localhost:8084/mcp")
     parser.add_argument(
+        "--auth-scheme",
+        choices=["bearer", "basic"],
+        default="bearer",
+        help="Authorization scheme used for MCP requests",
+    )
+    parser.add_argument(
         "--token-source",
         choices=["auto", "docker", "http"],
         default="auto",
@@ -236,6 +244,16 @@ def main() -> int:
     parser.add_argument("--password", default="demo-user-password")
     parser.add_argument("--token", default="", help="Use provided bearer token")
     parser.add_argument(
+        "--basic-username",
+        default=os.getenv("BASIC_AUTH_USERNAME", "demo-basic-user"),
+        help="Basic Auth username for basic-auth mode",
+    )
+    parser.add_argument(
+        "--basic-password",
+        default=os.getenv("BASIC_AUTH_PASSWORD", "demo-basic-password"),
+        help="Basic Auth password for basic-auth mode",
+    )
+    parser.add_argument(
         "--skip-tool-call",
         action="store_true",
         help="Skip tools/call(list_flights)",
@@ -243,12 +261,20 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        token = _get_token(args)
-        print(f"OK: token length={len(token)}")
+        if args.auth_scheme == "basic":
+            encoded = base64.b64encode(
+                f"{args.basic_username}:{args.basic_password}".encode("utf-8")
+            ).decode("ascii")
+            authorization_header = f"Basic {encoded}"
+            print(f"OK: using basic auth for user {args.basic_username}")
+        else:
+            token = _get_token(args)
+            authorization_header = f"Bearer {token}"
+            print(f"OK: token length={len(token)}")
 
         init_result, init_headers = _rpc(
             mcp_url=args.mcp_url,
-            token=token,
+            authorization_header=authorization_header,
             request_id=1,
             method="initialize",
             params={
@@ -272,7 +298,7 @@ def main() -> int:
 
         tools_result, _ = _rpc(
             mcp_url=args.mcp_url,
-            token=token,
+            authorization_header=authorization_header,
             request_id=2,
             method="tools/list",
             params={},
@@ -286,7 +312,7 @@ def main() -> int:
         if not args.skip_tool_call and "list_flights" in names:
             call_result, _ = _rpc(
                 mcp_url=args.mcp_url,
-                token=token,
+                authorization_header=authorization_header,
                 request_id=3,
                 method="tools/call",
                 params={"name": "list_flights", "arguments": {}},

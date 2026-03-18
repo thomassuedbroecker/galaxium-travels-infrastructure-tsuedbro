@@ -132,6 +132,23 @@
           <div id="travelerInfo" class="traveler-panel">
             <div class="text-muted">Loading traveler context...</div>
           </div>
+          <div id="guestTravelerControls" class="mt-3" {% if frontend_auth_required %}hidden{% endif %}>
+            <div class="alert alert-secondary mb-3">
+              This deployment does not require browser login. Register or look up a traveler profile to book flights and view bookings.
+            </div>
+            <form id="guestTravelerForm">
+              <div class="mb-2">
+                <label for="guestTravelerName" class="form-label">Traveler name</label>
+                <input id="guestTravelerName" class="form-control" type="text" placeholder="Ada Lovelace" />
+              </div>
+              <div class="mb-2">
+                <label for="guestTravelerEmail" class="form-label">Traveler email</label>
+                <input id="guestTravelerEmail" class="form-control" type="email" placeholder="ada@example.com" />
+              </div>
+              <button class="btn btn-outline-primary w-100" type="submit">Use traveler profile</button>
+            </form>
+            <div id="guestTravelerResult" class="mt-2"></div>
+          </div>
         </section>
 
         <section class="portal-card sidebar-card sticky-card">
@@ -166,6 +183,7 @@
 
 <script>
 const frontendAuthRequired = {{ "true" if frontend_auth_required else "false" }};
+let currentTraveler = null;
 
 function setText(id, value) {
   const el = document.getElementById(id);
@@ -200,6 +218,8 @@ async function jsonFetch(path, opts = {}) {
 
 async function loadTraveler() {
   const out = document.getElementById('travelerInfo');
+  const guestControls = document.getElementById('guestTravelerControls');
+  const guestResult = document.getElementById('guestTravelerResult');
   const r = await jsonFetch('/api/traveler');
 
   if (redirectToLoginIfNeeded(r.status)) {
@@ -214,13 +234,21 @@ async function loadTraveler() {
   }
 
   if (!r.body.traveler_id) {
+    currentTraveler = null;
     setText('travelerStatus', 'Guest mode');
     setText('travelerHint', 'Traveler login is not enforced in this deployment.');
     out.innerHTML = '<div class="alert alert-warning">Traveler login is not enforced in this deployment.</div>';
-    document.getElementById('bookTraveler').value = 'not authenticated';
+    document.getElementById('bookTraveler').value = 'register traveler first';
+    if (guestControls) {
+      guestControls.hidden = false;
+    }
+    if (guestResult) {
+      guestResult.innerHTML = '';
+    }
     return null;
   }
 
+  currentTraveler = r.body;
   setText('travelerStatus', r.body.name);
   setText('travelerHint', `Traveler #${r.body.traveler_id} is ready to book flights.`);
   out.innerHTML = `
@@ -244,6 +272,11 @@ async function loadTraveler() {
     </div>
   `;
   document.getElementById('bookTraveler').value = `${r.body.name} (#${r.body.traveler_id})`;
+  if (guestControls && !frontendAuthRequired) {
+    guestControls.hidden = false;
+    document.getElementById('guestTravelerName').value = r.body.name || '';
+    document.getElementById('guestTravelerEmail').value = r.body.email || '';
+  }
   return r.body;
 }
 
@@ -301,7 +334,18 @@ async function loadBookings() {
   const el = document.querySelector('#bookingsTable tbody');
   el.innerHTML = '<tr><td class="table-message-cell" colspan="5">Loading traveler bookings...</td></tr>';
 
-  const r = await jsonFetch('/api/bookings');
+  if (!frontendAuthRequired && !(currentTraveler && currentTraveler.traveler_id)) {
+    setText('bookingCount', '--');
+    setText('bookingHint', 'Register or look up a traveler profile to load bookings.');
+    document.getElementById('bookingsAlert').innerHTML = '';
+    el.innerHTML = '<tr><td class="table-message-cell" colspan="5">Register or look up a traveler profile to see bookings.</td></tr>';
+    return;
+  }
+
+  const bookingsPath = frontendAuthRequired
+    ? '/api/bookings'
+    : `/api/bookings?user_id=${encodeURIComponent(currentTraveler.traveler_id)}`;
+  const r = await jsonFetch(bookingsPath);
   if (redirectToLoginIfNeeded(r.status)) {
     return;
   }
@@ -354,13 +398,73 @@ async function cancelBooking(bookingId) {
   await loadBookings();
 }
 
+async function syncGuestTraveler(ev) {
+  ev.preventDefault();
+
+  const guestResult = document.getElementById('guestTravelerResult');
+  const name = document.getElementById('guestTravelerName').value.trim();
+  const email = document.getElementById('guestTravelerEmail').value.trim();
+
+  if (!name || !email) {
+    guestResult.innerHTML = '<div class="alert alert-warning">Traveler name and email are required.</div>';
+    return;
+  }
+
+  guestResult.innerHTML = '<div class="alert alert-info">Syncing traveler profile...</div>';
+
+  const lookup = await jsonFetch(`/api/get_user?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`);
+  if (lookup.ok && lookup.body && lookup.body.traveler_id) {
+    guestResult.innerHTML = `<div class="alert alert-success">Traveler ${lookup.body.name} is ready.</div>`;
+    await loadTraveler();
+    await loadBookings();
+    return;
+  }
+
+  if (!(lookup.ok && lookup.body && lookup.body.success === false && lookup.body.error_code === 'USER_NOT_FOUND')) {
+    guestResult.innerHTML = `<div class="alert alert-danger">Traveler lookup failed: ${JSON.stringify(lookup.body)}</div>`;
+    return;
+  }
+
+  const registration = await jsonFetch('/api/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, email })
+  });
+
+  if (!registration.ok) {
+    guestResult.innerHTML = `<div class="alert alert-danger">Traveler registration failed: ${JSON.stringify(registration.body)}</div>`;
+    return;
+  }
+
+  if (registration.body && registration.body.success === false) {
+    guestResult.innerHTML = `<div class="alert alert-warning">${registration.body.error}: ${registration.body.details || ''}</div>`;
+    return;
+  }
+
+  guestResult.innerHTML = `<div class="alert alert-success">Traveler ${registration.body.name} is ready.</div>`;
+  await loadTraveler();
+  await loadBookings();
+}
+
 document.getElementById('bookForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const flightId = parseInt(document.getElementById('bookFlightId').value, 10);
 
+  if (!frontendAuthRequired && !(currentTraveler && currentTraveler.traveler_id)) {
+    document.getElementById('bookResult').innerHTML = '<div class="alert alert-warning">Register or look up a traveler profile before booking.</div>';
+    return;
+  }
+
+  const requestBody = frontendAuthRequired
+    ? { flight_id: flightId }
+    : {
+        flight_id: flightId,
+        user_id: currentTraveler.traveler_id,
+        name: currentTraveler.name
+      };
+
   const r = await jsonFetch('/api/book', {
     method: 'POST',
-    body: JSON.stringify({ flight_id: flightId })
+    body: JSON.stringify(requestBody)
   });
 
   if (redirectToLoginIfNeeded(r.status)) {
@@ -385,6 +489,7 @@ document.getElementById('bookForm').addEventListener('submit', async (ev) => {
 
 document.getElementById('refreshFlights').addEventListener('click', loadFlights);
 document.getElementById('refreshBookings').addEventListener('click', loadBookings);
+document.getElementById('guestTravelerForm').addEventListener('submit', syncGuestTraveler);
 
 (async function init() {
   await loadTraveler();

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from auth import require_oauth2_token, validate_auth_configuration
+from auth import require_authenticated_request, validate_auth_configuration
 from db import get_db, init_db
 from models import Booking as BookingModel
 from models import Flight as FlightModel
@@ -109,7 +109,7 @@ def health():
     description="Retrieve a list of all available flights, including origin, destination, departure and arrival times, price, and the number of seats currently available for booking.",
 )
 def get_flights(
-    _: dict = Depends(require_oauth2_token),
+    _: dict = Depends(require_authenticated_request),
     db: Session = Depends(get_db),
 ):
     try:
@@ -128,7 +128,7 @@ def get_flights(
 )
 def book_flight(
     booking: BookingRequest,
-    _: dict = Depends(require_oauth2_token),
+    _: dict = Depends(require_authenticated_request),
     db: Session = Depends(get_db),
 ):
     try:
@@ -192,7 +192,7 @@ def book_flight(
 )
 def get_user_bookings(
     user_id: int,
-    _: dict = Depends(require_oauth2_token),
+    _: dict = Depends(require_authenticated_request),
     db: Session = Depends(get_db),
 ):
     try:
@@ -211,7 +211,7 @@ def get_user_bookings(
 )
 def cancel_booking(
     booking_id: int,
-    _: dict = Depends(require_oauth2_token),
+    _: dict = Depends(require_authenticated_request),
     db: Session = Depends(get_db),
 ):
     try:
@@ -252,7 +252,7 @@ def cancel_booking(
 )
 def register_user(
     user: UserRegistration,
-    _: dict = Depends(require_oauth2_token),
+    _: dict = Depends(require_authenticated_request),
     db: Session = Depends(get_db),
 ):
     try:
@@ -285,7 +285,7 @@ def register_user(
 def get_user(
     name: str,
     email: str,
-    _: dict = Depends(require_oauth2_token),
+    _: dict = Depends(require_authenticated_request),
     db: Session = Depends(get_db),
 ):
     try:

@@ -7,6 +7,7 @@ This folder is the main entry point for automated checks in this repository.
 - REST API tests from `booking_system_rest/tests/`
 - local UI behavior checks against the compose stack
 - local MCP integration checks against the compose stack
+- local Basic Auth smoke checks for backends, frontends, and MCP inspector config
 - the WebUI auth matrix for:
   - REST and MCP
   - local machine and LAN-prepare environments
@@ -44,30 +45,28 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 ## Current Verified State
 
-Current WebUI auth matrix result:
+Current verified checks are split between smoke coverage and the last full matrix run:
 
-- Command:
+- `2026-03-18`: `bash local-container/verify-keycloak-auth-e2e.sh`
+  - passed end to end for REST auth, MCP auth, traveler web login, inspector client sync, and OAuth metadata discovery
+- `2026-03-18`: `bash local-container/verify-basic-auth-backends.sh`
+  - passed for REST Basic Auth and MCP Basic Auth
+- `2026-03-18`: `bash local-container/verify-basic-auth-frontends-and-inspector.sh`
+  - passed for REST UI guest flow, MCP UI guest flow, and Basic Auth inspector config generation over `Streamable HTTP`
+- `2026-03-18`: `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v`
+  - passed with `8/8` tests green
+- `2026-03-15`: full eight-variant WebUI auth matrix
+  - command:
 
-  ```sh
-  WEBUI_TEST_PUBLIC_HOST=192.168.2.88 \
-  WEBUI_TEST_RUN_DOCKER=1 \
-  WEBUI_TEST_SKIP_BUILD=1 \
-  WEBUI_TEST_RUN_FULL_MATRIX=1 \
-  python3 -m unittest discover -s testing/webui_matrix/tests -p 'test_*.py' -v
-  ```
-
-- Date: `2026-03-15`
-- Result: `52 tests passed`
-- Skipped: `0`
-
-This means:
-
-- both environments work
-- both backend modes work
-- both OAuth modes work
-- the `8086` host-port change is verified across the full matrix
-- the regression was fixed by exporting `KEYCLOAK_PUBLIC_HOSTNAME` for LAN-prepare variants so Keycloak no longer falls back to `localhost`
-- the test generator still runs only real applicable tests
+    ```sh
+    WEBUI_TEST_PUBLIC_HOST=192.168.2.88 \
+    WEBUI_TEST_RUN_DOCKER=1 \
+    WEBUI_TEST_SKIP_BUILD=1 \
+    WEBUI_TEST_RUN_FULL_MATRIX=1 \
+    python3 -m unittest discover -s testing/webui_matrix/tests -p 'test_*.py' -v
+    ```
+  - result: `52 tests passed`
+  - skipped: `0`
 
 ## Folder Structure
 
@@ -114,6 +113,18 @@ Run only the MCP integration checks:
 
 ```sh
 bash testing/automation/run-mcp-integration-tests.sh
+```
+
+Run the local Basic Auth backend smoke:
+
+```sh
+bash local-container/verify-basic-auth-backends.sh
+```
+
+Run the local Basic Auth frontend plus inspector smoke:
+
+```sh
+bash local-container/verify-basic-auth-frontends-and-inspector.sh
 ```
 
 ## WebUI Auth Matrix

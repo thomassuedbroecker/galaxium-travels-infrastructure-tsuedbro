@@ -2,19 +2,22 @@
 
 This folder contains the runnable Docker Compose setup for the Galaxium demo.
 
-You can use it in two ways:
+You can use it in three ways:
 
 - run everything on one local machine
 - run the protected stack on the host machine and let another app or agent connect from a VM or another machine in the LAN
+- run the REST path, MCP path, and inspector tooling in a small Basic Auth variant without Keycloak
 
-## Two Runtime Options
+## Three Runtime Options
 
 ```mermaid
 flowchart TD
     A["local-container/"] --> B["Option 1<br/>Local machine"]
     A --> C["Option 2<br/>Host machine + VM/LAN OAuth"]
+    A --> F["Option 3<br/>Basic Auth stack"]
     B --> D["Use localhost URLs"]
     C --> E["Use host IP or DNS name"]
+    F --> G["Use REST, MCP, both web UIs,<br/>and inspector config"]
 ```
 
 ## Option 1: Local Machine
@@ -133,9 +136,9 @@ cp vm-oauth.env.template vm-oauth.env
 2. Edit `vm-oauth.env`:
 
 ```sh
-KEYCLOAK_PUBLIC_HOSTNAME=${LOCAL_NET_IP)
-KEYCLOAK_PUBLIC_BASE_URL=http://${LOCAL_NET_IP):8086
-MCP_PUBLIC_BASE_URL=http://${LOCAL_NET_IP):8084
+KEYCLOAK_PUBLIC_HOSTNAME=${LOCAL_NET_IP}
+KEYCLOAK_PUBLIC_BASE_URL=http://${LOCAL_NET_IP}:8086
+MCP_PUBLIC_BASE_URL=http://${LOCAL_NET_IP}:8084
 ```
 
 3. Start the stack:
@@ -183,9 +186,9 @@ cp vm-client.env.template vm-client.env
 Edit `vm-client.env`:
 
 ```sh
-KEYCLOAK_BASE_URL=http://${LOCAL_NET_IP):8086
-KEYCLOAK_TOKEN_URL=http://${LOCAL_NET_IP):8086/realms/galaxium/protocol/openid-connect/token
-MCP_SERVER_URL=http://${LOCAL_NET_IP):8084/mcp
+KEYCLOAK_BASE_URL=http://${LOCAL_NET_IP}:8086
+KEYCLOAK_TOKEN_URL=http://${LOCAL_NET_IP}:8086/realms/galaxium/protocol/openid-connect/token
+MCP_SERVER_URL=http://${LOCAL_NET_IP}:8084/mcp
 ```
 
 Do not use `localhost` for this option.
@@ -214,6 +217,43 @@ Expected:
 - MCP registration endpoint uses `http://192.168.1.50:8084/oauth/register`
 - MCP token-authenticated initialize and `tools/list` calls succeed over the LAN URL
 
+## Option 3: Basic Auth Stack
+
+Use this when:
+
+- you want the REST API, MCP server, REST UI, and MCP UI without Keycloak
+- you do not need Keycloak
+- you want shared backend Basic Auth instead of traveler browser login
+
+### Start
+
+```sh
+cd local-container
+docker compose -f docker_compose.basic-auth.yaml up --build -d
+```
+
+### URLs
+
+- Booking REST API docs: `http://localhost:8082/docs`
+- REST web UI: `http://localhost:8083`
+- MCP endpoint: `http://localhost:8084/mcp`
+- MCP web UI: `http://localhost:8085`
+
+### Built-In Credentials
+
+- Basic Auth user: `demo-basic-user`
+- Basic Auth password: `demo-basic-password`
+
+In this mode the web UIs do not require browser login. Instead, each UI stores a guest traveler profile in the browser session and uses the shared backend Basic Auth credentials for backend calls.
+
+### Verify
+
+```sh
+cd local-container
+bash verify-basic-auth-backends.sh
+bash verify-basic-auth-frontends-and-inspector.sh
+```
+
 ## Verification Scripts
 
 Run the complete local OAuth smoke test:
@@ -235,6 +275,19 @@ Run the lightweight MCP CLI test:
 python3 mcp_test_app.py
 ```
 
+Run the Basic Auth backend variant:
+
+```sh
+docker compose -f docker_compose.basic-auth.yaml up --build -d
+bash verify-basic-auth-backends.sh
+bash verify-basic-auth-frontends-and-inspector.sh
+```
+
+Default Basic Auth demo credentials:
+
+- `demo-basic-user`
+- `demo-basic-password`
+
 Reports are written to `test-results/`.
 
 ## MCP Inspector
@@ -255,6 +308,27 @@ bash start-mcp-inspector-ui.sh
    - Connection type: `Via Proxy`
 
 For the VM/LAN option, replace `localhost` with the host IP or DNS name.
+
+For the Basic Auth stack, generate the inspector config like this:
+
+```sh
+MCP_AUTH_SCHEME=basic \
+BASIC_AUTH_USERNAME=demo-basic-user \
+BASIC_AUTH_PASSWORD=demo-basic-password \
+bash start-mcp-inspector-ui.sh
+```
+
+If you only want to verify the generated config without opening the Inspector UI:
+
+```sh
+INSPECTOR_AUTO_START=0 \
+MCP_AUTH_SCHEME=basic \
+BASIC_AUTH_USERNAME=demo-basic-user \
+BASIC_AUTH_PASSWORD=demo-basic-password \
+bash start-mcp-inspector-ui.sh
+```
+
+Keep the MCP transport on `Streamable HTTP`. Do not switch the inspector to another transport for this repository.
 
 ## Stop
 

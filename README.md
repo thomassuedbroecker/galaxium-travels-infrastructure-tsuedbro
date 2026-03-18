@@ -10,7 +10,8 @@ In this repository you can run both styles side by side:
 
 - a REST backend and a REST-based web UI
 - an MCP backend and an MCP-based web UI
-- the same Keycloak security model for both paths
+- the same Keycloak OAuth path for both styles
+- an additional Basic Auth variant for the REST backend, MCP server, REST UI, and MCP UI
 
 This matches the idea discussed in the blog post [Should MCP replace REST for AI-ready applications?](https://suedbroecker.net/2026/03/10/should-mcp-replace-rest-for-ai-ready-applications/).
 The point is not that MCP always replaces REST.
@@ -62,23 +63,21 @@ flowchart LR
 
 ## Current Verified State
 
-The latest live WebUI auth matrix rerun was executed on `2026-03-15` after fixing the LAN-prepare Keycloak hostname injection for the `8086` host-port change.
+Current change-set smoke status as of `2026-03-18`:
 
-- Latest rerun result: `52 tests passed`, `0 skipped`
-- Verified environments:
-  - `local_machine_network`
-  - `local_machine_local_network_prepare`
-- Verified backend modes:
-  - `rest`
-  - `mcp`
-- Verified OAuth modes:
-  - `backend_and_ui_oauth`
-  - `ui_oauth`
-- Root cause fixed:
-  - the WebUI matrix LAN-prepare variants were not exporting `KEYCLOAK_PUBLIC_HOSTNAME`
-  - the VM/LAN compose override therefore fell back to `localhost`, which broke public issuer metadata and backend token validation
+- Local OAuth smoke rerun passed on `2026-03-18`.
+- Local Basic Auth backend smoke rerun passed on `2026-03-18`.
+- Local Basic Auth frontend plus MCP Inspector smoke rerun passed on `2026-03-18`.
+- WebUI matrix unit config checks passed on `2026-03-18` with `8/8` tests green.
 
-For the exact commands, see [testing/README.md](./testing/README.md).
+The latest full eight-variant WebUI auth matrix rerun is still the `2026-03-15` run:
+
+- Result: `52 tests passed`, `0 skipped`
+- Environments: `local_machine_network`, `local_machine_local_network_prepare`
+- Backend modes: `rest`, `mcp`
+- OAuth modes: `backend_and_ui_oauth`, `ui_oauth`
+
+For the exact commands and current scope split, see [testing/README.md](./testing/README.md).
 
 ## Test Status Overview
 
@@ -90,11 +89,12 @@ Status meaning:
 
 | Status | Scope | Result |
 | --- | --- | --- |
-| `🟢` | Local compose OAuth smoke test after Keycloak host-port change to `8086` | `bash local-container/verify-keycloak-auth-e2e.sh` passed end to end on `2026-03-15`, including REST auth, MCP auth, Inspector client sync, and OAuth metadata discovery. Report: `local-container/test-results/oauth-e2e-all-20260315T172529Z.md` |
-| `🟢` | WebUI matrix unit config checks after Keycloak host-port change to `8086` | `python3 -m unittest discover -s testing/webui_matrix/tests/unit -p 'test_*.py' -v` passed with `8/8` tests green |
-| `🟢` | Compose validation after Keycloak host-port change to `8086` | `docker compose ... config` resolved correctly for both `local-container/docker_compose.yaml` and the `vm-oauth` override path |
-| `🟢` | Full WebUI auth matrix after Keycloak host-port change to `8086` | Rerun on `2026-03-15` with `WEBUI_TEST_PUBLIC_HOST=192.168.2.88`: `52` tests ran, `52` passed, `0` skipped |
-| `🟢` | VM / LAN remote auth verification after Keycloak host-port change to `8086` | Verified on `2026-03-15` against `192.168.2.88`: `verify-keycloak-auth-remote.sh` passed for REST plus traveler web login, Keycloak discovery returned the public issuer, MCP metadata returned the public issuer and registration endpoint, and `python3 local-container/mcp_test_app.py --mcp-url http://192.168.2.88:8084/mcp --token-source http --token-url http://192.168.2.88:8086/realms/galaxium/protocol/openid-connect/token` passed |
+| `🟢` | Local compose OAuth smoke test | `bash local-container/verify-keycloak-auth-e2e.sh` passed end to end on `2026-03-18`, including REST auth, MCP auth, traveler web login, Inspector client sync, and OAuth metadata discovery. Report: `local-container/test-results/oauth-e2e-all-20260318T204838Z.md` |
+| `🟢` | Local Basic Auth backend smoke test | `bash local-container/verify-basic-auth-backends.sh` passed on `2026-03-18`, including REST `401/200` checks plus authenticated MCP `initialize`, `tools/list`, and `tools/call(list_flights)` |
+| `🟢` | Local Basic Auth frontend + MCP Inspector smoke test | `bash local-container/verify-basic-auth-frontends-and-inspector.sh` passed on `2026-03-18`, including REST UI guest flow, MCP UI guest flow, and Basic Auth Inspector config generation with `Streamable HTTP` |
+| `🟢` | WebUI matrix unit config checks | `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v` passed on `2026-03-18` with `8/8` tests green |
+| `🟡` | Full WebUI auth matrix | Latest full rerun is still the `2026-03-15` run: `52` tests ran, `52` passed, `0` skipped |
+| `🟡` | VM / LAN remote auth verification | Latest verified rerun is still the `2026-03-15` run against `192.168.2.88` |
 | `🟢` | Current failing checks in this change set | None from the executed checks |
 
 ## Fast Validation
@@ -109,6 +109,18 @@ Run the compose OAuth smoke test:
 
 ```sh
 bash local-container/verify-keycloak-auth-e2e.sh
+```
+
+Run the local Basic Auth backend smoke test:
+
+```sh
+bash local-container/verify-basic-auth-backends.sh
+```
+
+Run the local Basic Auth frontend plus Inspector smoke test:
+
+```sh
+bash local-container/verify-basic-auth-frontends-and-inspector.sh
 ```
 
 Run the WebUI auth matrix with the local template:

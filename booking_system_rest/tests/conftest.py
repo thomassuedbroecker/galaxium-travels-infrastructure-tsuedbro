@@ -22,9 +22,13 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 def disable_auth(monkeypatch):
     """Keep API tests isolated from compose or shell auth settings."""
     monkeypatch.setenv("AUTH_ENABLED", "false")
+    monkeypatch.delenv("AUTH_MODE", raising=False)
     monkeypatch.delenv("OIDC_ISSUER", raising=False)
     monkeypatch.delenv("OIDC_AUDIENCE", raising=False)
     monkeypatch.delenv("OIDC_JWKS_URL", raising=False)
+    monkeypatch.delenv("BASIC_AUTH_USERNAME", raising=False)
+    monkeypatch.delenv("BASIC_AUTH_PASSWORD", raising=False)
+    monkeypatch.delenv("BASIC_AUTH_REALM", raising=False)
 
 @pytest.fixture(scope="function")
 def db_session():

@@ -1,28 +1,47 @@
 # Latest Validation
 
-- Run date: `2026-03-07`
-- Command: `bash testing/automation/run-all-tests.sh`
+- Summary date: `2026-03-18`
+- Validation type: composite committed validation summary
 - Overall status: `PASS`
 
-## Suite Results
+## Verified Checks
 
-- REST API tests: `PASS`
-  - Result: `33 passed`
-  - Log: `testing/results/generated/rest/rest-api-pytest-20260307T112311Z.log`
+- Local compose OAuth smoke: `PASS`
+  - Command: `bash local-container/verify-keycloak-auth-e2e.sh`
+  - Coverage: REST auth, MCP auth, traveler web login, inspector client sync, and OAuth metadata discovery
+  - Report: `local-container/test-results/oauth-e2e-all-20260318T204838Z.md`
 
-- UI behavior checks: `PASS`
-  - Coverage: login redirect, unauthenticated API rejection, traveler session flow, authenticated flights/bookings/book calls
-  - Markdown report: `testing/results/generated/ui/oauth-e2e-ui-rest-20260307T112326Z.md`
-  - JSON report: `testing/results/generated/ui/oauth-e2e-ui-rest-20260307T112326Z.json`
-  - Log: `testing/results/generated/ui/oauth-e2e-ui-rest-20260307T112326Z.log`
+- Local Basic Auth backend smoke: `PASS`
+  - Command: `bash local-container/verify-basic-auth-backends.sh`
+  - Coverage: REST `401/200` checks plus authenticated MCP `initialize`, `tools/list`, and `tools/call(list_flights)`
 
-- MCP integration checks: `PASS`
-  - Coverage: OAuth metadata discovery, unauthenticated `initialize`, authenticated `initialize`, authenticated `tools/list`
-  - Markdown report: `testing/results/generated/mcp/oauth-e2e-mcp-20260307T112338Z.md`
-  - JSON report: `testing/results/generated/mcp/oauth-e2e-mcp-20260307T112338Z.json`
-  - Log: `testing/results/generated/mcp/oauth-e2e-mcp-20260307T112338Z.log`
+- Local Basic Auth frontend plus inspector smoke: `PASS`
+  - Command: `bash local-container/verify-basic-auth-frontends-and-inspector.sh`
+  - Coverage: REST UI guest flow, MCP UI guest flow, and Basic Auth inspector config generation over `Streamable HTTP`
+
+- WebUI matrix unit config checks: `PASS`
+  - Command: `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v`
+  - Result: `11/11` tests green
+
+- Full WebUI auth matrix: `PASS`
+  - Command:
+
+    ```sh
+    WEBUI_TEST_PUBLIC_HOST=192.168.2.88 \
+    WEBUI_TEST_RUN_DOCKER=1 \
+    WEBUI_TEST_SKIP_BUILD=1 \
+    WEBUI_TEST_RUN_FULL_MATRIX=1 \
+    python3 -m unittest discover -s testing/webui_matrix/tests -p 'test_*.py' -v
+    ```
+  - Result: `55 tests passed`, `0 skipped`
+
+- VM / LAN remote auth verification: `PASS`
+  - Command: `bash local-container/verify-keycloak-auth-remote.sh --env-file local-container/verify-keycloak-auth-remote.env`
+  - Additional checks:
+    - MCP metadata checks for `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`
+    - `python3 local-container/mcp_test_app.py --mcp-url http://192.168.2.88:8084/mcp --token-source http --token-url http://192.168.2.88:8086/realms/galaxium/protocol/openid-connect/token`
 
 ## Notes
 
-- The REST suite still emits existing deprecation warnings from FastAPI, SQLAlchemy, and Pydantic, but the tests pass.
-- The UI and MCP suites run against the docker-compose stack and clean it up after execution.
+- This file tracks the latest committed validation state across the active validation slices.
+- `bash testing/automation/run-all-tests.sh` is still useful, but it does not include the Basic Auth smoke checks, the full WebUI matrix, or the VM / LAN remote verification.

@@ -17,7 +17,7 @@ Instead, it lets you compare:
 - REST
 - MCP
 - the same business domain
-- the same Keycloak security model
+- the same OAuth security model plus a shared Basic Auth variant
 - the same user journey
 
 That is also the main value behind the blog post [Should MCP replace REST for AI-ready applications?](https://suedbroecker.net/2026/03/10/should-mcp-replace-rest-for-ai-ready-applications/):
@@ -66,6 +66,7 @@ Next improvement:
 ### What Is Good
 
 - The project now has a real WebUI auth matrix
+- The repository also has dedicated Basic Auth smoke coverage for both backends, both web UIs, and the MCP inspector config flow
 - The matrix covers:
   - REST
   - MCP
@@ -73,7 +74,7 @@ Next improvement:
   - LAN-prepare mode
   - backend-and-UI OAuth
   - UI-only OAuth
-- Current full matrix result: `52 passed, 0 skipped`
+- Current full matrix result: `55 passed, 0 skipped`
 - Tests check both positive and negative auth behavior
 - End-to-end tests validate real traveler flows
 

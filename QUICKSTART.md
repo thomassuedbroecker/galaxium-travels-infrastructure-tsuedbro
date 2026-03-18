@@ -14,9 +14,11 @@ cd galaxium-travels-infrastructure-tsuedbro
 flowchart TD
     Start["Start here"] --> Local["Option 1<br/>Local machine"]
     Start --> Lan["Option 2<br/>Host machine + VM/LAN OAuth"]
+    Start --> Basic["Option 3<br/>Local Basic Auth"]
     Local --> Rest["REST UI<br/>http://localhost:8083"]
     Local --> Mcp["MCP UI<br/>http://localhost:8085"]
     Lan --> Public["Use host IP or DNS name<br/>for Keycloak and MCP"]
+    Basic --> Guest["Guest traveler session<br/>no Keycloak browser login"]
 ```
 
 ## Option 1: Local Machine
@@ -172,7 +174,51 @@ docker compose --env-file local-container/vm-oauth.env \
 
 For the detailed diagram and the explanation of why this OAuth setup works, see [local-container/README.md](./local-container/README.md).
 
+## Option 3: Local Basic Auth
+
+Use this option when you want the REST API, MCP server, and both web UIs without Keycloak browser login.
+
+### 1. Start the stack
+
+```sh
+docker compose -f local-container/docker_compose.basic-auth.yaml up --build -d
+```
+
+### 2. Open the URLs
+
+- Booking REST API docs: `http://localhost:8082/docs`
+- REST web UI: `http://localhost:8083`
+- MCP endpoint: `http://localhost:8084/mcp`
+- MCP web UI: `http://localhost:8085`
+
+### 3. Use the shared demo credentials
+
+- Basic Auth user: `demo-basic-user`
+- Basic Auth password: `demo-basic-password`
+
+The two web UIs keep a guest traveler profile in the browser session and send the shared Basic Auth header to the backend.
+
+### 4. Run the Basic Auth smoke checks
+
+```sh
+bash local-container/verify-basic-auth-backends.sh
+bash local-container/verify-basic-auth-frontends-and-inspector.sh
+```
+
+### 5. Stop the stack
+
+```sh
+docker compose -f local-container/docker_compose.basic-auth.yaml down
+```
+
 ## Run The Tests
+
+Run the local Basic Auth smoke checks:
+
+```sh
+bash local-container/verify-basic-auth-backends.sh
+bash local-container/verify-basic-auth-frontends-and-inspector.sh
+```
 
 Run the WebUI auth matrix with the local template:
 
@@ -196,4 +242,4 @@ If you want to inspect the MCP server manually, use:
 bash local-container/start-mcp-inspector-ui.sh
 ```
 
-For the full Inspector flow, use [local-container/README.md](./local-container/README.md).
+For the full Inspector flow, including the Basic Auth config path, use [local-container/README.md](./local-container/README.md).

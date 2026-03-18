@@ -174,9 +174,10 @@ HTTP 500: "Error reading employee database: [Errno 2] No such file or directory:
 
 ## Testing
 
-All error message improvements have been tested and verified:
-- REST API tests pass with updated assertions
-- Error message content is validated
-- Both positive and negative test cases are covered
-- MCP server error handling is implemented (though not fully testable in this environment)
-- HR database error handling is improved and tested
+The current repository validates these improvements through:
+
+- REST pytest coverage for booking, user, flight, database, and Basic Auth paths
+- compose-based OAuth smoke coverage for the REST and MCP paths
+- compose-based Basic Auth smoke coverage for both backends and both web UIs
+- direct MCP verification through `local-container/mcp_test_app.py`
+- manual HR API checks against `http://localhost:8081`

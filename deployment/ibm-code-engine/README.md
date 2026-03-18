@@ -120,23 +120,24 @@ This package now uses an explicit phased order because some URLs are only known 
 
 1. create or select the Code Engine project
 2. create secrets and configmaps
-3. deploy Keycloak in the same Code Engine project for `oauth2` mode
-4. deploy HR, REST, and MCP first, then deploy both web UIs with the resolved public backend URLs
-5. sync the Keycloak client with the final public UI URLs
-6. print the final summary and smoke-test commands
+3. when `DEPLOY_ARTIFACT_MODE=prebuilt_images`, build and push the five Galaxium service images to IBM Cloud Container Registry
+4. deploy Keycloak in the same Code Engine project for `oauth2` mode
+5. deploy HR, REST, and MCP first, then deploy both web UIs with the resolved public backend URLs
+6. sync the Keycloak client with the final public UI URLs
+7. print the final summary and smoke-test commands
 
 This follows the same practical issue from older Code Engine automation: public routes are deployment outputs, so later steps must read them back before configuring dependent apps.
 
 ## Current Service Mapping
 
-| Component | Source | Port | Notes |
+| Component | Artifact Source | Port | Notes |
 | --- | --- | --- | --- |
 | Keycloak | `quay.io/keycloak/keycloak:26.0` | `8080` | Deployed in the same Code Engine project by default for `oauth2` mode |
-| HR API | local source `HR_database/` | `8081` | File-backed data is ephemeral without a mounted data store |
-| Booking REST API | local source `booking_system_rest/` | `8082` | Supports `AUTH_MODE=oauth2` or `AUTH_MODE=basic` |
-| Booking MCP server | local source `booking_system_mcp/` | `8084` | Public MCP endpoint stays `${MCP_URL}/mcp` with Streamable HTTP |
-| REST Web UI | local source `galaxium-booking-web-app/` | `8083` | Supports OAuth browser login or Basic Auth guest mode |
-| MCP Web UI | local source `galaxium-booking-web-app-mcp/` | `8085` | Uses the direct Python MCP client over Streamable HTTP |
+| HR API | local source `HR_database/` or prebuilt ICR image | `8081` | File-backed data is ephemeral without a mounted data store |
+| Booking REST API | local source `booking_system_rest/` or prebuilt ICR image | `8082` | Supports `AUTH_MODE=oauth2` or `AUTH_MODE=basic` |
+| Booking MCP server | local source `booking_system_mcp/` or prebuilt ICR image | `8084` | Public MCP endpoint stays `${MCP_URL}/mcp` with Streamable HTTP |
+| REST Web UI | local source `galaxium-booking-web-app/` or prebuilt ICR image | `8083` | Supports OAuth browser login or Basic Auth guest mode |
+| MCP Web UI | local source `galaxium-booking-web-app-mcp/` or prebuilt ICR image | `8085` | Uses the direct Python MCP client over Streamable HTTP |
 
 ## Files
 
@@ -144,6 +145,7 @@ This follows the same practical issue from older Code Engine automation: public 
   - Copy this to `deploy.env` and fill in the values.
 - [`scripts/00-prereqs.sh`](./scripts/00-prereqs.sh)
   - Check required local commands, verify the Code Engine plugin, and show whether the deployment will use `IBM_CLOUD_API_KEY` or an existing interactive `ibmcloud login` session.
+  - In `prebuilt_images` mode, also checks the Container Registry plugin and the selected container client.
 - [`scripts/01-project.sh`](./scripts/01-project.sh)
   - Target IBM Cloud and create or select the Code Engine project.
 - [`scripts/02-config-and-secrets.sh`](./scripts/02-config-and-secrets.sh)
@@ -207,6 +209,15 @@ ibmcloud version
 ibmcloud plugin show code-engine
 ibmcloud plugin list
 ```
+
+Additional CLI checks for `DEPLOY_ARTIFACT_MODE=prebuilt_images`:
+
+```sh
+ibmcloud plugin show container-registry
+docker version
+```
+
+If you use `CONTAINER_CLIENT=podman`, replace `docker version` with `podman version`.
 
 ## CLI Compatibility Check
 
@@ -279,8 +290,29 @@ Main variables in `deploy.env`:
 - `ICR_REGISTRY_SECRET_NAME`
   - Code Engine registry secret used to pull the private images
 
+- `ICR_REGISTRY_USERNAME`
+  - Defaults to `iamapikey`
+  - Used only in `prebuilt_images` mode when the Code Engine registry secret is created
+
+- `ICR_REGISTRY_PASSWORD`
+  - Optional
+  - Leave it empty to reuse `IBM_CLOUD_API_KEY`
+  - Set it explicitly when registry authentication must differ from the IBM Cloud login credential
+
 - `IMAGE_TAG`
   - Shared tag that is applied to all pushed Galaxium service images
+
+- `CONTAINER_CLIENT`
+  - `docker` or `podman`
+  - Used only in `prebuilt_images` mode
+
+- `CONTAINER_PLATFORM`
+  - Defaults to `linux/amd64`
+  - Used only in `prebuilt_images` mode to reduce registry and Code Engine compatibility risk
+
+- `HR_IMAGE_REPOSITORY`, `BOOKING_API_IMAGE_REPOSITORY`, `MCP_IMAGE_REPOSITORY`, `WEB_APP_IMAGE_REPOSITORY`, `WEB_APP_MCP_IMAGE_REPOSITORY`
+  - Repository names inside the selected IBM Cloud Container Registry namespace
+  - Used only in `prebuilt_images` mode
 
 - `STACK_AUTH_MODE`
   - `oauth2` or `basic`
@@ -329,11 +361,13 @@ These checks were completed locally:
 - the env template was updated to the current auth modes
 - the README was synced with the scripts
 - shell syntax validation was run on the deployment scripts
+- dry environment validation was run for both `source_build` and `prebuilt_images`
 
 These checks were not completed here:
 
 - live `ibmcloud` CLI execution
-- live Code Engine builds
+- live Code Engine source builds
+- live local image build and push to IBM Cloud Container Registry
 - live Keycloak rollout on IBM Cloud
 - live public URL smoke tests on IBM Cloud
 

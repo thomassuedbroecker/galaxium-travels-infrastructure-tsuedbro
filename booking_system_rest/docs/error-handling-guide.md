@@ -75,10 +75,15 @@ Similar improvements were made to the MCP server tools, with error messages adap
 
 ## Testing Updates
 
-All test files have been updated to verify the new error message content:
-- `test_booking_system.py` - Updated assertions for booking-related errors
-- `test_user_management.py` - Updated assertions for user-related errors
-- Tests now verify both the error status codes and the specific content of error messages
+Relevant REST tests now verify the error-handling behavior through:
+
+- `test_booking_system.py` - booking and cancellation errors
+- `test_user_management.py` - user lookup and registration errors
+- `test_flight_management.py` - flight lookup and seat-availability behavior
+- `test_database.py` - initialization and persistence expectations
+- `test_auth_modes.py` - Basic Auth validation and request enforcement
+
+Repo-level smoke coverage also exercises the active REST and MCP auth/error paths through the compose verification scripts and `local-container/mcp_test_app.py`.
 
 ## Implementation Notes
 

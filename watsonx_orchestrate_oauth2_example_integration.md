@@ -1,91 +1,106 @@
-# Keycloak Redirect URI Configuration - "MCP booking server with watsonx Orchestrate via OAuth2"
+# Keycloak Redirect URI Configuration for LAN OAuth and MCP Inspector
 
-## Problem
-When integrating MCP server with watsonx Orchestrate via OAuth2, the Keycloak client must have the correct redirect URIs configured to match the actual IP address being used.
+This note explains the current redirect-URI detail that matters when you use the repository over a LAN IP or DNS name.
 
-## Solution
-Add the following redirect URIs to the Keycloak `web-app-proxy` client configuration:
+## What This Applies To
 
-1. Get your local network IP address.
+This is mainly needed for browser-based OAuth clients such as MCP Inspector on port `6274`.
+
+For service-to-service clients such as watsonx Orchestrate using client credentials, a redirect URI is usually not the main issue. In that case, focus on:
+
+- the public token URL
+- the client ID and secret
+- the required audience for the MCP server
+- the public MCP endpoint at `http://<HOST>:8084/mcp`
+
+For the full server-to-server setup background, see [ai_generated_documentation/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./ai_generated_documentation/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md).
+
+## Current Repo Defaults
+
+The local realm file already includes these inspector callback URLs:
+
+- `http://localhost:6274/oauth/callback`
+- `http://localhost:6274/oauth/callback/debug`
+- `http://127.0.0.1:6274/oauth/callback`
+- `http://127.0.0.1:6274/oauth/callback/debug`
+
+Source: `local-container/keycloak/realm/galaxium-realm.json`
+
+If you use a LAN IP or DNS name instead of `localhost`, add matching callback URIs for that host.
+
+## Example for a LAN Host
+
+1. Get the host IP address:
 
 ```sh
 IP_LOCAL_NETWORK_ADDRESS=$(ipconfig getifaddr en0)
-echo ${IP_LOCAL_NETWORK_ADDRESS}
-192.168.2.53:6274
+echo "${IP_LOCAL_NETWORK_ADDRESS}"
 ```
 
-2. Then these are the URI to add:
+2. Add these redirect URIs to the Keycloak client `web-app-proxy`:
 
+```text
+http://<LAN_HOST>:6274/oauth/callback
+http://<LAN_HOST>:6274/oauth/callback/debug
 ```
-http://192.168.2.53:6274/oauth/callback/debug
+
+Example:
+
+```text
 http://192.168.2.53:6274/oauth/callback
+http://192.168.2.53:6274/oauth/callback/debug
 ```
 
 ## Why This Is Required
-- **MCP Inspector:** Uses port 6274 for OAuth2 callback handling
-- **IP Address Matching:** Keycloak validates redirect URIs strictly - must match the actual IP address used in requests
-- **OAuth2 Flow:** Authorization Code flow requires a valid redirect URI for the callback after authentication
 
-## Configuration Steps
-
-### Option 1: Via Keycloak Admin UI
-1. Navigate to Keycloak Admin Console: `http://192.168.2.53:8086/admin`
-2. Select realm: `galaxium`
-3. Go to: Clients → `web-app-proxy`
-4. Scroll to: "Valid redirect URIs"
-5. Add both URIs:
-   - `http://192.168.2.53:6274/oauth/callback/debug`
-   - `http://192.168.2.53:6274/oauth/callback`
-6. Click "Save"
-
-### Option 2: Via Realm Export/Import
-Update the realm configuration JSON to include:
-
-```json
-{
-  "clientId": "web-app-proxy",
-  "redirectUris": [
-    "http://127.0.0.1:6274/oauth/callback",
-    "http://127.0.0.1:6274/oauth/callback/debug",
-    "http://localhost:6274/oauth/callback",
-    "http://localhost:6274/oauth/callback/debug",
-    "http://192.168.2.53:6274/oauth/callback",
-    "http://192.168.2.53:6274/oauth/callback/debug"
-  ]
-}
-```
+- Keycloak validates redirect URIs strictly.
+- MCP Inspector uses port `6274` for the OAuth browser callback.
+- The callback host must match the real host or IP you used to start Inspector.
 
 ## Verification
-After adding the redirect URIs, test the OAuth2 flow:
 
-```bash
-# 1. Get token (should work)
-curl -X POST "http://192.168.2.53:8086/realms/galaxium/protocol/openid-connect/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=password" \
-  -d "client_id=web-app-proxy" \
-  -d "client_secret=web-app-proxy-secret" \
-  -d "username=demo-user" \
-  -d "password=demo-user-password" \
-  -d "scope=openid profile email"
+1. Verify Keycloak discovery over the LAN URL:
 
-# 2. Test MCP server access (should return 200 OK)
-TOKEN="<access_token_from_above>"
-curl -H "Authorization: Bearer $TOKEN" "http://192.168.2.53:8084/"
+```sh
+curl -fsS http://192.168.2.53:8086/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
 ```
 
+2. Verify the MCP metadata root over the same LAN host:
+
+```sh
+curl -fsS http://192.168.2.53:8084/.well-known/oauth-authorization-server | jq .
+```
+
+3. Verify authenticated MCP access through the current public endpoint:
+
+```sh
+python3 local-container/mcp_test_app.py \
+  --mcp-url http://192.168.2.53:8084/mcp \
+  --token-source http \
+  --token-url http://192.168.2.53:8086/realms/galaxium/protocol/openid-connect/token
+```
+
+4. If you use MCP Inspector, keep:
+
+- connection mode: `Via Proxy`
+- transport: `Streamable HTTP`
+- MCP URL: `http://192.168.2.53:8084/mcp`
+
 ## Common Errors Without This Configuration
-- `invalid_redirect_uri` - Redirect URI not registered in Keycloak
-- `403 Forbidden` - OAuth2 callback fails due to URI mismatch
-- MCP Inspector unable to complete OAuth2 flow
+
+- `invalid_redirect_uri`
+- OAuth browser callback fails after login
+- MCP Inspector cannot complete the OAuth flow
 
 ## Related Files
-- Infrastructure realm config: `infrastructure/galaxium-travels-infrastructure-tsuedbro/local-container/keycloak/realm/galaxium-realm-orchestrate-config.json`
-- Connection definition: `bob-agent-tools-generation/connection-orchestrate-booking-mcp.json`
-- Environment variables: `bob-agent-tools-generation/.env.sample`
+
+- Realm import: `local-container/keycloak/realm/galaxium-realm.json`
+- VM/LAN compose overlay: `local-container/docker_compose.vm-oauth.yaml`
+- Remote verifier: `local-container/verify-keycloak-auth-remote.sh`
+- Inspector helper: `local-container/start-mcp-inspector-ui.sh`
 
 ## Notes
-- Port 6274 is the standard port used by MCP Inspector for OAuth2 callbacks
-- Always use the actual IP address that will be used in production/testing
-- For local development, include localhost, 127.0.0.1, and LAN IP addresses
-- For watsonx Orchestrate integration, the redirect URI may need to point to the Orchestrate callback endpoint
+
+- Keep the MCP public endpoint on `/mcp`.
+- Keep the MCP transport on `Streamable HTTP`.
+- In the Code Engine deployment package, `deployment/ibm-code-engine/scripts/05-sync-keycloak-client.sh` updates the web UI client URLs after deploy, but extra inspector callback URIs may still need to be added if you use a non-default host.

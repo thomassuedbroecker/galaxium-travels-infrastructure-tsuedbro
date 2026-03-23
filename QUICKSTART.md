@@ -178,37 +178,64 @@ For the detailed diagram and the explanation of why this OAuth setup works, see 
 
 Use this option when you want the REST API, MCP server, and both web UIs without Keycloak browser login.
 
-### 1. Start the stack
+### 1. Prepare the Basic Auth env file
 
 ```sh
-docker compose -f local-container/docker_compose.basic-auth.yaml up --build -d
+cp local-container/basic-auth.env.template local-container/basic-auth.env
 ```
 
-### 2. Open the URLs
+Edit `local-container/basic-auth.env` if you want credentials other than the demo defaults.
+
+### 2. Start the stack
+
+```sh
+docker compose --env-file local-container/basic-auth.env \
+  -f local-container/docker_compose.basic-auth.yaml \
+  up --build -d
+```
+
+### 3. Open the URLs
 
 - Booking REST API docs: `http://localhost:8082/docs`
 - REST web UI: `http://localhost:8083`
 - MCP endpoint: `http://localhost:8084/mcp`
 - MCP web UI: `http://localhost:8085`
 
-### 3. Use the shared demo credentials
+### 4. Use the shared demo credentials
 
 - Basic Auth user: `demo-basic-user`
 - Basic Auth password: `demo-basic-password`
 
 The two web UIs keep a guest traveler profile in the browser session and send the shared Basic Auth header to the backend.
 
-### 4. Run the Basic Auth smoke checks
+If another VM or LAN client reaches this Basic Auth stack through the host IP or DNS name, prepare the matching client env file:
+
+```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
+cp local-container/vm-client-basic-auth.env.template local-container/vm-client-basic-auth.env
+```
+
+Edit `local-container/vm-client-basic-auth.env`:
+
+```sh
+MCP_SERVER_URL=http://${LOCAL_NET_IP}:8084/mcp
+BASIC_AUTH_USERNAME=demo-basic-user
+BASIC_AUTH_PASSWORD=demo-basic-password
+```
+
+### 5. Run the Basic Auth smoke checks
 
 ```sh
 bash local-container/verify-basic-auth-backends.sh
 bash local-container/verify-basic-auth-frontends-and-inspector.sh
 ```
 
-### 5. Stop the stack
+### 6. Stop the stack
 
 ```sh
-docker compose -f local-container/docker_compose.basic-auth.yaml down
+docker compose --env-file local-container/basic-auth.env \
+  -f local-container/docker_compose.basic-auth.yaml \
+  down
 ```
 
 ## Run The Tests

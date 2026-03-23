@@ -227,9 +227,20 @@ Use this when:
 
 ### Start
 
+Prepare the env file:
+
 ```sh
 cd local-container
-docker compose -f docker_compose.basic-auth.yaml up --build -d
+cp basic-auth.env.template basic-auth.env
+```
+
+Edit `basic-auth.env` if you want credentials other than the demo defaults.
+
+Start the stack:
+
+```sh
+cd local-container
+docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d
 ```
 
 ### URLs
@@ -245,6 +256,21 @@ docker compose -f docker_compose.basic-auth.yaml up --build -d
 - Basic Auth password: `demo-basic-password`
 
 In this mode the web UIs do not require browser login. Instead, each UI stores a guest traveler profile in the browser session and uses the shared backend Basic Auth credentials for backend calls.
+
+If a VM-side client or another machine reaches this Basic Auth stack through the host IP or DNS name, use the matching client env template:
+
+```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
+cp vm-client-basic-auth.env.template vm-client-basic-auth.env
+```
+
+Edit `vm-client-basic-auth.env`:
+
+```sh
+MCP_SERVER_URL=http://${LOCAL_NET_IP}:8084/mcp
+BASIC_AUTH_USERNAME=demo-basic-user
+BASIC_AUTH_PASSWORD=demo-basic-password
+```
 
 ### Verify
 
@@ -278,7 +304,8 @@ python3 mcp_test_app.py
 Run the Basic Auth backend variant:
 
 ```sh
-docker compose -f docker_compose.basic-auth.yaml up --build -d
+cp basic-auth.env.template basic-auth.env
+docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d
 bash verify-basic-auth-backends.sh
 bash verify-basic-auth-frontends-and-inspector.sh
 ```
@@ -345,6 +372,12 @@ docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
   down
+```
+
+Stop the Basic Auth stack:
+
+```sh
+docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml down
 ```
 
 ## Related Docs

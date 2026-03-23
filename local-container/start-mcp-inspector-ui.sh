@@ -5,6 +5,19 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${RESULTS_DIR:-${SCRIPT_DIR}/test-results}"
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
 CONFIG_FILE="${RESULTS_DIR}/inspector-ui-config-${RUN_ID}.md"
+BASIC_AUTH_ENV_FILE="${BASIC_AUTH_ENV_FILE:-${SCRIPT_DIR}/basic-auth.env}"
+
+load_env_file_if_present() {
+  local env_file="$1"
+  if [[ -f "${env_file}" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "${env_file}"
+    set +a
+  fi
+}
+
+load_env_file_if_present "${BASIC_AUTH_ENV_FILE}"
 
 MCP_URL="${MCP_URL:-http://localhost:8084/mcp}"
 MCP_AUTH_SCHEME="${MCP_AUTH_SCHEME:-bearer}"

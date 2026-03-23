@@ -46,15 +46,15 @@ class TestUserRegistration:
         """Test registration with missing required fields."""
         # Missing name
         response1 = client.post("/register", json={"email": "test@example.com"})
-        assert response1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response1.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         
         # Missing email
         response2 = client.post("/register", json={"name": "Test User"})
-        assert response2.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response2.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         
         # Empty request
         response3 = client.post("/register", json={})
-        assert response3.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response3.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     
     def test_register_user_invalid_email_format(self, client):
         """Test registration with invalid email format."""
@@ -69,7 +69,7 @@ class TestUserRegistration:
         for email in invalid_emails:
             response = client.post("/register", json={"name": "Test User", "email": email})
             # Note: FastAPI with Pydantic will validate email format
-            assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 class TestUserRetrieval:
     """Test user retrieval functionality."""
@@ -107,15 +107,15 @@ class TestUserRetrieval:
         """Test user retrieval with missing parameters."""
         # Missing name
         response1 = client.get("/user_id?email=test@example.com")
-        assert response1.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response1.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         
         # Missing email
         response2 = client.get("/user_id?name=Test User")
-        assert response2.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response2.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         
         # No parameters
         response3 = client.get("/user_id")
-        assert response3.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response3.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     
     def test_get_user_empty_parameters(self, client):
         """Test user retrieval with empty parameters."""

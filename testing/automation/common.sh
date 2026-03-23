@@ -29,6 +29,7 @@ cleanup_stack() {
 }
 
 ensure_results_dir() {
+  mkdir -p "${GENERATED_RESULTS_DIR}/contracts"
   mkdir -p "${GENERATED_RESULTS_DIR}/rest"
   mkdir -p "${GENERATED_RESULTS_DIR}/ui"
   mkdir -p "${GENERATED_RESULTS_DIR}/mcp"

@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/docker_compose.basic-auth.yaml"
+BASIC_AUTH_ENV_FILE="${BASIC_AUTH_ENV_FILE:-${SCRIPT_DIR}/basic-auth.env}"
 
 REST_ROOT_URL="http://localhost:8083"
 MCP_ROOT_URL="http://localhost:8085"
@@ -11,11 +12,27 @@ MCP_HEALTH_URL="${MCP_ROOT_URL}/api/health"
 REST_FLIGHTS_URL="${REST_ROOT_URL}/api/flights"
 MCP_FLIGHTS_URL="${MCP_ROOT_URL}/api/flights"
 
+load_env_file_if_present() {
+  local env_file="$1"
+  if [[ -f "${env_file}" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "${env_file}"
+    set +a
+  fi
+}
+
+load_env_file_if_present "${BASIC_AUTH_ENV_FILE}"
+
 BASIC_AUTH_USERNAME="${BASIC_AUTH_USERNAME:-demo-basic-user}"
 BASIC_AUTH_PASSWORD="${BASIC_AUTH_PASSWORD:-demo-basic-password}"
+COMPOSE_ENV_ARGS=()
+if [[ -f "${BASIC_AUTH_ENV_FILE}" ]]; then
+  COMPOSE_ENV_ARGS=(--env-file "${BASIC_AUTH_ENV_FILE}")
+fi
 
 cleanup() {
-  docker compose -f "${COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
+  docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
 }
 
 fail() {
@@ -208,7 +225,7 @@ fi
 trap cleanup EXIT
 
 echo "Starting basic-auth stack with frontends..."
-docker compose -f "${COMPOSE_FILE}" up --build -d booking_system booking_system_mcp web_app web_app_mcp
+docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${COMPOSE_FILE}" up --build -d booking_system booking_system_mcp web_app web_app_mcp
 
 wait_for_http "${REST_HEALTH_URL}" "200"
 wait_for_http "${MCP_HEALTH_URL}" "200"

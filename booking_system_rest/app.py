@@ -1,10 +1,11 @@
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional, Union
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from sqlalchemy.orm import Session
 
 from auth import require_authenticated_request, validate_auth_configuration
@@ -14,21 +15,25 @@ from models import Flight as FlightModel
 from models import User as UserModel
 from seed import seed
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    validate_auth_configuration()
+    init_db()
+    seed()
+    yield
+
+
 app = FastAPI(
     title="Galaxium Travels Booking API",
     description="API for booking flights and managing users",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 
-@app.on_event("startup")
-def on_startup():
-    validate_auth_configuration()
-    init_db()
-    seed()
-
-
 class Flight(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     flight_id: int
     origin: str
     destination: str
@@ -37,10 +42,6 @@ class Flight(BaseModel):
     price: int
     seats_available: int
 
-    class Config:
-        from_attributes = True
-
-
 class BookingRequest(BaseModel):
     user_id: int
     name: str
@@ -48,14 +49,13 @@ class BookingRequest(BaseModel):
 
 
 class Booking(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     booking_id: int
     user_id: int
     flight_id: int
     status: str
     booking_time: str
-
-    class Config:
-        from_attributes = True
 
 
 class UserRegistration(BaseModel):
@@ -64,12 +64,11 @@ class UserRegistration(BaseModel):
 
 
 class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user_id: int
     name: str
     email: str
-
-    class Config:
-        from_attributes = True
 
 
 class ErrorResponse(BaseModel):
@@ -87,7 +86,7 @@ def create_error_response(error: str, error_code: str, details: Optional[str] = 
             error=error,
             error_code=error_code,
             details=details,
-        ).dict(),
+        ).model_dump(),
     )
 
 

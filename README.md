@@ -19,6 +19,8 @@ The point is that you can compare both approaches on the same business case and 
 
 Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./architecture/galaxim-travel-infrastructure.drawio)
 
+![](./images/galaxim-travel-infrastructure-container-architecture.png)
+
 ## Why This Repo Is Useful
 
 - You can compare REST and MCP in one small, understandable business domain.

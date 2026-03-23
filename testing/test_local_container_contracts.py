@@ -113,6 +113,13 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("OAuth or Basic Auth", content)
         self.assertIn("OAuth token validation or Basic Auth", content)
 
+    def test_watsonx_note_documents_basic_auth_mcp_variant(self) -> None:
+        content = _read("watsonx_orchestrate_basic_auth_example_integration.md")
+        self.assertIn("docker_compose.basic-auth.yaml", content)
+        self.assertIn("vm-client-basic-auth.env.template", content)
+        self.assertIn("--auth-scheme basic", content)
+        self.assertIn("no Keycloak redirect URI setup is required", content)
+
     def test_repo_aggregate_runner_includes_local_container_contract_suite(self) -> None:
         runner = _read("testing/automation/run-all-tests.sh")
         self.assertIn('bash "${SCRIPT_DIR}/run-local-container-contract-tests.sh"', runner)

@@ -191,7 +191,7 @@ Edit `local-container/basic-auth.env` if you want credentials other than the dem
 ```sh
 docker compose --env-file local-container/basic-auth.env \
   -f local-container/docker_compose.basic-auth.yaml \
-  up --build -d
+  up --build
 ```
 
 ### 3. Open the URLs

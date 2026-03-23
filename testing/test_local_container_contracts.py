@@ -85,12 +85,29 @@ class LocalContainerContractTests(unittest.TestCase):
                 msg=script_path,
             )
 
+    def test_keycloak_ui_basic_auth_mcp_overlay_exists(self) -> None:
+        overlay_path = LOCAL_CONTAINER_DIR / "docker_compose.mcp-ui-keycloak-basic.yaml"
+        self.assertTrue(overlay_path.exists())
+        content = overlay_path.read_text(encoding="utf-8")
+        self.assertIn("AUTH_MODE=basic", content)
+        self.assertIn("BACKEND_AUTH_MODE=basic", content)
+        self.assertIn("FRONTEND_AUTH_REQUIRED=true", content)
+
+    def test_keycloak_ui_basic_auth_mcp_verifier_uses_overlay_and_basic_env(self) -> None:
+        content = _read("local-container/verify-keycloak-ui-basic-auth-mcp.sh")
+        self.assertIn('BASIC_AUTH_ENV_FILE="${BASIC_AUTH_ENV_FILE:-${SCRIPT_DIR}/basic-auth.env}"', content)
+        self.assertIn('load_env_file_if_present "${BASIC_AUTH_ENV_FILE}"', content)
+        self.assertIn('docker_compose.mcp-ui-keycloak-basic.yaml', content)
+        self.assertIn('--auth-scheme basic', content)
+
     def test_quickstart_documents_option_specific_env_templates(self) -> None:
         content = _read("QUICKSTART.md")
         self.assertIn("vm-client.env.template", content)
         self.assertIn("basic-auth.env.template", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
         self.assertIn("docker compose --env-file local-container/basic-auth.env \\", content)
+        self.assertIn("docker_compose.mcp-ui-keycloak-basic.yaml", content)
+        self.assertIn("verify-keycloak-ui-basic-auth-mcp.sh", content)
 
     def test_local_container_readme_documents_option_specific_env_templates(self) -> None:
         content = _read("local-container/README.md")
@@ -98,10 +115,13 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("basic-auth.env.template", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
         self.assertIn("docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d", content)
+        self.assertIn("docker_compose.mcp-ui-keycloak-basic.yaml", content)
+        self.assertIn("verify-keycloak-ui-basic-auth-mcp.sh", content)
 
     def test_repo_readme_documents_auth_options_and_env_templates(self) -> None:
         content = _read("README.md")
         self.assertIn("shared Basic Auth", content)
+        self.assertIn("Keycloak UI -> MCP Basic Auth", content)
         self.assertIn("vm-client.env.template", content)
         self.assertIn("basic-auth.env.template", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
@@ -130,6 +150,10 @@ class LocalContainerContractTests(unittest.TestCase):
         content = runner_path.read_text(encoding="utf-8")
         self.assertIn("python3 -m unittest testing.test_local_container_contracts -v", content)
         self.assertIn('LOG_FILE="${GENERATED_RESULTS_DIR}/contracts/local-container-contracts-${RUN_ID}.log"', content)
+
+    def test_mcp_integration_runner_includes_mixed_mode_verifier(self) -> None:
+        runner = _read("testing/automation/run-mcp-integration-tests.sh")
+        self.assertIn('bash "${LOCAL_CONTAINER_DIR}/verify-keycloak-ui-basic-auth-mcp.sh" \\', runner)
 
 
 if __name__ == "__main__":

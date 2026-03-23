@@ -1,0 +1,18 @@
+services:
+  booking_system_mcp:
+    environment:
+      - AUTH_MODE=basic
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+
+  web_app_mcp:
+    environment:
+      - BACKEND_AUTH_MODE=basic
+      - FRONTEND_AUTH_REQUIRED=true
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+      - OIDC_TOKEN_URL=http://keycloak:8080/realms/galaxium/protocol/openid-connect/token
+      - OIDC_CLIENT_ID=web-app-proxy
+      - OIDC_CLIENT_SECRET=web-app-proxy-secret
+      - OIDC_SCOPE=openid profile email
+      - FLASK_SECRET_KEY=local-dev-secret-key

@@ -15,10 +15,12 @@ flowchart TD
     Start["Start here"] --> Local["Option 1<br/>Local machine"]
     Start --> Lan["Option 2<br/>Host machine + VM/LAN OAuth"]
     Start --> Basic["Option 3<br/>Local Basic Auth"]
+    Start --> Mixed["Option 4<br/>Keycloak UI + MCP Basic Auth"]
     Local --> Rest["REST UI<br/>http://localhost:8083"]
     Local --> Mcp["MCP UI<br/>http://localhost:8085"]
     Lan --> Public["Use host IP or DNS name<br/>for Keycloak and MCP"]
     Basic --> Guest["Guest traveler session<br/>no Keycloak browser login"]
+    Mixed --> MixedFlow["Keycloak browser login<br/>shared Basic Auth to MCP"]
 ```
 
 ## Option 1: Local Machine
@@ -238,6 +240,55 @@ docker compose --env-file local-container/basic-auth.env \
   down
 ```
 
+## Option 4: Keycloak UI + MCP Basic Auth
+
+Use this option when you want the MCP web UI to keep the traveler browser login in Keycloak, but the MCP backend itself should accept the shared Basic Auth header.
+
+### 1. Prepare the Basic Auth env file
+
+```sh
+cp local-container/basic-auth.env.template local-container/basic-auth.env
+```
+
+Edit `local-container/basic-auth.env` if you want credentials other than the demo defaults.
+
+### 2. Start the mixed stack
+
+```sh
+docker compose --env-file local-container/basic-auth.env \
+  -f local-container/docker_compose.yaml \
+  -f local-container/docker_compose.mcp-ui-keycloak-basic.yaml \
+  up --build keycloak booking_system_mcp web_app_mcp
+```
+
+### 3. Open the URLs
+
+- Keycloak: `http://localhost:8086`
+- MCP endpoint: `http://localhost:8084/mcp`
+- MCP web UI: `http://localhost:8085`
+
+### 4. Use the two credential sets
+
+- Traveler user for the browser login: `demo-user` / `demo-user-password`
+- Shared Basic Auth for the MCP backend: `demo-basic-user` / `demo-basic-password`
+
+In this mode the traveler still signs in through Keycloak at the browser, but the MCP UI sends the shared Basic Auth header to the MCP backend on tool calls.
+
+### 5. Run the mixed-mode smoke check
+
+```sh
+bash local-container/verify-keycloak-ui-basic-auth-mcp.sh
+```
+
+### 6. Stop the mixed stack
+
+```sh
+docker compose --env-file local-container/basic-auth.env \
+  -f local-container/docker_compose.yaml \
+  -f local-container/docker_compose.mcp-ui-keycloak-basic.yaml \
+  down
+```
+
 ## Run The Tests
 
 Run the local Basic Auth smoke checks:
@@ -245,6 +296,12 @@ Run the local Basic Auth smoke checks:
 ```sh
 bash local-container/verify-basic-auth-backends.sh
 bash local-container/verify-basic-auth-frontends-and-inspector.sh
+```
+
+Run the Keycloak UI + MCP Basic Auth smoke check:
+
+```sh
+bash local-container/verify-keycloak-ui-basic-auth-mcp.sh
 ```
 
 Run the WebUI auth matrix with the local template:

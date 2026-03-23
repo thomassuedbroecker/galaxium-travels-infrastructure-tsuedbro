@@ -12,6 +12,7 @@ In this repository you can run both styles side by side:
 - an MCP backend and an MCP-based web UI
 - the same Keycloak OAuth path for both styles
 - an additional Basic Auth variant for the REST backend, MCP server, REST UI, and MCP UI
+- a mixed MCP option where the browser user logs in with Keycloak but the MCP backend itself uses shared Basic Auth
 
 This matches the idea discussed in the blog post [Should MCP replace REST for AI-ready applications?](https://suedbroecker.net/2026/03/10/should-mcp-replace-rest-for-ai-ready-applications/).
 The point is not that MCP always replaces REST.
@@ -25,6 +26,7 @@ Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./a
 
 - You can compare REST and MCP in one small, understandable business domain.
 - You can test browser users, backends, and AI-style tool access with both Keycloak OAuth and shared Basic Auth.
+- You can compare pure OAuth, pure Basic Auth, and a mixed `Keycloak UI -> MCP Basic Auth` path in the same demo.
 - You can run everything on one local machine.
 - You can also prepare the stack for a VM or LAN setup where OAuth needs public host URLs.
 - You can choose the matching env template for each option: `local-container/vm-client.env.template`, `local-container/basic-auth.env.template`, or `local-container/vm-client-basic-auth.env.template`.
@@ -44,6 +46,7 @@ flowchart LR
     MCP -. "OAuth token validation" .-> KC
     UIREST -. "Basic Auth guest + shared backend creds" .-> REST
     UIMCP -. "Basic Auth guest + shared backend creds" .-> MCP
+    UIMCP -. "Keycloak browser login + Basic Auth backend" .-> MCP
     Agent -. "VM/LAN OAuth uses vm-client.env" .-> KC
     Agent -. "VM/LAN Basic Auth uses vm-client-basic-auth.env" .-> MCP
 ```
@@ -73,11 +76,13 @@ flowchart LR
 Current change-set status as of `2026-03-23`:
 
 - Aggregate repo test runner passed on `2026-03-23`.
-- Local-container contract checks passed on `2026-03-23` with `9/9` tests green.
+- Local-container contract checks passed on `2026-03-23` with `15/15` tests green.
 - REST API pytest suite passed on `2026-03-23` with `37` tests green and no pytest warning summary.
-- Local OAuth smoke rerun passed on `2026-03-23`.
+- Local UI OAuth smoke rerun passed on `2026-03-23`.
+- Local MCP OAuth smoke rerun passed on `2026-03-23`.
 - Local Basic Auth backend smoke rerun passed on `2026-03-23`.
 - Local Basic Auth frontend plus MCP Inspector smoke rerun passed on `2026-03-23`.
+- Local Keycloak UI plus MCP Basic Auth smoke rerun passed on `2026-03-23`.
 - VM / LAN remote auth verification rerun passed on `2026-03-23` against `192.168.178.154`.
 
 The latest full eight-variant WebUI auth matrix rerun is still the `2026-03-18` run:
@@ -99,12 +104,14 @@ Status meaning:
 
 | Status | Scope | Result |
 | --- | --- | --- |
-| `🟢` | Aggregate repo regression slice | `bash testing/automation/run-all-tests.sh` passed on `2026-03-23`, including local-container contracts, REST pytest, UI OAuth smoke, and MCP OAuth smoke |
-| `🟢` | Local-container contract checks | `bash testing/automation/run-local-container-contract-tests.sh` passed on `2026-03-23` with `9/9` tests green |
-| `🟢` | REST API pytest suite | `bash testing/automation/run-rest-api-tests.sh` passed on `2026-03-23` with `37` tests green and no pytest warning summary |
-| `🟢` | Local compose OAuth smoke test | `bash local-container/verify-keycloak-auth-e2e.sh` passed end to end on `2026-03-23`, including REST auth, MCP auth, traveler web login, Inspector client sync, and OAuth metadata discovery. Report: `local-container/test-results/oauth-e2e-all-20260323T172444Z.md` |
+| `🟢` | Aggregate repo regression slice | `bash testing/automation/run-all-tests.sh` passed on `2026-03-23`, including local-container contracts, REST pytest, UI OAuth smoke, MCP OAuth smoke, and Keycloak UI -> MCP Basic Auth smoke. Artifacts: `local-container-contracts-20260323T200030Z.log`, `rest-api-pytest-20260323T200031Z.log`, `oauth-e2e-ui-rest-20260323T200045Z.md`, `oauth-e2e-mcp-20260323T200102Z.md`, `keycloak-ui-basic-auth-mcp-20260323T200115Z.md` |
+| `🟢` | Local-container contract checks | `bash testing/automation/run-local-container-contract-tests.sh` passed on `2026-03-23` with `15/15` tests green. Log: `testing/results/generated/contracts/local-container-contracts-20260323T200030Z.log` |
+| `🟢` | REST API pytest suite | `bash testing/automation/run-rest-api-tests.sh` passed on `2026-03-23` with `37` tests green and no pytest warning summary. Log: `testing/results/generated/rest/rest-api-pytest-20260323T200031Z.log` |
+| `🟢` | Local UI OAuth smoke test | `bash testing/automation/run-ui-behavior-tests.sh` passed on `2026-03-23`, including REST auth, traveler web login, and MCP web app traveler session checks. Report: `testing/results/generated/ui/oauth-e2e-ui-rest-20260323T200045Z.md` |
+| `🟢` | Local MCP OAuth smoke test | `bash testing/automation/run-mcp-integration-tests.sh` passed on `2026-03-23` for the MCP OAuth slice. Report: `testing/results/generated/mcp/oauth-e2e-mcp-20260323T200102Z.md` |
 | `🟢` | Local Basic Auth backend smoke test | `bash local-container/verify-basic-auth-backends.sh` passed on `2026-03-23`, including REST `401/200` checks plus authenticated MCP `initialize`, `tools/list`, and `tools/call(list_flights)` |
 | `🟢` | Local Basic Auth frontend + MCP Inspector smoke test | `bash local-container/verify-basic-auth-frontends-and-inspector.sh` passed on `2026-03-23`, including REST UI guest flow, MCP UI guest flow, and Basic Auth Inspector config generation with `Streamable HTTP` |
+| `🟢` | Local Keycloak UI -> MCP Basic Auth smoke test | `bash local-container/verify-keycloak-ui-basic-auth-mcp.sh` passed on `2026-03-23`, including Keycloak browser login on the MCP UI, authenticated flight lookup, booking flow, and direct MCP Basic Auth verification. Report: `testing/results/generated/mcp/keycloak-ui-basic-auth-mcp-20260323T200115Z.md` |
 | `🟢` | WebUI matrix unit config checks | `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v` passed on `2026-03-18` with `11/11` tests green |
 | `🟢` | Full WebUI auth matrix | Rerun passed on `2026-03-18`: `55` tests ran, `55` passed, `0` skipped |
 | `🟢` | VM / LAN remote auth verification | Rerun passed on `2026-03-23` against `192.168.178.154`, including the repo remote verifier, MCP OAuth metadata checks, and authenticated `mcp_test_app.py` over `Streamable HTTP` |
@@ -140,6 +147,12 @@ Run the local Basic Auth frontend plus Inspector smoke test:
 
 ```sh
 bash local-container/verify-basic-auth-frontends-and-inspector.sh
+```
+
+Run the Keycloak UI + MCP Basic Auth smoke test:
+
+```sh
+bash local-container/verify-keycloak-ui-basic-auth-mcp.sh
 ```
 
 Run the current aggregate repo regression slice:

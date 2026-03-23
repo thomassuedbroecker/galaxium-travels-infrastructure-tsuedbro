@@ -8,6 +8,7 @@ This folder is the main entry point for automated checks in this repository.
 - local UI behavior checks against the compose stack
 - local MCP integration checks against the compose stack
 - local Basic Auth smoke checks for backends, frontends, and MCP inspector config
+- local mixed-mode smoke for Keycloak browser login on the MCP UI with Basic Auth on the MCP backend
 - the WebUI auth matrix for:
   - REST and MCP
   - local machine and LAN-prepare environments
@@ -47,12 +48,29 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 Current verified checks are split between smoke coverage and the last full matrix run:
 
-- `2026-03-18`: `bash local-container/verify-keycloak-auth-e2e.sh`
-  - passed end to end for REST auth, MCP auth, traveler web login, inspector client sync, and OAuth metadata discovery
-- `2026-03-18`: `bash local-container/verify-basic-auth-backends.sh`
+- `2026-03-23`: `bash testing/automation/run-all-tests.sh`
+  - passed for local-container contracts, REST pytest, UI OAuth smoke, MCP OAuth smoke, and Keycloak UI -> MCP Basic Auth smoke
+  - artifacts:
+    - `testing/results/generated/contracts/local-container-contracts-20260323T200030Z.log`
+    - `testing/results/generated/rest/rest-api-pytest-20260323T200031Z.log`
+    - `testing/results/generated/ui/oauth-e2e-ui-rest-20260323T200045Z.md`
+    - `testing/results/generated/mcp/oauth-e2e-mcp-20260323T200102Z.md`
+    - `testing/results/generated/mcp/keycloak-ui-basic-auth-mcp-20260323T200115Z.md`
+- `2026-03-23`: `python3 -m unittest testing.test_local_container_contracts -v`
+  - passed with `15/15` tests green
+- `2026-03-23`: `bash testing/automation/run-ui-behavior-tests.sh`
+  - passed for the local UI OAuth slice with report `testing/results/generated/ui/oauth-e2e-ui-rest-20260323T200045Z.md`
+- `2026-03-23`: `bash testing/automation/run-mcp-integration-tests.sh`
+  - passed for the MCP OAuth slice and the mixed Keycloak UI -> MCP Basic Auth slice
+  - reports:
+    - `testing/results/generated/mcp/oauth-e2e-mcp-20260323T200102Z.md`
+    - `testing/results/generated/mcp/keycloak-ui-basic-auth-mcp-20260323T200115Z.md`
+- `2026-03-23`: `bash local-container/verify-basic-auth-backends.sh`
   - passed for REST Basic Auth and MCP Basic Auth
-- `2026-03-18`: `bash local-container/verify-basic-auth-frontends-and-inspector.sh`
+- `2026-03-23`: `bash local-container/verify-basic-auth-frontends-and-inspector.sh`
   - passed for REST UI guest flow, MCP UI guest flow, and Basic Auth inspector config generation over `Streamable HTTP`
+- `2026-03-23`: `bash local-container/verify-keycloak-ui-basic-auth-mcp.sh`
+  - passed for Keycloak browser login on the MCP UI with Basic Auth enforcement on the MCP backend
 - `2026-03-18`: `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v`
   - passed with `11/11` tests green
 - `2026-03-18`: full eight-variant WebUI auth matrix
@@ -67,10 +85,10 @@ Current verified checks are split between smoke coverage and the last full matri
     ```
   - result: `55 tests passed`
   - skipped: `0`
-- `2026-03-18`: VM / LAN remote auth verification against `192.168.2.88`
+- `2026-03-23`: VM / LAN remote auth verification against `192.168.178.154`
   - `bash local-container/verify-keycloak-auth-remote.sh` passed for booking API bearer-token enforcement, traveler web login, and authenticated web app access
   - MCP metadata checks passed for `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`
-  - `python3 local-container/mcp_test_app.py --mcp-url http://192.168.2.88:8084/mcp --token-source http --token-url http://192.168.2.88:8086/realms/galaxium/protocol/openid-connect/token` passed
+  - `python3 local-container/mcp_test_app.py --mcp-url http://192.168.178.154:8084/mcp --token-source http --token-url http://192.168.178.154:8086/realms/galaxium/protocol/openid-connect/token` passed
 
 ## Folder Structure
 
@@ -129,6 +147,12 @@ Run the local Basic Auth frontend plus inspector smoke:
 
 ```sh
 bash local-container/verify-basic-auth-frontends-and-inspector.sh
+```
+
+Run the Keycloak UI + MCP Basic Auth smoke:
+
+```sh
+bash local-container/verify-keycloak-ui-basic-auth-mcp.sh
 ```
 
 ## WebUI Auth Matrix

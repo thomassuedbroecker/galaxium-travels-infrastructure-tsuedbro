@@ -16,7 +16,7 @@
       <div class="login-copy-shell">
         <p class="login-eyebrow">Galaxium access</p>
         <h1 class="login-title">Traveler Authentication</h1>
-        <p class="login-subtitle">Sign in with your Keycloak traveler account to continue to the flight desk.</p>
+        <p class="login-subtitle">{{ login_subtitle }}</p>
         <div class="login-mode-strip">
           <span class="portal-mode-badge portal-mode-{{ frontend_mode_id }}">{{ frontend_mode_label }}</span>
           <span class="login-mode-copy">{{ frontend_mode_summary }}</span>
@@ -39,13 +39,13 @@
         </article>
         <article class="login-feature-card">
           <span class="login-feature-label">Protected flow</span>
-          <strong>Keycloak-backed browser session</strong>
-          <p>Traveler access is established before the UI sends any booking action to the secured backend.</p>
+          <strong>{{ login_flow_title }}</strong>
+          <p>{{ login_flow_copy }}</p>
         </article>
         <article class="login-feature-card">
           <span class="login-feature-label">Backend mode</span>
           <strong>{{ frontend_mode_label }}</strong>
-          <p>{{ frontend_mode_summary }}</p>
+          <p>{{ session_policy_summary }}</p>
         </article>
       </div>
     </section>
@@ -54,8 +54,8 @@
       <div class="login-form-shell">
         <div class="login-form-header">
           <p class="login-form-kicker">Traveler sign-in</p>
-          <h2>Use your realm account</h2>
-          <p>Start with the imported demo user or authenticate with another traveler account in the Galaxium realm.</p>
+          <h2>{{ login_form_heading }}</h2>
+          <p>{{ login_form_copy }}</p>
         </div>
 
         {% if error %}

@@ -108,12 +108,73 @@ booking_service = BookingMcpService(
 )
 
 
+def _session_policy_label() -> str:
+    if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE == "basic":
+        return "Traveler login + shared Basic Auth"
+    if FRONTEND_AUTH_REQUIRED:
+        return "Traveler login + bearer forwarding"
+    if BACKEND_AUTH_MODE == "oauth2":
+        return "Shared service token"
+    if BACKEND_AUTH_MODE == "basic":
+        return "Shared Basic Auth"
+    return "Guest session"
+
+
+def _session_policy_summary() -> str:
+    if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE == "basic":
+        return "Browser users sign in with Keycloak, but MCP tool calls use the shared Basic Auth header."
+    if FRONTEND_AUTH_REQUIRED:
+        return "Browser users sign in with Keycloak and their traveler bearer token is forwarded to the MCP server."
+    if BACKEND_AUTH_MODE == "oauth2":
+        return "The UI keeps a guest traveler profile and uses service-to-service OAuth for MCP tool calls."
+    if BACKEND_AUTH_MODE == "basic":
+        return "The UI keeps a guest traveler profile and uses the shared Basic Auth header for MCP tool calls."
+    return "The UI keeps a guest traveler profile and sends no Authorization header to the MCP server."
+
+
+def _login_subtitle() -> str:
+    if BACKEND_AUTH_MODE == "basic":
+        return "Sign in with your Keycloak traveler account. The portal will keep your browser session in Keycloak and call the MCP server with shared Basic Auth."
+    return "Sign in with your Keycloak traveler account to continue to the flight desk."
+
+
+def _login_flow_title() -> str:
+    if BACKEND_AUTH_MODE == "basic":
+        return "Keycloak browser session + Basic Auth MCP calls"
+    return "Keycloak-backed browser session"
+
+
+def _login_flow_copy() -> str:
+    if BACKEND_AUTH_MODE == "basic":
+        return "Traveler identity comes from Keycloak, while MCP booking actions are authenticated with the shared backend Basic Auth credentials."
+    return "Traveler access is established before the UI sends any booking action to the secured backend."
+
+
+def _login_form_heading() -> str:
+    if BACKEND_AUTH_MODE == "basic":
+        return "Use your realm account to open the MCP Basic Auth desk"
+    return "Use your realm account"
+
+
+def _login_form_copy() -> str:
+    if BACKEND_AUTH_MODE == "basic":
+        return "Start with the imported demo traveler or another Galaxium realm account. The browser session stays in Keycloak while the MCP backend uses the shared Basic Auth credentials."
+    return "Start with the imported demo user or authenticate with another traveler account in the Galaxium realm."
+
+
 def _frontend_template_context() -> dict[str, str]:
     return {
         "frontend_mode_id": FRONTEND_MODE_ID,
         "frontend_mode_label": FRONTEND_MODE_LABEL,
         "frontend_mode_summary": FRONTEND_MODE_SUMMARY,
         "backend_label": BACKEND_LABEL,
+        "session_policy_label": _session_policy_label(),
+        "session_policy_summary": _session_policy_summary(),
+        "login_subtitle": _login_subtitle(),
+        "login_flow_title": _login_flow_title(),
+        "login_flow_copy": _login_flow_copy(),
+        "login_form_heading": _login_form_heading(),
+        "login_form_copy": _login_form_copy(),
     }
 
 
@@ -121,45 +182,54 @@ def validate_runtime_settings() -> None:
     if not MCP_SERVER_URL:
         raise RuntimeError("MCP_SERVER_URL must be set")
 
-    if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE != "oauth2":
+    if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE not in {"oauth2", "basic"}:
         raise RuntimeError(
-            "FRONTEND_AUTH_REQUIRED=true requires BACKEND_AUTH_MODE=oauth2 so traveler bearer tokens can be sent to the MCP server."
+            "FRONTEND_AUTH_REQUIRED=true requires BACKEND_AUTH_MODE=oauth2 or BACKEND_AUTH_MODE=basic."
         )
 
-    if BACKEND_AUTH_MODE == "none":
-        return
-
+    missing = []
     if BACKEND_AUTH_MODE == "basic":
-        missing = []
         if not BASIC_AUTH_USERNAME:
             missing.append("BASIC_AUTH_USERNAME")
         if not BASIC_AUTH_PASSWORD:
             missing.append("BASIC_AUTH_PASSWORD")
-        if missing:
-            raise RuntimeError(
-                "Basic Auth is enabled but missing settings: " + ", ".join(missing)
-            )
-        return
+    elif BACKEND_AUTH_MODE == "oauth2":
+        if not OIDC_TOKEN_URL:
+            missing.append("OIDC_TOKEN_URL")
+        if not OIDC_CLIENT_ID:
+            missing.append("OIDC_CLIENT_ID")
+        if not OIDC_CLIENT_SECRET:
+            missing.append("OIDC_CLIENT_SECRET")
 
-    missing = []
-    if not OIDC_TOKEN_URL:
-        missing.append("OIDC_TOKEN_URL")
-    if not OIDC_CLIENT_ID:
-        missing.append("OIDC_CLIENT_ID")
-    if not OIDC_CLIENT_SECRET:
-        missing.append("OIDC_CLIENT_SECRET")
-    if FRONTEND_AUTH_REQUIRED and not FLASK_SECRET_KEY:
-        missing.append("FLASK_SECRET_KEY")
+    if FRONTEND_AUTH_REQUIRED:
+        if not OIDC_TOKEN_URL:
+            missing.append("OIDC_TOKEN_URL")
+        if not OIDC_CLIENT_ID:
+            missing.append("OIDC_CLIENT_ID")
+        if not OIDC_CLIENT_SECRET:
+            missing.append("OIDC_CLIENT_SECRET")
+        if not FLASK_SECRET_KEY:
+            missing.append("FLASK_SECRET_KEY")
 
     if missing:
+        unique_missing = sorted(set(missing))
+        auth_label = (
+            "Mixed Keycloak UI + Basic Auth MCP"
+            if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE == "basic"
+            else "OAuth2"
+        )
         raise RuntimeError(
-            "OAuth2 is enabled but missing settings: " + ", ".join(missing)
+            f"{auth_label} mode is missing required settings: {', '.join(unique_missing)}"
         )
 
 
 validate_runtime_settings()
 
-if FRONTEND_AUTH_REQUIRED:
+if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE == "basic":
+    logger.warning(
+        "FRONTEND_AUTH_REQUIRED=true and BACKEND_AUTH_MODE=basic: browser users log in with Keycloak while MCP tool calls use shared Basic Auth credentials."
+    )
+elif FRONTEND_AUTH_REQUIRED:
     logger.warning(
         "FRONTEND_AUTH_REQUIRED=true: browser users must log in with Keycloak. MCP tool calls reuse the traveler bearer token."
     )
@@ -328,8 +398,12 @@ def _basic_auth_header() -> str | None:
 
 def _backend_authorization_header_for_request() -> str | None:
     if FRONTEND_AUTH_REQUIRED:
-        bearer_token = _get_user_access_token()
-        return f"Bearer {bearer_token}" if bearer_token else None
+        user_access_token = _get_user_access_token()
+        if not user_access_token:
+            return None
+        if BACKEND_AUTH_MODE == "basic":
+            return _basic_auth_header()
+        return f"Bearer {user_access_token}" if BACKEND_AUTH_MODE == "oauth2" else None
     if BACKEND_AUTH_MODE == "oauth2":
         bearer_token = _get_service_access_token()
         return f"Bearer {bearer_token}" if bearer_token else None
@@ -367,7 +441,7 @@ def _business_error_response(exc: BookingServiceError) -> Response:
 
 def _ensure_traveler_registration(authorization_header: str) -> dict[str, Any]:
     if not authorization_header:
-        raise RuntimeError("Missing traveler authorization header")
+        raise RuntimeError("Missing backend authorization header")
 
     name = (session.get("traveler_name") or "").strip()
     email = (session.get("traveler_email") or "").strip()
@@ -436,11 +510,15 @@ def login():
                         session["traveler_username"] = profile["username"]
                         session["traveler_name"] = profile["name"]
                         session["traveler_email"] = profile["email"]
-                        _ensure_traveler_registration(f"Bearer {access_token}")
+                        authorization_header = _backend_authorization_header_for_request()
+                        if not authorization_header:
+                            error_message = "Unable to prepare the backend session after Keycloak login"
+                        else:
+                            _ensure_traveler_registration(authorization_header)
 
-                        if not next_path.startswith("/"):
-                            next_path = "/"
-                        return redirect(next_path)
+                            if not next_path.startswith("/"):
+                                next_path = "/"
+                            return redirect(next_path)
             except Exception as exc:
                 error_message = f"Login request failed: {str(exc)}"
 
@@ -759,7 +837,9 @@ def health():
             "frontend_auth_required": FRONTEND_AUTH_REQUIRED,
             "frontend_user_login_enforced": FRONTEND_AUTH_REQUIRED,
             "auth_mode": (
-                "traveler-login-and-mcp"
+                "traveler-login-basic-backend"
+                if FRONTEND_AUTH_REQUIRED and BACKEND_AUTH_MODE == "basic"
+                else "traveler-login-and-mcp"
                 if FRONTEND_AUTH_REQUIRED
                 else "service-to-service-oauth"
                 if BACKEND_AUTH_MODE == "oauth2"

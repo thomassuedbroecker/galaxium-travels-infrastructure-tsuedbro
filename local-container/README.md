@@ -2,22 +2,25 @@
 
 This folder contains the runnable Docker Compose setup for the Galaxium demo.
 
-You can use it in three ways:
+You can use it in four ways:
 
 - run everything on one local machine
 - run the protected stack on the host machine and let another app or agent connect from a VM or another machine in the LAN
 - run the REST path, MCP path, and inspector tooling in a small Basic Auth variant without Keycloak
+- run the MCP UI with Keycloak browser login while the MCP backend itself uses shared Basic Auth
 
-## Three Runtime Options
+## Runtime Options
 
 ```mermaid
 flowchart TD
     A["local-container/"] --> B["Option 1<br/>Local machine"]
     A --> C["Option 2<br/>Host machine + VM/LAN OAuth"]
     A --> F["Option 3<br/>Basic Auth stack"]
+    A --> H["Option 4<br/>Keycloak UI + MCP Basic Auth"]
     B --> D["Use localhost URLs"]
     C --> E["Use host IP or DNS name"]
     F --> G["Use REST, MCP, both web UIs,<br/>and inspector config"]
+    H --> I["Use Keycloak traveler login<br/>with shared Basic Auth to MCP"]
 ```
 
 ## Option 1: Local Machine
@@ -280,6 +283,55 @@ bash verify-basic-auth-backends.sh
 bash verify-basic-auth-frontends-and-inspector.sh
 ```
 
+## Option 4: Keycloak UI + MCP Basic Auth
+
+Use this when:
+
+- you want the MCP web UI to keep traveler browser login in Keycloak
+- you want the MCP backend itself to require the shared Basic Auth header
+- you only need the MCP path for this mixed mode
+
+### Start
+
+Prepare the env file:
+
+```sh
+cd local-container
+cp basic-auth.env.template basic-auth.env
+```
+
+Edit `basic-auth.env` if you want credentials other than the demo defaults.
+
+Start the mixed stack:
+
+```sh
+cd local-container
+docker compose --env-file basic-auth.env \
+  -f docker_compose.yaml \
+  -f docker_compose.mcp-ui-keycloak-basic.yaml \
+  up --build -d keycloak booking_system_mcp web_app_mcp
+```
+
+### URLs
+
+- Keycloak: `http://localhost:8086`
+- MCP endpoint: `http://localhost:8084/mcp`
+- MCP web UI: `http://localhost:8085`
+
+### Built-In Credentials
+
+- Traveler browser login: `demo-user` / `demo-user-password`
+- Shared Basic Auth for MCP: `demo-basic-user` / `demo-basic-password`
+
+In this mode the browser session stays in Keycloak, but MCP tool calls from the UI use the shared backend Basic Auth credentials from `basic-auth.env`.
+
+### Verify
+
+```sh
+cd local-container
+bash verify-keycloak-ui-basic-auth-mcp.sh
+```
+
 ## Verification Scripts
 
 Run the complete local OAuth smoke test:
@@ -308,6 +360,17 @@ cp basic-auth.env.template basic-auth.env
 docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d
 bash verify-basic-auth-backends.sh
 bash verify-basic-auth-frontends-and-inspector.sh
+```
+
+Run the Keycloak UI + MCP Basic Auth variant:
+
+```sh
+cp basic-auth.env.template basic-auth.env
+docker compose --env-file basic-auth.env \
+  -f docker_compose.yaml \
+  -f docker_compose.mcp-ui-keycloak-basic.yaml \
+  up --build -d keycloak booking_system_mcp web_app_mcp
+bash verify-keycloak-ui-basic-auth-mcp.sh
 ```
 
 Default Basic Auth demo credentials:
@@ -378,6 +441,15 @@ Stop the Basic Auth stack:
 
 ```sh
 docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml down
+```
+
+Stop the Keycloak UI + MCP Basic Auth stack:
+
+```sh
+docker compose --env-file basic-auth.env \
+  -f docker_compose.yaml \
+  -f docker_compose.mcp-ui-keycloak-basic.yaml \
+  down
 ```
 
 ## Related Docs

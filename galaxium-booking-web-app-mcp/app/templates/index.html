@@ -31,7 +31,11 @@
         </div>
         <div class="hero-metric">
           <span>Session policy</span>
-          <strong>{% if frontend_auth_required %}Traveler login{% else %}Shared service token{% endif %}</strong>
+          <strong>{{ session_policy_label }}</strong>
+        </div>
+        <div class="hero-metric hero-metric-wide">
+          <span>Auth path</span>
+          <small>{{ session_policy_summary }}</small>
         </div>
         <div class="hero-metric hero-metric-wide">
           <span>Backend route</span>

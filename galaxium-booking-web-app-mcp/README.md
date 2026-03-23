@@ -23,6 +23,10 @@ Default URL: `http://localhost:8085`
   - Traveler login mode.
   - MCP tool calls reuse the authenticated traveler bearer token.
 
+- `BACKEND_AUTH_MODE=basic` and `FRONTEND_AUTH_REQUIRED=true`
+  - Traveler login with Keycloak, MCP backend with Basic Auth.
+  - The UI keeps the traveler browser session in Keycloak, but MCP tool calls use the shared Basic Auth header.
+
 - `BACKEND_AUTH_MODE=oauth2` and `FRONTEND_AUTH_REQUIRED=false`
   - Service-to-service OAuth mode.
   - The UI stores a guest traveler profile in the browser session.
@@ -82,7 +86,7 @@ The service layer calls these booking backend tools directly:
 2. Flask stores the authenticated session and access token.
 3. A UI action calls a Flask route in `app.py`.
 4. The route calls `BookingMcpService`.
-5. `BookingMcpService` invokes the required MCP tool explicitly with the traveler token.
+5. `BookingMcpService` invokes the required MCP tool explicitly with either the traveler bearer token or the shared Basic Auth header, depending on `BACKEND_AUTH_MODE`.
 6. The tool result is normalized and returned to the UI response.
 
 When browser login is not required, the flow is the same except the UI uses a stored guest traveler profile and sends either a service OAuth token, a shared Basic Auth header, or no auth header depending on `BACKEND_AUTH_MODE`.
@@ -125,6 +129,7 @@ Compose service name: `web_app_mcp`
 - Local compose stack: see [../QUICKSTART.md](../QUICKSTART.md), option 1.
 - VM/LAN OAuth host stack: see [../QUICKSTART.md](../QUICKSTART.md), option 2.
 - Local Basic Auth stack: see [../local-container/README.md](../local-container/README.md), option 3.
+- Keycloak UI + MCP Basic Auth stack: see [../QUICKSTART.md](../QUICKSTART.md), option 4.
 - MCP-backed frontend path only:
 
   ```sh
@@ -137,6 +142,15 @@ Compose service name: `web_app_mcp`
   ```sh
   docker compose -f ../local-container/docker_compose.basic-auth.yaml up --build \
     booking_system_mcp web_app_mcp
+  ```
+
+- Keycloak login + MCP Basic Auth frontend path:
+
+  ```sh
+  docker compose --env-file ../local-container/basic-auth.env \
+    -f ../local-container/docker_compose.yaml \
+    -f ../local-container/docker_compose.mcp-ui-keycloak-basic.yaml \
+    up --build keycloak booking_system_mcp web_app_mcp
   ```
 
 Default compose URL: `http://localhost:8085`

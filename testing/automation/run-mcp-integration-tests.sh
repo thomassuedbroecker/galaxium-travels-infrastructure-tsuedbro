@@ -13,6 +13,9 @@ bash "${LOCAL_CONTAINER_DIR}/verify-keycloak-auth-e2e.sh" \
   --scope mcp \
   --reports-dir "${GENERATED_RESULTS_DIR}/mcp"
 
+bash "${LOCAL_CONTAINER_DIR}/verify-keycloak-ui-basic-auth-mcp.sh" \
+  --reports-dir "${GENERATED_RESULTS_DIR}/mcp"
+
 echo
 echo "Saved MCP integration reports under:"
 echo "  ${GENERATED_RESULTS_DIR}/mcp"

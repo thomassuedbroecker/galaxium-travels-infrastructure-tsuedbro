@@ -99,6 +99,20 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("vm-client-basic-auth.env.template", content)
         self.assertIn("docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d", content)
 
+    def test_repo_readme_documents_auth_options_and_env_templates(self) -> None:
+        content = _read("README.md")
+        self.assertIn("shared Basic Auth", content)
+        self.assertIn("vm-client.env.template", content)
+        self.assertIn("basic-auth.env.template", content)
+        self.assertIn("vm-client-basic-auth.env.template", content)
+        self.assertIn("testing/automation/run-all-tests.sh", content)
+
+    def test_architecture_drawio_marks_oauth_only_and_basic_auth_capable_components(self) -> None:
+        content = _read("architecture/galaxim-travel-infrastructure.drawio")
+        self.assertIn("OAuth option only", content)
+        self.assertIn("OAuth or Basic Auth", content)
+        self.assertIn("OAuth token validation or Basic Auth", content)
+
     def test_repo_aggregate_runner_includes_local_container_contract_suite(self) -> None:
         runner = _read("testing/automation/run-all-tests.sh")
         self.assertIn('bash "${SCRIPT_DIR}/run-local-container-contract-tests.sh"', runner)

@@ -18,6 +18,7 @@ source "${ENV_FILE}"
 IBM_CLOUD_API_KEY_RESOLVED="${IBM_CLOUD_API_KEY:-${IBMCLOUD_API_KEY:-}}"
 ICR_REGISTRY_USERNAME_RESOLVED="${ICR_REGISTRY_USERNAME:-iamapikey}"
 ICR_REGISTRY_PASSWORD_RESOLVED="${ICR_REGISTRY_PASSWORD:-${IBM_CLOUD_API_KEY_RESOLVED}}"
+GENERATED_ENV_FILES=()
 
 normalize_deploy_artifact_mode() {
   local raw_mode="${1:-source_build}"
@@ -52,7 +53,7 @@ normalize_container_client() {
 }
 
 normalize_stack_auth_mode() {
-  local raw_mode="${1:-oauth2}"
+  local raw_mode="${1:-basic}"
   local normalized
   normalized="$(printf '%s' "${raw_mode}" | tr '[:upper:]' '[:lower:]')"
 
@@ -92,7 +93,7 @@ resolve_frontend_auth_required() {
   esac
 }
 
-STACK_AUTH_MODE="$(normalize_stack_auth_mode "${STACK_AUTH_MODE:-oauth2}")"
+STACK_AUTH_MODE="$(normalize_stack_auth_mode "${STACK_AUTH_MODE:-basic}")"
 FRONTEND_AUTH_REQUIRED_RESOLVED="$(resolve_frontend_auth_required)"
 DEPLOY_ARTIFACT_MODE="$(normalize_deploy_artifact_mode "${DEPLOY_ARTIFACT_MODE:-source_build}")"
 CONTAINER_CLIENT_RESOLVED="$(normalize_container_client "${CONTAINER_CLIENT:-docker}")"
@@ -177,6 +178,17 @@ case "${BUILD_SOURCE_RESOLVED}" in
     BUILD_COMMIT_RESOLVED="${BUILD_COMMIT:-}"
     ;;
 esac
+
+cleanup_generated_env_files() {
+  local env_file
+  for env_file in "${GENERATED_ENV_FILES[@]:-}"; do
+    if [[ -n "${env_file}" && -f "${env_file}" ]]; then
+      rm -f "${env_file}"
+    fi
+  done
+}
+
+trap cleanup_generated_env_files EXIT
 
 prebuilt_image_mode_enabled() {
   [[ "${DEPLOY_ARTIFACT_MODE}" == "prebuilt_images" ]]
@@ -376,6 +388,29 @@ ce_upsert_application() {
   fi
 }
 
+ce_remove_application_env_keys() {
+  local app_name="$1"
+  shift
+
+  if ! ce_application_exists "${app_name}"; then
+    return
+  fi
+
+  local update_args=()
+  local env_key
+  for env_key in "$@"; do
+    update_args+=(--env-rm "${env_key}")
+  done
+
+  if [[ "${#update_args[@]}" -eq 0 ]]; then
+    return
+  fi
+
+  ibmcloud ce application update \
+    --name "${app_name}" \
+    "${update_args[@]}" >/dev/null
+}
+
 ce_app_url() {
   local app_name="$1"
   ibmcloud ce application get --name "${app_name}" --output url | tr -d '\r\n'
@@ -395,6 +430,23 @@ ce_upsert_configmap() {
   else
     ibmcloud ce configmap create --name "${configmap_name}" "$@"
   fi
+}
+
+create_env_file() {
+  local env_file
+  env_file="$(mktemp "${TMPDIR:-/tmp}/galaxium-ce-config.XXXXXX")"
+  GENERATED_ENV_FILES+=("${env_file}")
+  printf '%s\n' "$@" > "${env_file}"
+  printf '%s\n' "${env_file}"
+}
+
+ce_upsert_configmap_from_env_lines() {
+  local configmap_name="$1"
+  shift
+
+  local env_file
+  env_file="$(create_env_file "$@")"
+  ce_upsert_configmap "${configmap_name}" --from-env-file "${env_file}"
 }
 
 ce_secret_exists() {

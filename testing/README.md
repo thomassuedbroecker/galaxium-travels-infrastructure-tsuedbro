@@ -9,6 +9,7 @@ This folder is the main entry point for automated checks in this repository.
 - local MCP integration checks against the compose stack
 - local Basic Auth smoke checks for backends, frontends, and MCP inspector config
 - local mixed-mode smoke for Keycloak browser login on the MCP UI with Basic Auth on the MCP backend
+- deployment contract checks for the IBM Code Engine package
 - the WebUI auth matrix for:
   - REST and MCP
   - local machine and LAN-prepare environments
@@ -48,6 +49,10 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 Current verified checks are split between smoke coverage and the last full matrix run:
 
+- `2026-03-24`: `bash testing/automation/run-code-engine-contract-tests.sh`
+  - passed with `6/6` tests green
+  - artifact:
+    - `testing/results/generated/contracts/code-engine-contracts-20260324T101509Z.log`
 - `2026-03-23`: `bash testing/automation/run-all-tests.sh`
   - passed for local-container contracts, REST pytest, UI OAuth smoke, MCP OAuth smoke, and Keycloak UI -> MCP Basic Auth smoke
   - artifacts:
@@ -56,8 +61,8 @@ Current verified checks are split between smoke coverage and the last full matri
     - `testing/results/generated/ui/oauth-e2e-ui-rest-20260323T200045Z.md`
     - `testing/results/generated/mcp/oauth-e2e-mcp-20260323T200102Z.md`
     - `testing/results/generated/mcp/keycloak-ui-basic-auth-mcp-20260323T200115Z.md`
-- `2026-03-23`: `python3 -m unittest testing.test_local_container_contracts -v`
-  - passed with `15/15` tests green
+- `2026-03-24`: `python3 -m unittest testing.test_local_container_contracts -v`
+  - passed with `17/17` tests green
 - `2026-03-23`: `bash testing/automation/run-ui-behavior-tests.sh`
   - passed for the local UI OAuth slice with report `testing/results/generated/ui/oauth-e2e-ui-rest-20260323T200045Z.md`
 - `2026-03-23`: `bash testing/automation/run-mcp-integration-tests.sh`
@@ -97,6 +102,7 @@ testing/
 ├── README.md
 ├── automation/
 │   ├── run-all-tests.sh
+│   ├── run-code-engine-contract-tests.sh
 │   ├── run-mcp-integration-tests.sh
 │   ├── run-rest-api-tests.sh
 │   ├── run-ui-behavior-tests.sh
@@ -123,6 +129,12 @@ Run only the REST API suite:
 
 ```sh
 bash testing/automation/run-rest-api-tests.sh
+```
+
+Run only the Code Engine deployment contract suite:
+
+```sh
+bash testing/automation/run-code-engine-contract-tests.sh
 ```
 
 Run only the UI behavior checks:

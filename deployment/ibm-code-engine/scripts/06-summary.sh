@@ -11,6 +11,10 @@ require_var BOOKING_API_APP_NAME
 require_var MCP_APP_NAME
 require_var WEB_APP_NAME
 require_var WEB_APP_MCP_APP_NAME
+require_var BOOKING_API_CONFIGMAP_NAME
+require_var MCP_CONFIGMAP_NAME
+require_var WEB_APP_CONFIGMAP_NAME
+require_var WEB_APP_MCP_CONFIGMAP_NAME
 
 if [[ "${STACK_AUTH_MODE}" == "oauth2" ]]; then
   require_var KEYCLOAK_REALM
@@ -51,14 +55,31 @@ MCP base URL:        ${mcp_base_url}
 MCP endpoint:        ${mcp_base_url}/mcp
 REST Web UI:         ${web_url}
 MCP Web UI:          ${web_mcp_url}
+Booking API config:  ${BOOKING_API_CONFIGMAP_NAME}
+MCP config:          ${MCP_CONFIGMAP_NAME}
+REST UI config:      ${WEB_APP_CONFIGMAP_NAME}
+MCP UI config:       ${WEB_APP_MCP_CONFIGMAP_NAME}
 
 Important
 ---------
 
 - Deployment order matters because Code Engine public URLs are only known after each application is created.
-- The package deploys backends first, then frontends, then syncs the Keycloak client with the final UI URLs.
+- Non-secret runtime settings are delivered through the service configmaps in this folder.
 - Keep the MCP transport on Streamable HTTP.
 - Public MCP clients must use ${mcp_base_url}/mcp.
+EOF
+
+if [[ "${STACK_AUTH_MODE}" == "oauth2" ]]; then
+  cat <<EOF
+- The package deploys backends first, then frontends, then syncs the Keycloak client with the final UI URLs.
+EOF
+else
+  cat <<EOF
+- This default Basic Auth path does not deploy Keycloak and does not require Keycloak client sync.
+EOF
+fi
+
+cat <<EOF
 
 Suggested checks
 ----------------
@@ -117,11 +138,24 @@ else
 5. Basic Auth REST request:
    curl -i -u <BASIC_AUTH_USERNAME>:<BASIC_AUTH_PASSWORD> ${booking_api_url}/flights
 
-6. Basic Auth MCP request:
-   python3 ../../local-container/mcp_test_app.py \\
-     --mcp-url ${mcp_base_url}/mcp \\
-     --auth-scheme basic \\
-     --basic-username <BASIC_AUTH_USERNAME> \\
-     --basic-password <BASIC_AUTH_PASSWORD>
+6. Build the Basic Auth header:
+   BASIC_TOKEN="\$(printf '%s' '<BASIC_AUTH_USERNAME>:<BASIC_AUTH_PASSWORD>' | base64 | tr -d '\\r\\n')"
+
+7. Basic Auth MCP initialize:
+   curl -i ${mcp_base_url}/mcp \\
+     -H "Accept: application/json, text/event-stream" \\
+     -H "Content-Type: application/json" \\
+     -H "MCP-Protocol-Version: 2025-11-25" \\
+     -H "Authorization: Basic \${BASIC_TOKEN}" \\
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"code-engine-smoke","version":"1.0.0"}}}'
+
+8. Reuse the returned mcp-session-id for tools/list:
+   curl -sS ${mcp_base_url}/mcp \\
+     -H "Accept: application/json, text/event-stream" \\
+     -H "Content-Type: application/json" \\
+     -H "MCP-Protocol-Version: 2025-11-25" \\
+     -H "MCP-Session-Id: <mcp-session-id>" \\
+     -H "Authorization: Basic \${BASIC_TOKEN}" \\
+     -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
 EOF
 fi

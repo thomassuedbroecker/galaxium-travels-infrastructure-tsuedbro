@@ -420,6 +420,8 @@ bash start-mcp-inspector-ui.sh
 
 Keep the MCP transport on `Streamable HTTP`. Do not switch the inspector to another transport for this repository.
 
+For a step-by-step manual commandline walkthrough of both auth variants, see [../manual_auth_check_using_the_commandline.md](../manual_auth_check_using_the_commandline.md).
+
 ## Stop
 
 Stop the local stack:

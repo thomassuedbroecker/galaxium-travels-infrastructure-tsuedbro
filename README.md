@@ -56,6 +56,7 @@ flowchart LR
 - New user path: [QUICKSTART.md](./QUICKSTART.md)
 - Local compose, VM/LAN OAuth, and Basic Auth details: [local-container/README.md](./local-container/README.md)
 - Test commands and current test scope: [testing/README.md](./testing/README.md)
+- Manual MCP auth walkthrough with Inspector CLI: [manual_auth_check_using_the_commandline.md](./manual_auth_check_using_the_commandline.md)
 - WebUI auth matrix details: [testing/webui_matrix/README.md](./testing/webui_matrix/README.md)
 - Project quality review: [QUALITY-CHECK.md](./QUALITY-CHECK.md)
 - Draft IBM Code Engine deployment: [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md)

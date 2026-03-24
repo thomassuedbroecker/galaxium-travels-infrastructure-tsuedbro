@@ -140,6 +140,23 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("--auth-scheme basic", content)
         self.assertIn("no Keycloak redirect URI setup is required", content)
 
+    def test_manual_commandline_auth_guide_documents_oauth_and_basic_auth(self) -> None:
+        content = _read("manual_auth_check_using_the_commandline.md")
+        self.assertIn("@modelcontextprotocol/inspector", content)
+        self.assertIn("Authorization: Bearer ${ACCESS_TOKEN}", content)
+        self.assertIn("Authorization: Basic ${BASIC_TOKEN}", content)
+        self.assertIn("tools/list", content)
+        self.assertIn("docker_compose.basic-auth.yaml", content)
+        self.assertIn("docker_compose.yaml", content)
+
+    def test_repo_docs_link_to_manual_commandline_auth_guide(self) -> None:
+        repo_readme = _read("README.md")
+        quickstart = _read("QUICKSTART.md")
+        local_container_readme = _read("local-container/README.md")
+        self.assertIn("manual_auth_check_using_the_commandline.md", repo_readme)
+        self.assertIn("manual_auth_check_using_the_commandline.md", quickstart)
+        self.assertIn("manual_auth_check_using_the_commandline.md", local_container_readme)
+
     def test_repo_aggregate_runner_includes_local_container_contract_suite(self) -> None:
         runner = _read("testing/automation/run-all-tests.sh")
         self.assertIn('bash "${SCRIPT_DIR}/run-local-container-contract-tests.sh"', runner)

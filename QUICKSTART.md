@@ -327,3 +327,5 @@ bash local-container/start-mcp-inspector-ui.sh
 ```
 
 For the full Inspector flow, including the Basic Auth config path, use [local-container/README.md](./local-container/README.md).
+
+For a step-by-step manual commandline walkthrough of both the OAuth and Basic Auth MCP variants, use [manual_auth_check_using_the_commandline.md](./manual_auth_check_using_the_commandline.md).

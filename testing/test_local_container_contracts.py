@@ -148,6 +148,10 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("tools/list", content)
         self.assertIn("docker_compose.basic-auth.yaml", content)
         self.assertIn("docker_compose.yaml", content)
+        self.assertIn("This stack does not start Keycloak.", content)
+        self.assertIn("do not use `http://localhost:8086`", content)
+        self.assertIn("Arguments cannot be passed to a URL-based MCP server.", content)
+        self.assertIn("issue `#790`", content)
 
     def test_repo_docs_link_to_manual_commandline_auth_guide(self) -> None:
         repo_readme = _read("README.md")

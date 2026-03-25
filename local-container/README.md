@@ -246,6 +246,13 @@ cd local-container
 docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d
 ```
 
+If you want the dedicated VM/LAN-flavored Basic Auth compose variant from this folder, use:
+
+```sh
+cd local-container
+docker compose --env-file basic-auth.env -f docker_compose.basic-auth-vm.yaml up --build -d
+```
+
 ### URLs
 
 - Booking REST API docs: `http://localhost:8082/docs`
@@ -274,6 +281,8 @@ MCP_SERVER_URL=http://${LOCAL_NET_IP}:8084/mcp
 BASIC_AUTH_USERNAME=demo-basic-user
 BASIC_AUTH_PASSWORD=demo-basic-password
 ```
+
+The same `vm-client-basic-auth.env.template` client settings apply whether you start the backend with `docker_compose.basic-auth.yaml` or `docker_compose.basic-auth-vm.yaml`.
 
 ### Verify
 
@@ -362,6 +371,15 @@ bash verify-basic-auth-backends.sh
 bash verify-basic-auth-frontends-and-inspector.sh
 ```
 
+Run the VM/LAN-flavored Basic Auth backend variant:
+
+```sh
+cp basic-auth.env.template basic-auth.env
+docker compose --env-file basic-auth.env -f docker_compose.basic-auth-vm.yaml up --build -d
+bash verify-basic-auth-backends.sh
+bash verify-basic-auth-frontends-and-inspector.sh
+```
+
 Run the Keycloak UI + MCP Basic Auth variant:
 
 ```sh
@@ -443,6 +461,12 @@ Stop the Basic Auth stack:
 
 ```sh
 docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml down
+```
+
+Stop the VM/LAN-flavored Basic Auth stack:
+
+```sh
+docker compose --env-file basic-auth.env -f docker_compose.basic-auth-vm.yaml down
 ```
 
 Stop the Keycloak UI + MCP Basic Auth stack:

@@ -106,6 +106,7 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("basic-auth.env.template", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
         self.assertIn("docker compose --env-file local-container/basic-auth.env \\", content)
+        self.assertIn("docker_compose.basic-auth-vm.yaml", content)
         self.assertIn("docker_compose.mcp-ui-keycloak-basic.yaml", content)
         self.assertIn("verify-keycloak-ui-basic-auth-mcp.sh", content)
 
@@ -115,6 +116,7 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("basic-auth.env.template", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
         self.assertIn("docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d", content)
+        self.assertIn("docker_compose.basic-auth-vm.yaml", content)
         self.assertIn("docker_compose.mcp-ui-keycloak-basic.yaml", content)
         self.assertIn("verify-keycloak-ui-basic-auth-mcp.sh", content)
 
@@ -125,6 +127,7 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("vm-client.env.template", content)
         self.assertIn("basic-auth.env.template", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
+        self.assertIn("docker_compose.basic-auth-vm.yaml", content)
         self.assertIn("testing/automation/run-all-tests.sh", content)
 
     def test_architecture_drawio_marks_oauth_only_and_basic_auth_capable_components(self) -> None:

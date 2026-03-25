@@ -31,6 +31,7 @@ Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./a
 - You can compare pure OAuth, pure Basic Auth, and a mixed `Keycloak UI -> MCP Basic Auth` path in the same demo.
 - You can run everything on one local machine.
 - You can also prepare the stack for a VM or LAN setup where OAuth needs public host URLs.
+- The Basic Auth runtime is available as both `local-container/docker_compose.basic-auth.yaml` and `local-container/docker_compose.basic-auth-vm.yaml`.
 - You can choose the matching env template for each option: `local-container/vm-client.env.template`, `local-container/basic-auth.env.template`, or `local-container/vm-client-basic-auth.env.template`.
 
 ## Architecture At A Glance

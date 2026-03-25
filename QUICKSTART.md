@@ -196,6 +196,14 @@ docker compose --env-file local-container/basic-auth.env \
   up --build
 ```
 
+If you want the dedicated VM/LAN-flavored Basic Auth compose variant from `local-container/`, use:
+
+```sh
+docker compose --env-file local-container/basic-auth.env \
+  -f local-container/docker_compose.basic-auth-vm.yaml \
+  up --build
+```
+
 ### 3. Open the URLs
 
 - Booking REST API docs: `http://localhost:8082/docs`
@@ -225,6 +233,8 @@ BASIC_AUTH_USERNAME=demo-basic-user
 BASIC_AUTH_PASSWORD=demo-basic-password
 ```
 
+The same `vm-client-basic-auth.env.template` client settings apply whether you start the backend with `docker_compose.basic-auth.yaml` or `docker_compose.basic-auth-vm.yaml`.
+
 ### 5. Run the Basic Auth smoke checks
 
 ```sh
@@ -237,6 +247,14 @@ bash local-container/verify-basic-auth-frontends-and-inspector.sh
 ```sh
 docker compose --env-file local-container/basic-auth.env \
   -f local-container/docker_compose.basic-auth.yaml \
+  down
+```
+
+If you started the VM/LAN-flavored Basic Auth compose variant, stop it with:
+
+```sh
+docker compose --env-file local-container/basic-auth.env \
+  -f local-container/docker_compose.basic-auth-vm.yaml \
   down
 ```
 

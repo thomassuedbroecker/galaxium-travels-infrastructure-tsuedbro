@@ -89,9 +89,11 @@ There is currently no Terraform state, Terraform module, or Terraform workflow i
 Runtime configuration model:
 
 - `deploy-stack.sh` is the primary operator entrypoint for the single supported deployment path in this repository.
+- Each numbered script in `scripts/` is self-contained and can be run directly with `bash scripts/<step>.sh` without sourcing a shared helper file first.
 - `scripts/04-deploy-services.sh` renders env files for each deployed service variant into `generated/` and pushes them into Code Engine configmaps.
 - The applications then consume those configmaps with `--env-from-configmap` instead of a long list of direct `--env` flags.
 - Secrets stay in Code Engine secrets and are still attached with `--env-from-secret`.
+- `deploy-stack.sh` is intentionally thin now and just runs the standalone numbered scripts in order.
 - This keeps the Basic Auth-first path simple now, leaves visible config artifacts behind for debugging on another machine, and still leaves room for future auth variants.
 
 Important build detail:
@@ -236,6 +238,13 @@ Example:
 cd deployment/ibm-code-engine
 cp deploy.env.template deploy.env
 bash deploy-stack.sh
+```
+
+Or run one step directly while debugging:
+
+```sh
+cd deployment/ibm-code-engine
+bash scripts/04-deploy-services.sh
 ```
 
 ## Current Default Path

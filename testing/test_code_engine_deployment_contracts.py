@@ -37,23 +37,35 @@ class CodeEngineDeploymentContractTests(unittest.TestCase):
         self.assertIn("STACK_AUTH_MODE=basic", content)
         self.assertIn("Current preconfigured default in this folder: basic", content)
 
-    def test_common_sh_defaults_to_basic_and_keeps_only_core_shared_helpers(self) -> None:
-        content = _read("deployment/ibm-code-engine/scripts/common.sh")
-        self.assertIn('local raw_mode="${1:-basic}"', content)
-        self.assertIn('STACK_AUTH_MODE="$(normalize_stack_auth_mode "${STACK_AUTH_MODE:-basic}")"', content)
-        self.assertIn("ce_remove_application_env_keys()", content)
-        self.assertIn("ce_upsert_configmap()", content)
-        self.assertNotIn("create_env_file()", content)
-        self.assertNotIn("ce_upsert_configmap_from_env_lines()", content)
+    def test_code_engine_scripts_are_standalone(self) -> None:
+        deploy_stack = _read("deployment/ibm-code-engine/deploy-stack.sh")
+        self.assertNotIn("common.sh", deploy_stack)
+
+        script_dir = REPO_ROOT / "deployment" / "ibm-code-engine" / "scripts"
+        expected_scripts = {
+            "00-prereqs.sh",
+            "01-project.sh",
+            "02-config-and-secrets.sh",
+            "02b-build-and-push-images.sh",
+            "03-deploy-keycloak.sh",
+            "04-deploy-services.sh",
+            "05-sync-keycloak-client.sh",
+            "06-summary.sh",
+        }
+
+        self.assertEqual({path.name for path in script_dir.glob("*.sh")}, expected_scripts)
+        for script_path in script_dir.glob("*.sh"):
+            content = script_path.read_text(encoding="utf-8")
+            self.assertNotIn("common.sh", content, msg=script_path.name)
+            self.assertIn('ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"', content, msg=script_path.name)
 
     def test_deploy_stack_wrapper_runs_the_numbered_scripts(self) -> None:
         content = _read("deployment/ibm-code-engine/deploy-stack.sh")
-        self.assertIn('source "${SCRIPTS_DIR}/common.sh"', content)
-        self.assertIn('bash "${SCRIPTS_DIR}/00-prereqs.sh"', content)
-        self.assertIn('bash "${SCRIPTS_DIR}/04-deploy-services.sh"', content)
-        self.assertIn('bash "${SCRIPTS_DIR}/06-summary.sh"', content)
-        self.assertIn('if prebuilt_image_mode_enabled; then', content)
-        self.assertIn('if should_deploy_keycloak; then', content)
+        self.assertIn("steps=(", content)
+        self.assertIn("00-prereqs.sh", content)
+        self.assertIn("02b-build-and-push-images.sh", content)
+        self.assertIn("05-sync-keycloak-client.sh", content)
+        self.assertIn('bash "${SCRIPTS_DIR}/${step}"', content)
 
     def test_generated_directory_is_reserved_for_rendered_env_files(self) -> None:
         generated_ignore = _read("deployment/ibm-code-engine/generated/.gitignore")
@@ -93,6 +105,8 @@ class CodeEngineDeploymentContractTests(unittest.TestCase):
         self.assertIn("preconfigured for the `basic` auth path first", content)
         self.assertIn("Code Engine configmaps for per-service non-secret runtime settings", content)
         self.assertIn("deploy-stack.sh", content)
+        self.assertIn("self-contained", content)
+        self.assertIn("without sourcing a shared helper file first", content)
         self.assertIn("generated/", content)
         self.assertIn("renders env files for each deployed service variant into `generated/`", content)
         self.assertIn("--env-from-configmap", content)

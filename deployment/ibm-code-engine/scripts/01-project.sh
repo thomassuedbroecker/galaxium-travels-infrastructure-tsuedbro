@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
 # ************************
 # Variable definition section
 # ************************
@@ -9,6 +10,20 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
+
+# Colors for output
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo -e "\n${BLUE}========================================${NC}"
+echo -e "${YELLOW} Clear output ${NC}"
+clear
+
+echo -e "\n${BLUE}========================================${NC}"
+echo "Running ${BASH_SOURCE[0]} with environment file ${ENV_FILE}"
 
 # ************************
 # Environment definition section
@@ -103,17 +118,26 @@ ensure_ibmcloud_session() {
 # Execution section
 # ************************
 
+echo -e "\n${BLUE}========================================${NC}"
+echo -e "${YELLOW} Execute commands ${NC}"
+
 require_command ibmcloud
 require_var IBM_CLOUD_REGION
 require_var IBM_CLOUD_RESOURCE_GROUP
 require_var CE_PROJECT_NAME
 
+echo -e "\n${BLUE}========================================${NC}"
+echo -e "${YELLOW} Ensure IBM Cloud session ${NC}"
 ensure_ibmcloud_session
 
-target_args=("-r" "${IBM_CLOUD_REGION}" "-g" "${IBM_CLOUD_RESOURCE_GROUP}")
-select_args=("--name" "${CE_PROJECT_NAME}")
-create_args=("--name" "${CE_PROJECT_NAME}")
+echo -e "\n${BLUE}========================================${NC}"
+echo -e "${YELLOW} Ensure Code Engine project settings ${NC}"
+target_args=$("-r" "${IBM_CLOUD_REGION}" "-g" "${IBM_CLOUD_RESOURCE_GROUP}")
+select_args=$("--name" "${CE_PROJECT_NAME}")
+create_args=$("--name" "${CE_PROJECT_NAME}")
 
+echo -e "\n${BLUE}========================================${NC}"
+echo -e "${YELLOW} IBM Cloud target... ${NC}"
 if [[ -n "${CE_ENDPOINT:-}" ]]; then
   select_args+=("--endpoint" "${CE_ENDPOINT}")
 fi

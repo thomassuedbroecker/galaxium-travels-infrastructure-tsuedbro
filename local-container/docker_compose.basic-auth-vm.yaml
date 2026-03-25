@@ -1,0 +1,71 @@
+services:
+  booking_system:
+    build:
+      context: ../booking_system_rest
+    image: booking_system_rest:1.0.0
+    container_name: booking_system_rest_basic
+    ports:
+      - 8082:8082
+    environment:
+      - AUTH_MODE=basic
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+    networks:
+      - mcp-network
+      
+  booking_system_mcp:
+    build:
+      context: ../booking_system_mcp
+    image: booking_system_mcp:1.0.0
+    container_name: booking_system_mcp_basic
+    ports:
+      - 8084:8084
+    environment:
+      - AUTH_MODE=basic
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+      - MCP_PUBLIC_BASE_URL=http://localhost:8084
+    networks:
+      - mcp-network
+
+  web_app:
+    build:
+      context: ../galaxium-booking-web-app
+    image: web_app:1.0.0
+    container_name: web_app_basic
+    ports:
+      - 8083:8083
+    depends_on:
+      - booking_system
+    environment:
+      - BACKEND_URL=http://booking_system:8082
+      - BACKEND_AUTH_MODE=basic
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+      - FRONTEND_AUTH_REQUIRED=false
+    networks:
+      - mcp-network
+
+  web_app_mcp:
+    build:
+      context: ../galaxium-booking-web-app-mcp
+    image: web_app_mcp:1.0.0
+    container_name: web_app_mcp_basic
+    ports:
+      - 8085:8085
+    depends_on:
+      - booking_system_mcp
+    environment:
+      - PORT=8085
+      - MCP_SERVER_URL=http://booking_system_mcp:8084/mcp
+      - MCP_TIMEOUT_SECONDS=10
+      - BACKEND_AUTH_MODE=basic
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+      - FRONTEND_AUTH_REQUIRED=false
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge

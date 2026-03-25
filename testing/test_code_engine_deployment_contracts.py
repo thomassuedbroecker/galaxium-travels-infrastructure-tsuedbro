@@ -37,22 +37,40 @@ class CodeEngineDeploymentContractTests(unittest.TestCase):
         self.assertIn("STACK_AUTH_MODE=basic", content)
         self.assertIn("Current preconfigured default in this folder: basic", content)
 
-    def test_common_sh_defaults_to_basic_and_provides_configmap_helpers(self) -> None:
+    def test_common_sh_defaults_to_basic_and_keeps_only_core_shared_helpers(self) -> None:
         content = _read("deployment/ibm-code-engine/scripts/common.sh")
         self.assertIn('local raw_mode="${1:-basic}"', content)
         self.assertIn('STACK_AUTH_MODE="$(normalize_stack_auth_mode "${STACK_AUTH_MODE:-basic}")"', content)
-        self.assertIn("create_env_file()", content)
-        self.assertIn("ce_upsert_configmap_from_env_lines()", content)
         self.assertIn("ce_remove_application_env_keys()", content)
-        self.assertIn('--from-env-file "${env_file}"', content)
+        self.assertIn("ce_upsert_configmap()", content)
+        self.assertNotIn("create_env_file()", content)
+        self.assertNotIn("ce_upsert_configmap_from_env_lines()", content)
 
-    def test_service_deploy_script_uses_env_from_configmap_for_runtime_settings(self) -> None:
+    def test_deploy_stack_wrapper_runs_the_numbered_scripts(self) -> None:
+        content = _read("deployment/ibm-code-engine/deploy-stack.sh")
+        self.assertIn('source "${SCRIPTS_DIR}/common.sh"', content)
+        self.assertIn('bash "${SCRIPTS_DIR}/00-prereqs.sh"', content)
+        self.assertIn('bash "${SCRIPTS_DIR}/04-deploy-services.sh"', content)
+        self.assertIn('bash "${SCRIPTS_DIR}/06-summary.sh"', content)
+        self.assertIn('if prebuilt_image_mode_enabled; then', content)
+        self.assertIn('if should_deploy_keycloak; then', content)
+
+    def test_generated_directory_is_reserved_for_rendered_env_files(self) -> None:
+        generated_ignore = _read("deployment/ibm-code-engine/generated/.gitignore")
+        self.assertEqual(generated_ignore.strip(), "*\n!.gitignore")
+
+    def test_service_deploy_script_renders_env_files_and_uses_env_from_configmap(self) -> None:
         content = _read("deployment/ibm-code-engine/scripts/04-deploy-services.sh")
+        self.assertIn('GENERATED_CONFIG_DIR="${DEPLOY_DIR}/generated"', content)
+        self.assertIn("config_env_file()", content)
+        self.assertIn("write_env_file()", content)
+        self.assertIn("upsert_configmap_from_file()", content)
+        self.assertIn('--from-env-file "${env_file}"', content)
         self.assertIn('--env-from-configmap "${BOOKING_API_CONFIGMAP_NAME}"', content)
         self.assertIn('--env-from-configmap "${MCP_CONFIGMAP_NAME}"', content)
         self.assertIn('--env-from-configmap "${WEB_APP_CONFIGMAP_NAME}"', content)
         self.assertIn('--env-from-configmap "${WEB_APP_MCP_CONFIGMAP_NAME}"', content)
-        self.assertIn("ce_upsert_configmap_from_env_lines", content)
+        self.assertIn('mkdir -p "${GENERATED_CONFIG_DIR}"', content)
         self.assertIn("deploy_mcp_api_basic \"${mcp_base_url}\"", content)
         self.assertIn("deploy_mcp_api_oauth2 \"${keycloak_realm_url}\" \"${jwks_url}\" \"${mcp_base_url}\"", content)
         self.assertNotIn("--env AUTH_MODE=", content)
@@ -61,19 +79,25 @@ class CodeEngineDeploymentContractTests(unittest.TestCase):
 
     def test_summary_script_mentions_runtime_configmaps(self) -> None:
         content = _read("deployment/ibm-code-engine/scripts/06-summary.sh")
+        self.assertIn("Rendered config dir:", content)
         self.assertIn("Booking API config:", content)
         self.assertIn("MCP config:", content)
         self.assertIn("REST UI config:", content)
         self.assertIn("MCP UI config:", content)
         self.assertIn("service configmaps", content)
+        self.assertIn("rendered env files", content)
 
     def test_code_engine_readme_documents_basic_first_configmap_model(self) -> None:
         content = _read("deployment/ibm-code-engine/README.md")
+        self.assertIn("only supported deployment package", content)
         self.assertIn("preconfigured for the `basic` auth path first", content)
         self.assertIn("Code Engine configmaps for per-service non-secret runtime settings", content)
-        self.assertIn("renders env files for each deployed service variant", content)
+        self.assertIn("deploy-stack.sh", content)
+        self.assertIn("generated/", content)
+        self.assertIn("renders env files for each deployed service variant into `generated/`", content)
         self.assertIn("--env-from-configmap", content)
-        self.assertIn("service runtime configmaps", content)
+        self.assertIn("visible config artifacts", content)
+        self.assertNotIn("ce-deployment", content)
 
     def test_repo_aggregate_runner_includes_code_engine_contract_suite(self) -> None:
         content = _read("testing/automation/run-all-tests.sh")

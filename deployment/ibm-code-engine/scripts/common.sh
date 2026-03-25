@@ -18,7 +18,7 @@ source "${ENV_FILE}"
 IBM_CLOUD_API_KEY_RESOLVED="${IBM_CLOUD_API_KEY:-${IBMCLOUD_API_KEY:-}}"
 ICR_REGISTRY_USERNAME_RESOLVED="${ICR_REGISTRY_USERNAME:-iamapikey}"
 ICR_REGISTRY_PASSWORD_RESOLVED="${ICR_REGISTRY_PASSWORD:-${IBM_CLOUD_API_KEY_RESOLVED}}"
-GENERATED_ENV_FILES=()
+CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
 
 normalize_deploy_artifact_mode() {
   local raw_mode="${1:-source_build}"
@@ -112,8 +112,31 @@ require_command() {
   fi
 }
 
+debug_enabled() {
+  case "$(printf '%s' "${CE_DEBUG_RESOLVED}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+run_maybe_quiet() {
+  local label="$1"
+  shift
+
+  if debug_enabled; then
+    echo "[debug] ${label}"
+    "$@"
+  else
+    "$@" >/dev/null 2>&1
+  fi
+}
+
 require_code_engine_plugin() {
-  if ! ibmcloud plugin show code-engine >/dev/null 2>&1; then
+  if ! run_maybe_quiet "ibmcloud plugin show code-engine" ibmcloud plugin show code-engine; then
     echo "ERROR: the IBM Cloud Code Engine plugin is not available."
     echo "Install it with: ibmcloud plugin install code-engine"
     exit 1
@@ -121,7 +144,7 @@ require_code_engine_plugin() {
 }
 
 require_container_registry_plugin() {
-  if ! ibmcloud plugin show container-registry >/dev/null 2>&1; then
+  if ! run_maybe_quiet "ibmcloud plugin show container-registry" ibmcloud plugin show container-registry; then
     echo "ERROR: the IBM Cloud Container Registry plugin is not available."
     echo "Install it with: ibmcloud plugin install container-registry"
     exit 1
@@ -179,17 +202,6 @@ case "${BUILD_SOURCE_RESOLVED}" in
     ;;
 esac
 
-cleanup_generated_env_files() {
-  local env_file
-  for env_file in "${GENERATED_ENV_FILES[@]:-}"; do
-    if [[ -n "${env_file}" && -f "${env_file}" ]]; then
-      rm -f "${env_file}"
-    fi
-  done
-}
-
-trap cleanup_generated_env_files EXIT
-
 prebuilt_image_mode_enabled() {
   [[ "${DEPLOY_ARTIFACT_MODE}" == "prebuilt_images" ]]
 }
@@ -223,14 +235,16 @@ ensure_ibmcloud_session() {
   if [[ -n "${IBM_CLOUD_API_KEY_RESOLVED}" ]]; then
     require_var IBM_CLOUD_REGION
     require_var IBM_CLOUD_RESOURCE_GROUP
-    ibmcloud login \
+    run_maybe_quiet \
+      "ibmcloud login --apikey <hidden> -r ${IBM_CLOUD_REGION} -g ${IBM_CLOUD_RESOURCE_GROUP}" \
+      ibmcloud login \
       --apikey "${IBM_CLOUD_API_KEY_RESOLVED}" \
       -r "${IBM_CLOUD_REGION}" \
-      -g "${IBM_CLOUD_RESOURCE_GROUP}" >/dev/null
+      -g "${IBM_CLOUD_RESOURCE_GROUP}"
     return
   fi
 
-  if ! ibmcloud target >/dev/null 2>&1; then
+  if ! run_maybe_quiet "ibmcloud target" ibmcloud target; then
     echo "ERROR: IBM Cloud login required."
     echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
     exit 1
@@ -241,7 +255,7 @@ ensure_container_registry_session() {
   ensure_ibmcloud_session
   require_container_registry_plugin
   require_var ICR_REGION
-  ibmcloud cr region-set "${ICR_REGION}" >/dev/null
+  run_maybe_quiet "ibmcloud cr region-set ${ICR_REGION}" ibmcloud cr region-set "${ICR_REGION}"
 }
 
 ensure_icr_namespace() {
@@ -259,14 +273,16 @@ ensure_icr_namespace() {
     return
   fi
 
-  ibmcloud cr namespace-add "${ICR_NAMESPACE}" >/dev/null
+  run_maybe_quiet "ibmcloud cr namespace-add ${ICR_NAMESPACE}" ibmcloud cr namespace-add "${ICR_NAMESPACE}"
 }
 
 login_container_client_to_icr() {
   require_prebuilt_image_settings
   ensure_container_registry_session
   require_command "${CONTAINER_CLIENT_RESOLVED}"
-  ibmcloud cr login --client "${CONTAINER_CLIENT_RESOLVED}" >/dev/null
+  run_maybe_quiet \
+    "ibmcloud cr login --client ${CONTAINER_CLIENT_RESOLVED}" \
+    ibmcloud cr login --client "${CONTAINER_CLIENT_RESOLVED}"
 }
 
 select_project() {
@@ -276,8 +292,12 @@ select_project() {
   fi
 
   ensure_ibmcloud_session
-  ibmcloud target -r "${IBM_CLOUD_REGION}" -g "${IBM_CLOUD_RESOURCE_GROUP}" >/dev/null
-  ibmcloud ce project select "${select_args[@]}" >/dev/null
+  run_maybe_quiet \
+    "ibmcloud target -r ${IBM_CLOUD_REGION} -g ${IBM_CLOUD_RESOURCE_GROUP}" \
+    ibmcloud target -r "${IBM_CLOUD_REGION}" -g "${IBM_CLOUD_RESOURCE_GROUP}"
+  run_maybe_quiet \
+    "ibmcloud ce project select ${CE_PROJECT_NAME}" \
+    ibmcloud ce project select "${select_args[@]}"
 }
 
 set_build_args() {
@@ -430,23 +450,6 @@ ce_upsert_configmap() {
   else
     ibmcloud ce configmap create --name "${configmap_name}" "$@"
   fi
-}
-
-create_env_file() {
-  local env_file
-  env_file="$(mktemp "${TMPDIR:-/tmp}/galaxium-ce-config.XXXXXX")"
-  GENERATED_ENV_FILES+=("${env_file}")
-  printf '%s\n' "$@" > "${env_file}"
-  printf '%s\n' "${env_file}"
-}
-
-ce_upsert_configmap_from_env_lines() {
-  local configmap_name="$1"
-  shift
-
-  local env_file
-  env_file="$(create_env_file "$@")"
-  ce_upsert_configmap "${configmap_name}" --from-env-file "${env_file}"
 }
 
 ce_secret_exists() {

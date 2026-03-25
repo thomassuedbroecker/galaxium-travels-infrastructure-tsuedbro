@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common.sh"
 
+GENERATED_CONFIG_DIR="${DEPLOY_DIR}/generated"
+
 require_command ibmcloud
 require_var HR_APP_NAME
 require_var BOOKING_API_APP_NAME
@@ -40,7 +42,26 @@ if prebuilt_image_mode_enabled; then
   require_prebuilt_image_settings
 fi
 
+mkdir -p "${GENERATED_CONFIG_DIR}"
 select_project
+
+config_env_file() {
+  local service_slug="$1"
+  local variant_slug="$2"
+  printf '%s/%s.%s.env\n' "${GENERATED_CONFIG_DIR}" "${service_slug}" "${variant_slug}"
+}
+
+write_env_file() {
+  local env_file="$1"
+  shift
+  printf '%s\n' "$@" > "${env_file}"
+}
+
+upsert_configmap_from_file() {
+  local configmap_name="$1"
+  local env_file="$2"
+  ce_upsert_configmap "${configmap_name}" --from-env-file "${env_file}"
+}
 
 deploy_hr_api() {
   set_service_artifact_args "HR_database" "hr"
@@ -62,19 +83,25 @@ deploy_hr_api() {
 upsert_booking_api_config_oauth2() {
   local keycloak_realm_url="$1"
   local jwks_url="$2"
+  local env_file
+  env_file="$(config_env_file "booking-api" "oauth2")"
 
-  ce_upsert_configmap_from_env_lines \
-    "${BOOKING_API_CONFIGMAP_NAME}" \
+  write_env_file \
+    "${env_file}" \
     "AUTH_MODE=oauth2" \
     "OIDC_ISSUER=${keycloak_realm_url}" \
     "OIDC_AUDIENCE=${OIDC_AUDIENCE}" \
     "OIDC_JWKS_URL=${jwks_url}"
+
+  upsert_configmap_from_file "${BOOKING_API_CONFIGMAP_NAME}" "${env_file}"
 }
 
 upsert_booking_api_config_basic() {
-  ce_upsert_configmap_from_env_lines \
-    "${BOOKING_API_CONFIGMAP_NAME}" \
-    "AUTH_MODE=basic"
+  local env_file
+  env_file="$(config_env_file "booking-api" "basic")"
+
+  write_env_file "${env_file}" "AUTH_MODE=basic"
+  upsert_configmap_from_file "${BOOKING_API_CONFIGMAP_NAME}" "${env_file}"
 }
 
 deploy_booking_api_oauth2() {
@@ -122,6 +149,9 @@ upsert_mcp_api_config_oauth2() {
   local keycloak_realm_url="$1"
   local jwks_url="$2"
   local mcp_public_base_url="${3:-}"
+  local env_file
+  env_file="$(config_env_file "mcp" "oauth2")"
+
   local env_lines=(
     "AUTH_MODE=oauth2"
     "OIDC_ISSUER=${keycloak_realm_url}"
@@ -134,18 +164,22 @@ upsert_mcp_api_config_oauth2() {
     env_lines+=("MCP_PUBLIC_BASE_URL=${mcp_public_base_url}")
   fi
 
-  ce_upsert_configmap_from_env_lines "${MCP_CONFIGMAP_NAME}" "${env_lines[@]}"
+  write_env_file "${env_file}" "${env_lines[@]}"
+  upsert_configmap_from_file "${MCP_CONFIGMAP_NAME}" "${env_file}"
 }
 
 upsert_mcp_api_config_basic() {
   local mcp_public_base_url="${1:-}"
-  local env_lines=("AUTH_MODE=basic")
+  local env_file
+  env_file="$(config_env_file "mcp" "basic")"
 
+  local env_lines=("AUTH_MODE=basic")
   if [[ -n "${mcp_public_base_url}" ]]; then
     env_lines+=("MCP_PUBLIC_BASE_URL=${mcp_public_base_url}")
   fi
 
-  ce_upsert_configmap_from_env_lines "${MCP_CONFIGMAP_NAME}" "${env_lines[@]}"
+  write_env_file "${env_file}" "${env_lines[@]}"
+  upsert_configmap_from_file "${MCP_CONFIGMAP_NAME}" "${env_file}"
 }
 
 deploy_mcp_api_oauth2() {
@@ -200,25 +234,33 @@ deploy_mcp_api_basic() {
 upsert_rest_ui_config_oauth2() {
   local booking_api_url="$1"
   local token_url="$2"
+  local env_file
+  env_file="$(config_env_file "web-ui" "oauth2")"
 
-  ce_upsert_configmap_from_env_lines \
-    "${WEB_APP_CONFIGMAP_NAME}" \
+  write_env_file \
+    "${env_file}" \
     "BACKEND_URL=${booking_api_url}" \
     "BACKEND_AUTH_MODE=oauth2" \
     "FRONTEND_AUTH_REQUIRED=${FRONTEND_AUTH_REQUIRED_RESOLVED}" \
     "OIDC_TOKEN_URL=${token_url}" \
     "OIDC_CLIENT_ID=${OIDC_CLIENT_ID}" \
     "OIDC_SCOPE=${OIDC_SCOPE}"
+
+  upsert_configmap_from_file "${WEB_APP_CONFIGMAP_NAME}" "${env_file}"
 }
 
 upsert_rest_ui_config_basic() {
   local booking_api_url="$1"
+  local env_file
+  env_file="$(config_env_file "web-ui" "basic")"
 
-  ce_upsert_configmap_from_env_lines \
-    "${WEB_APP_CONFIGMAP_NAME}" \
+  write_env_file \
+    "${env_file}" \
     "BACKEND_URL=${booking_api_url}" \
     "BACKEND_AUTH_MODE=basic" \
     "FRONTEND_AUTH_REQUIRED=false"
+
+  upsert_configmap_from_file "${WEB_APP_CONFIGMAP_NAME}" "${env_file}"
 }
 
 deploy_rest_ui_oauth2() {
@@ -275,9 +317,11 @@ deploy_rest_ui_basic() {
 upsert_mcp_ui_config_oauth2() {
   local mcp_base_url="$1"
   local token_url="$2"
+  local env_file
+  env_file="$(config_env_file "web-ui-mcp" "oauth2")"
 
-  ce_upsert_configmap_from_env_lines \
-    "${WEB_APP_MCP_CONFIGMAP_NAME}" \
+  write_env_file \
+    "${env_file}" \
     "PORT=8085" \
     "MCP_SERVER_URL=${mcp_base_url}/mcp" \
     "MCP_TIMEOUT_SECONDS=${MCP_TIMEOUT_SECONDS}" \
@@ -286,18 +330,24 @@ upsert_mcp_ui_config_oauth2() {
     "OIDC_TOKEN_URL=${token_url}" \
     "OIDC_CLIENT_ID=${OIDC_CLIENT_ID}" \
     "OIDC_SCOPE=${OIDC_SCOPE}"
+
+  upsert_configmap_from_file "${WEB_APP_MCP_CONFIGMAP_NAME}" "${env_file}"
 }
 
 upsert_mcp_ui_config_basic() {
   local mcp_base_url="$1"
+  local env_file
+  env_file="$(config_env_file "web-ui-mcp" "basic")"
 
-  ce_upsert_configmap_from_env_lines \
-    "${WEB_APP_MCP_CONFIGMAP_NAME}" \
+  write_env_file \
+    "${env_file}" \
     "PORT=8085" \
     "MCP_SERVER_URL=${mcp_base_url}/mcp" \
     "MCP_TIMEOUT_SECONDS=${MCP_TIMEOUT_SECONDS}" \
     "BACKEND_AUTH_MODE=basic" \
     "FRONTEND_AUTH_REQUIRED=false"
+
+  upsert_configmap_from_file "${WEB_APP_MCP_CONFIGMAP_NAME}" "${env_file}"
 }
 
 deploy_mcp_ui_oauth2() {
@@ -393,6 +443,7 @@ web_url="$(ce_app_url "${WEB_APP_NAME}")"
 web_mcp_url="$(ce_app_url "${WEB_APP_MCP_APP_NAME}")"
 hr_url="$(ce_app_url "${HR_APP_NAME}")"
 
+echo "Rendered config files: ${GENERATED_CONFIG_DIR}"
 echo "Stack auth mode: ${STACK_AUTH_MODE}"
 echo "Artifact mode:   ${DEPLOY_ARTIFACT_MODE}"
 if [[ -n "${keycloak_url}" ]]; then

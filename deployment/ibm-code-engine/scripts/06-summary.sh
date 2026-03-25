@@ -55,6 +55,7 @@ MCP base URL:        ${mcp_base_url}
 MCP endpoint:        ${mcp_base_url}/mcp
 REST Web UI:         ${web_url}
 MCP Web UI:          ${web_mcp_url}
+Rendered config dir: ${DEPLOY_DIR}/generated
 Booking API config:  ${BOOKING_API_CONFIGMAP_NAME}
 MCP config:          ${MCP_CONFIGMAP_NAME}
 REST UI config:      ${WEB_APP_CONFIGMAP_NAME}
@@ -65,6 +66,7 @@ Important
 
 - Deployment order matters because Code Engine public URLs are only known after each application is created.
 - Non-secret runtime settings are delivered through the service configmaps in this folder.
+- The rendered env files are kept in ${DEPLOY_DIR}/generated so you can inspect what was sent to Code Engine.
 - Keep the MCP transport on Streamable HTTP.
 - Public MCP clients must use ${mcp_base_url}/mcp.
 EOF

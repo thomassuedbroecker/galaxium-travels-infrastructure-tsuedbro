@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
+CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
 
 require_command() {
   local command_name="$1"
@@ -13,12 +14,34 @@ require_command() {
   fi
 }
 
-require_command bash
+debug_enabled() {
+  case "$(printf '%s' "${CE_DEBUG_RESOLVED}" | tr '[:upper:]' '[:lower:]')" in
+    1|true|yes|on)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+run_maybe_quiet() {
+  local label="$1"
+  shift
+
+  if debug_enabled; then
+    echo "[debug] ${label}"
+    "$@"
+  else
+    "$@" >/dev/null 2>&1
+  fi
+}
+
 require_command ibmcloud
 require_command curl
 require_command jq
 
-if ! ibmcloud plugin show code-engine >/dev/null 2>&1; then
+if ! run_maybe_quiet "ibmcloud plugin show code-engine" ibmcloud plugin show code-engine; then
   echo "ERROR: the IBM Cloud Code Engine plugin is not available."
   echo "Install it with: ibmcloud plugin install code-engine"
   exit 1
@@ -54,7 +77,7 @@ ibmcloud plugin show code-engine
 echo
 
 if [[ "${deploy_artifact_mode}" == "prebuilt_images" ]]; then
-  if ! ibmcloud plugin show container-registry >/dev/null 2>&1; then
+  if ! run_maybe_quiet "ibmcloud plugin show container-registry" ibmcloud plugin show container-registry; then
     echo "ERROR: the IBM Cloud Container Registry plugin is not available."
     echo "Install it with: ibmcloud plugin install container-registry"
     exit 1
@@ -100,7 +123,7 @@ if [[ -n "${ibm_cloud_api_key_resolved}" ]]; then
   echo "The deployment scripts will call: ibmcloud login --apikey <hidden> -r <region> -g <resource-group>"
 else
   echo "No IBM Cloud API key is configured."
-  if ibmcloud target >/dev/null 2>&1; then
+  if run_maybe_quiet "ibmcloud target" ibmcloud target; then
     echo "An interactive ibmcloud session already exists."
   else
     echo "Run 'ibmcloud login' before scripts/01-project.sh, or set IBM_CLOUD_API_KEY in deploy.env."

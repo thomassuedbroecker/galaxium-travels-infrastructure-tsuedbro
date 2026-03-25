@@ -1,4 +1,4 @@
-# IBM Code Engine Deployment Draft
+# IBM Code Engine Deployment
 
 This folder prepares the current Galaxium Travels stack for IBM Code Engine.
 
@@ -17,6 +17,7 @@ Status:
 
 - draft deployment package
 - updated to match the current repository structure
+- the only supported deployment package in this repository
 - preconfigured for the `basic` auth path first
 - not executed against a live IBM Cloud account in this workspace
 
@@ -34,7 +35,8 @@ Not used in this folder:
 - Terraform
 
 So the current deployment package is `bash + ibmcloud ce ...`, not Terraform.
-If you want a Terraform-based deployment, that would be a separate implementation and should be documented as a second option instead of being mixed into this one.
+This repository now keeps a single supported Code Engine deployment path in this folder.
+Terraform is intentionally out of scope for the current repository state.
 
 ## What This Folder Supports
 
@@ -86,10 +88,11 @@ There is currently no Terraform state, Terraform module, or Terraform workflow i
 
 Runtime configuration model:
 
-- `scripts/04-deploy-services.sh` renders env files for each deployed service variant and pushes them into Code Engine configmaps.
+- `deploy-stack.sh` is the primary operator entrypoint for the single supported deployment path in this repository.
+- `scripts/04-deploy-services.sh` renders env files for each deployed service variant into `generated/` and pushes them into Code Engine configmaps.
 - The applications then consume those configmaps with `--env-from-configmap` instead of a long list of direct `--env` flags.
 - Secrets stay in Code Engine secrets and are still attached with `--env-from-secret`.
-- This keeps the Basic Auth-first path simple now and leaves room for future auth variants without turning the deploy command into a long list of inline variables.
+- This keeps the Basic Auth-first path simple now, leaves visible config artifacts behind for debugging on another machine, and still leaves room for future auth variants.
 
 Important build detail:
 
@@ -171,6 +174,10 @@ So the Code Engine model is different from local Docker Compose:
 
 - [`deploy.env.template`](./deploy.env.template)
   - Copy this to `deploy.env` and fill in the values.
+- [`deploy-stack.sh`](./deploy-stack.sh)
+  - Run the full deployment flow through the single supported entrypoint.
+- [`generated/.gitignore`](./generated/.gitignore)
+  - Keeps rendered service env files out of git while preserving the folder for local inspection.
 - [`scripts/00-prereqs.sh`](./scripts/00-prereqs.sh)
   - Check required local commands, verify the Code Engine plugin, and show whether the deployment will use `IBM_CLOUD_API_KEY` or an existing interactive `ibmcloud login` session.
   - In `prebuilt_images` mode, also checks the Container Registry plugin and the selected container client.
@@ -184,7 +191,7 @@ So the Code Engine model is different from local Docker Compose:
   - Deploy Keycloak inside the same Code Engine project for `oauth2` mode.
 - [`scripts/04-deploy-services.sh`](./scripts/04-deploy-services.sh)
   - Deploy HR, REST, and MCP first, then deploy REST UI and MCP UI with the resolved URLs.
-  - Renders per-service env files, updates the runtime configmaps, and binds them to the apps with `--env-from-configmap`.
+  - Renders per-service env files into `generated/`, updates the runtime configmaps, and binds them to the apps with `--env-from-configmap`.
   - Uses either `--build-source` or `--image` depending on `DEPLOY_ARTIFACT_MODE`.
 - [`scripts/05-sync-keycloak-client.sh`](./scripts/05-sync-keycloak-client.sh)
   - Update the Keycloak `web-app-proxy` client with the final Code Engine UI origins and redirect URI patterns.
@@ -228,7 +235,7 @@ Example:
 ```sh
 cd deployment/ibm-code-engine
 cp deploy.env.template deploy.env
-bash scripts/00-prereqs.sh
+bash deploy-stack.sh
 ```
 
 ## Current Default Path
@@ -240,7 +247,7 @@ That means:
 - `deploy.env.template` starts with `STACK_AUTH_MODE=basic`
 - `FRONTEND_AUTH_REQUIRED` resolves to `false` unless you change it
 - `scripts/03-deploy-keycloak.sh` and `scripts/05-sync-keycloak-client.sh` skip automatically
-- the non-secret runtime settings are expected to flow through the service configmaps, not through direct `ibmcloud ce application ... --env ...` flags
+- the non-secret runtime settings are expected to flow through the service configmaps, with the rendered source files kept in `generated/`
 - the first live validation path should be the Basic Auth REST and MCP checks printed by `scripts/06-summary.sh`
 
 Switch to `STACK_AUTH_MODE=oauth2` only when you are ready to configure the Keycloak-dependent variant.
@@ -285,7 +292,13 @@ Version handling note:
 
 ## Recommended Order
 
-Run the scripts in this order:
+Run the deployment through the single supported entrypoint:
+
+```sh
+bash deploy-stack.sh
+```
+
+Manual script order is still documented for debugging and step-by-step inspection:
 
 ```sh
 bash scripts/00-prereqs.sh
@@ -300,6 +313,7 @@ bash scripts/06-summary.sh
 
 Notes:
 
+- `deploy-stack.sh` already applies the practical order below, including the auth-mode and artifact-mode conditional skips.
 - In `DEPLOY_ARTIFACT_MODE=source_build`, `scripts/02b-build-and-push-images.sh` exits with a skip message.
 - In `DEPLOY_ARTIFACT_MODE=prebuilt_images`, run `scripts/02b-build-and-push-images.sh` before `scripts/04-deploy-services.sh`.
 - In the current default `STACK_AUTH_MODE=basic`, the practical operator flow is `00 -> 01 -> 02 -> 02b optional -> 04 -> 06`.
@@ -396,8 +410,7 @@ This folder does not currently automate:
 5. managed TLS certificate setup
 6. persistent data store creation and binding
 7. mirroring the Keycloak base image into IBM Cloud Container Registry
-8. Terraform-based deployment
-9. production hardening of the Keycloak runtime
+8. production hardening of the Keycloak runtime
 
 ## Local Validation Done In This Workspace
 
@@ -417,7 +430,7 @@ These checks were not completed here:
 - live Keycloak rollout on IBM Cloud
 - live public URL smoke tests on IBM Cloud
 
-Terraform checks were also not run because this folder does not contain a Terraform implementation.
+Terraform checks were not run because this repository keeps only the bash-based Code Engine deployment package in this folder.
 
 ## Suggested Next Step
 

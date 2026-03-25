@@ -49,10 +49,10 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 Current verified checks are split between smoke coverage and the last full matrix run:
 
-- `2026-03-24`: `bash testing/automation/run-code-engine-contract-tests.sh`
-  - passed with `6/6` tests green
+- `2026-03-25`: `bash testing/automation/run-code-engine-contract-tests.sh`
+  - passed with `8/8` tests green
   - artifact:
-    - `testing/results/generated/contracts/code-engine-contracts-20260324T101509Z.log`
+    - `testing/results/generated/contracts/code-engine-contracts-20260325T072004Z.log`
 - `2026-03-23`: `bash testing/automation/run-all-tests.sh`
   - passed for local-container contracts, REST pytest, UI OAuth smoke, MCP OAuth smoke, and Keycloak UI -> MCP Basic Auth smoke
   - artifacts:

@@ -18,6 +18,8 @@ This matches the idea discussed in the blog post [Should MCP replace REST for AI
 The point is not that MCP always replaces REST.
 The point is that you can compare both approaches on the same business case and make a better decision.
 
+For deployment, the repository now keeps a single supported IBM Code Engine package in `deployment/ibm-code-engine/`.
+
 Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./architecture/galaxim-travel-infrastructure.drawio)
 
 ![](./images/galaxim-travel-infrastructure-container-architecture.png)
@@ -59,7 +61,7 @@ flowchart LR
 - Manual MCP auth walkthrough with Inspector CLI: [manual_auth_check_using_the_commandline.md](./manual_auth_check_using_the_commandline.md)
 - WebUI auth matrix details: [testing/webui_matrix/README.md](./testing/webui_matrix/README.md)
 - Project quality review: [QUALITY-CHECK.md](./QUALITY-CHECK.md)
-- Draft IBM Code Engine deployment: [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md)
+- IBM Code Engine deployment package: [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md)
 
 ## Main Services
 

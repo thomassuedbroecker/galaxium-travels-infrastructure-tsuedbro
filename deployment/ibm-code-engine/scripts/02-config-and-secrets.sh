@@ -10,6 +10,17 @@ DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd -- "${DEPLOY_DIR}/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 
+if [[ -t 1 ]]; then
+  BLUE='\033[0;34m'
+  NC='\033[0m'
+else
+  BLUE=''
+  NC=''
+fi
+
+echo -e "\n${BLUE}========================================${NC}"
+echo "Running ${BASH_SOURCE[0]} with environment file ${ENV_FILE}"
+
 # ************************
 # Environment definition section
 # ************************
@@ -135,16 +146,46 @@ debug_enabled() {
   esac
 }
 
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+  printf '[%s] %s\n' "$(timestamp)" "$*"
+}
+
 run_maybe_quiet() {
   local label="$1"
   shift
 
+  log_info "START ${label}"
   if debug_enabled; then
-    echo "[debug] ${label}"
-    "$@"
-  else
-    "$@" >/dev/null 2>&1
+    if "$@"; then
+      log_info "DONE  ${label}"
+      return 0
+    fi
+
+    local status=$?
+    log_info "FAIL  ${label} (exit ${status})"
+    return "${status}"
   fi
+
+  local output_file
+  output_file="$(mktemp "${TMPDIR:-/tmp}/ce-script.XXXXXX")"
+
+  if "$@" >"${output_file}" 2>&1; then
+    log_info "DONE  ${label}"
+    rm -f "${output_file}"
+    return 0
+  fi
+
+  local status=$?
+  log_info "FAIL  ${label} (exit ${status})"
+  if [[ -s "${output_file}" ]]; then
+    cat "${output_file}"
+  fi
+  rm -f "${output_file}"
+  return "${status}"
 }
 
 require_code_engine_plugin() {
@@ -231,6 +272,8 @@ ensure_icr_namespace() {
   require_prebuilt_image_settings
   ensure_container_registry_session
 
+  log_info "Checking whether ICR namespace '${ICR_NAMESPACE}' already exists."
+
   if ibmcloud cr namespace-list -o json | jq -e --arg ns "${ICR_NAMESPACE}" '
     .[]
     | select(
@@ -239,6 +282,7 @@ ensure_icr_namespace() {
         or (.Namespace? // "") == $ns
       )
   ' >/dev/null; then
+    log_info "ICR namespace '${ICR_NAMESPACE}' already exists."
     return
   fi
 
@@ -273,10 +317,15 @@ ce_upsert_configmap() {
   local configmap_name="$1"
   shift
 
+  log_info "Checking whether configmap '${configmap_name}' already exists."
   if ce_configmap_exists "${configmap_name}"; then
-    ibmcloud ce configmap update --name "${configmap_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce configmap update ${configmap_name}" \
+      ibmcloud ce configmap update --name "${configmap_name}" "$@"
   else
-    ibmcloud ce configmap create --name "${configmap_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce configmap create ${configmap_name}" \
+      ibmcloud ce configmap create --name "${configmap_name}" "$@"
   fi
 }
 
@@ -289,10 +338,15 @@ ce_upsert_secret() {
   local secret_name="$1"
   shift
 
+  log_info "Checking whether secret '${secret_name}' already exists."
   if ce_secret_exists "${secret_name}"; then
-    ibmcloud ce secret update --name "${secret_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce secret update ${secret_name}" \
+      ibmcloud ce secret update --name "${secret_name}" "$@"
   else
-    ibmcloud ce secret create --name "${secret_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce secret create ${secret_name}" \
+      ibmcloud ce secret create --name "${secret_name}" "$@"
   fi
 }
 

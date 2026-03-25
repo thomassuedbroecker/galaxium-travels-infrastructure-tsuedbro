@@ -10,6 +10,17 @@ DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd -- "${DEPLOY_DIR}/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 
+if [[ -t 1 ]]; then
+  BLUE='\033[0;34m'
+  NC='\033[0m'
+else
+  BLUE=''
+  NC=''
+fi
+
+echo -e "\n${BLUE}========================================${NC}"
+echo "Running ${BASH_SOURCE[0]} with environment file ${ENV_FILE}"
+
 # ************************
 # Environment definition section
 # ************************
@@ -95,16 +106,46 @@ debug_enabled() {
   esac
 }
 
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+  printf '[%s] %s\n' "$(timestamp)" "$*"
+}
+
 run_maybe_quiet() {
   local label="$1"
   shift
 
+  log_info "START ${label}"
   if debug_enabled; then
-    echo "[debug] ${label}"
-    "$@"
-  else
-    "$@" >/dev/null 2>&1
+    if "$@"; then
+      log_info "DONE  ${label}"
+      return 0
+    fi
+
+    local status=$?
+    log_info "FAIL  ${label} (exit ${status})"
+    return "${status}"
   fi
+
+  local output_file
+  output_file="$(mktemp "${TMPDIR:-/tmp}/ce-script.XXXXXX")"
+
+  if "$@" >"${output_file}" 2>&1; then
+    log_info "DONE  ${label}"
+    rm -f "${output_file}"
+    return 0
+  fi
+
+  local status=$?
+  log_info "FAIL  ${label} (exit ${status})"
+  if [[ -s "${output_file}" ]]; then
+    cat "${output_file}"
+  fi
+  rm -f "${output_file}"
+  return "${status}"
 }
 
 require_code_engine_plugin() {
@@ -183,6 +224,8 @@ ensure_icr_namespace() {
   require_prebuilt_image_settings
   ensure_container_registry_session
 
+  log_info "Checking whether ICR namespace '${ICR_NAMESPACE}' already exists."
+
   if ibmcloud cr namespace-list -o json | jq -e --arg ns "${ICR_NAMESPACE}" '
     .[]
     | select(
@@ -191,6 +234,7 @@ ensure_icr_namespace() {
         or (.Namespace? // "") == $ns
       )
   ' >/dev/null; then
+    log_info "ICR namespace '${ICR_NAMESPACE}' already exists."
     return
   fi
 
@@ -257,11 +301,13 @@ build_and_push_service_image() {
     "${REPO_ROOT}/${context_dir}"
   )
 
-  echo "Building ${service_key} image: ${image_ref}"
-  "${build_cmd[@]}"
+  run_maybe_quiet \
+    "${CONTAINER_CLIENT_RESOLVED} build ${service_key} image ${image_ref}" \
+    "${build_cmd[@]}"
 
-  echo "Pushing ${service_key} image: ${image_ref}"
-  "${CONTAINER_CLIENT_RESOLVED}" push "${image_ref}"
+  run_maybe_quiet \
+    "${CONTAINER_CLIENT_RESOLVED} push ${service_key} image ${image_ref}" \
+    "${CONTAINER_CLIENT_RESOLVED}" push "${image_ref}"
 }
 
 # ************************

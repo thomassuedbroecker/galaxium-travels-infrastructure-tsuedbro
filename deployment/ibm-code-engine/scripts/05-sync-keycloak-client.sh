@@ -10,6 +10,17 @@ DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
 
+if [[ -t 1 ]]; then
+  BLUE='\033[0;34m'
+  NC='\033[0m'
+else
+  BLUE=''
+  NC=''
+fi
+
+echo -e "\n${BLUE}========================================${NC}"
+echo "Running ${BASH_SOURCE[0]} with environment file ${ENV_FILE}"
+
 # ************************
 # Environment definition section
 # ************************
@@ -74,16 +85,46 @@ debug_enabled() {
   esac
 }
 
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+  printf '[%s] %s\n' "$(timestamp)" "$*"
+}
+
 run_maybe_quiet() {
   local label="$1"
   shift
 
+  log_info "START ${label}"
   if debug_enabled; then
-    echo "[debug] ${label}"
-    "$@"
-  else
-    "$@" >/dev/null 2>&1
+    if "$@"; then
+      log_info "DONE  ${label}"
+      return 0
+    fi
+
+    local status=$?
+    log_info "FAIL  ${label} (exit ${status})"
+    return "${status}"
   fi
+
+  local output_file
+  output_file="$(mktemp "${TMPDIR:-/tmp}/ce-script.XXXXXX")"
+
+  if "$@" >"${output_file}" 2>&1; then
+    log_info "DONE  ${label}"
+    rm -f "${output_file}"
+    return 0
+  fi
+
+  local status=$?
+  log_info "FAIL  ${label} (exit ${status})"
+  if [[ -s "${output_file}" ]]; then
+    cat "${output_file}"
+  fi
+  rm -f "${output_file}"
+  return "${status}"
 }
 
 require_code_engine_plugin() {
@@ -141,11 +182,15 @@ wait_for_http_ok() {
   local url="$1"
   local attempts="${2:-60}"
   local sleep_seconds="${3:-5}"
+  local attempt
 
-  for _ in $(seq 1 "${attempts}"); do
+  for attempt in $(seq 1 "${attempts}"); do
+    log_info "HTTP readiness check ${attempt}/${attempts}: ${url}"
     if curl -fsS "${url}" >/dev/null 2>&1; then
+      log_info "Endpoint is ready: ${url}"
       return 0
     fi
+    log_info "Endpoint not ready yet; retrying in ${sleep_seconds}s: ${url}"
     sleep "${sleep_seconds}"
   done
 
@@ -202,6 +247,7 @@ select_project
 # Monitoring section
 # ************************
 
+log_info "Resolving Code Engine URLs for Keycloak and the web applications."
 keycloak_url="$(resolve_keycloak_base_url)"
 web_url="$(ce_app_url "${WEB_APP_NAME}")"
 web_mcp_url="$(ce_app_url "${WEB_APP_MCP_APP_NAME}")"
@@ -210,6 +256,7 @@ echo "Waiting for Keycloak realm endpoints..."
 wait_for_http_ok "${keycloak_url}/realms/master/.well-known/openid-configuration"
 wait_for_http_ok "${keycloak_url}/realms/${KEYCLOAK_REALM}/.well-known/openid-configuration"
 
+log_info "Requesting a Keycloak admin token from ${keycloak_url}."
 admin_token="$(
   curl -fsS -X POST "${keycloak_url}/realms/master/protocol/openid-connect/token" \
     -H "Content-Type: application/x-www-form-urlencoded" \
@@ -228,6 +275,7 @@ fi
 # Test section
 # ************************
 
+log_info "Reading Keycloak client '${OIDC_CLIENT_ID}'."
 client_payload="$(
   curl -fsS "${keycloak_url}/admin/realms/${KEYCLOAK_REALM}/clients?clientId=${OIDC_CLIENT_ID}" \
     -H "Authorization: Bearer ${admin_token}"
@@ -252,10 +300,12 @@ updated_client="$(
     '
 )"
 
-curl -fsS -X PUT "${keycloak_url}/admin/realms/${KEYCLOAK_REALM}/clients/${client_id}" \
-  -H "Authorization: Bearer ${admin_token}" \
-  -H "Content-Type: application/json" \
-  -d "${updated_client}" >/dev/null
+run_maybe_quiet \
+  "Keycloak client update ${OIDC_CLIENT_ID}" \
+  curl -fsS -X PUT "${keycloak_url}/admin/realms/${KEYCLOAK_REALM}/clients/${client_id}" \
+    -H "Authorization: Bearer ${admin_token}" \
+    -H "Content-Type: application/json" \
+    -d "${updated_client}"
 
 echo "Updated Keycloak client '${OIDC_CLIENT_ID}' with Code Engine UI URLs."
 echo "REST Web UI origin: ${web_url}"

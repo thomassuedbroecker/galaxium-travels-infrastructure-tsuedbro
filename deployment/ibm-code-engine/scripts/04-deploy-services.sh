@@ -11,6 +11,17 @@ REPO_ROOT="$(cd -- "${DEPLOY_DIR}/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 GENERATED_CONFIG_DIR="${DEPLOY_DIR}/generated"
 
+if [[ -t 1 ]]; then
+  BLUE='\033[0;34m'
+  NC='\033[0m'
+else
+  BLUE=''
+  NC=''
+fi
+
+echo -e "\n${BLUE}========================================${NC}"
+echo "Running ${BASH_SOURCE[0]} with environment file ${ENV_FILE}"
+
 # ************************
 # Environment definition section
 # ************************
@@ -136,16 +147,46 @@ debug_enabled() {
   esac
 }
 
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+  printf '[%s] %s\n' "$(timestamp)" "$*"
+}
+
 run_maybe_quiet() {
   local label="$1"
   shift
 
+  log_info "START ${label}"
   if debug_enabled; then
-    echo "[debug] ${label}"
-    "$@"
-  else
-    "$@" >/dev/null 2>&1
+    if "$@"; then
+      log_info "DONE  ${label}"
+      return 0
+    fi
+
+    local status=$?
+    log_info "FAIL  ${label} (exit ${status})"
+    return "${status}"
   fi
+
+  local output_file
+  output_file="$(mktemp "${TMPDIR:-/tmp}/ce-script.XXXXXX")"
+
+  if "$@" >"${output_file}" 2>&1; then
+    log_info "DONE  ${label}"
+    rm -f "${output_file}"
+    return 0
+  fi
+
+  local status=$?
+  log_info "FAIL  ${label} (exit ${status})"
+  if [[ -s "${output_file}" ]]; then
+    cat "${output_file}"
+  fi
+  rm -f "${output_file}"
+  return "${status}"
 }
 
 require_code_engine_plugin() {
@@ -341,10 +382,15 @@ ce_upsert_application() {
   local app_name="$1"
   shift
 
+  log_info "Checking whether application '${app_name}' already exists."
   if ce_application_exists "${app_name}"; then
-    ibmcloud ce application update --name "${app_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce application update ${app_name}" \
+      ibmcloud ce application update --name "${app_name}" "$@"
   else
-    ibmcloud ce application create --name "${app_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce application create ${app_name}" \
+      ibmcloud ce application create --name "${app_name}" "$@"
   fi
 }
 
@@ -352,6 +398,7 @@ ce_remove_application_env_keys() {
   local app_name="$1"
   shift
 
+  log_info "Checking whether application '${app_name}' exists before removing environment keys."
   if ! ce_application_exists "${app_name}"; then
     return
   fi
@@ -366,9 +413,11 @@ ce_remove_application_env_keys() {
     return
   fi
 
-  ibmcloud ce application update \
+  run_maybe_quiet \
+    "ibmcloud ce application update env ${app_name}" \
+    ibmcloud ce application update \
     --name "${app_name}" \
-    "${update_args[@]}" >/dev/null
+    "${update_args[@]}"
 }
 
 ce_app_url() {
@@ -385,10 +434,15 @@ ce_upsert_configmap() {
   local configmap_name="$1"
   shift
 
+  log_info "Checking whether configmap '${configmap_name}' already exists."
   if ce_configmap_exists "${configmap_name}"; then
-    ibmcloud ce configmap update --name "${configmap_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce configmap update ${configmap_name}" \
+      ibmcloud ce configmap update --name "${configmap_name}" "$@"
   else
-    ibmcloud ce configmap create --name "${configmap_name}" "$@"
+    run_maybe_quiet \
+      "ibmcloud ce configmap create ${configmap_name}" \
+      ibmcloud ce configmap create --name "${configmap_name}" "$@"
   fi
 }
 

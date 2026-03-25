@@ -11,16 +11,31 @@ DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
 
-# Colors for output
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+if [[ -t 1 ]]; then
+  BLUE='\033[0;34m'
+  YELLOW='\033[1;33m'
+  GREEN='\033[0;32m'
+  RED='\033[0;31m'
+  NC='\033[0m'
+else
+  BLUE=''
+  YELLOW=''
+  GREEN=''
+  RED=''
+  NC=''
+fi
 
-echo -e "\n${BLUE}========================================${NC}"
-echo -e "${YELLOW} Clear output ${NC}"
-clear
+clear_output_if_interactive() {
+  if [[ -t 1 && -n "${TERM:-}" ]]; then
+    clear || true
+  fi
+}
+
+if [[ -t 1 ]]; then
+  echo -e "\n${BLUE}========================================${NC}"
+  echo -e "${YELLOW} Clear output ${NC}"
+  clear_output_if_interactive
+fi
 
 echo -e "\n${BLUE}========================================${NC}"
 echo "Running ${BASH_SOURCE[0]} with environment file ${ENV_FILE}"
@@ -71,16 +86,46 @@ debug_enabled() {
   esac
 }
 
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+  printf '[%s] %s\n' "$(timestamp)" "$*"
+}
+
 run_maybe_quiet() {
   local label="$1"
   shift
 
+  log_info "START ${label}"
   if debug_enabled; then
-    echo "[debug] ${label}"
-    "$@"
-  else
-    "$@" >/dev/null 2>&1
+    if "$@"; then
+      log_info "DONE  ${label}"
+      return 0
+    fi
+
+    local status=$?
+    log_info "FAIL  ${label} (exit ${status})"
+    return "${status}"
   fi
+
+  local output_file
+  output_file="$(mktemp "${TMPDIR:-/tmp}/ce-script.XXXXXX")"
+
+  if "$@" >"${output_file}" 2>&1; then
+    log_info "DONE  ${label}"
+    rm -f "${output_file}"
+    return 0
+  fi
+
+  local status=$?
+  log_info "FAIL  ${label} (exit ${status})"
+  if [[ -s "${output_file}" ]]; then
+    cat "${output_file}"
+  fi
+  rm -f "${output_file}"
+  return "${status}"
 }
 
 require_code_engine_plugin() {
@@ -114,6 +159,37 @@ ensure_ibmcloud_session() {
   fi
 }
 
+select_project() {
+  local target_args=("-r" "${IBM_CLOUD_REGION}" "-g" "${IBM_CLOUD_RESOURCE_GROUP}")
+  local select_args=("--name" "${CE_PROJECT_NAME}")
+  local create_args=("--name" "${CE_PROJECT_NAME}")
+
+  if [[ -n "${CE_ENDPOINT:-}" ]]; then
+    select_args+=("--endpoint" "${CE_ENDPOINT}")
+  fi
+
+  if [[ -n "${CE_PROJECT_TAG:-}" ]]; then
+    create_args+=("--tag" "${CE_PROJECT_TAG}")
+  fi
+
+  run_maybe_quiet \
+    "ibmcloud target -r ${IBM_CLOUD_REGION} -g ${IBM_CLOUD_RESOURCE_GROUP}" \
+    ibmcloud target "${target_args[@]}"
+
+  log_info "Checking whether Code Engine project '${CE_PROJECT_NAME}' already exists."
+  if ! ibmcloud ce project select "${select_args[@]}" >/dev/null 2>&1; then
+    run_maybe_quiet \
+      "ibmcloud ce project create ${CE_PROJECT_NAME}" \
+      ibmcloud ce project create "${create_args[@]}"
+  else
+    log_info "Code Engine project '${CE_PROJECT_NAME}' already exists."
+  fi
+
+  run_maybe_quiet \
+    "ibmcloud ce project select ${CE_PROJECT_NAME}" \
+    ibmcloud ce project select "${select_args[@]}"
+}
+
 # ************************
 # Execution section
 # ************************
@@ -132,25 +208,5 @@ ensure_ibmcloud_session
 
 echo -e "\n${BLUE}========================================${NC}"
 echo -e "${YELLOW} Ensure Code Engine project settings ${NC}"
-target_args=$("-r" "${IBM_CLOUD_REGION}" "-g" "${IBM_CLOUD_RESOURCE_GROUP}")
-select_args=$("--name" "${CE_PROJECT_NAME}")
-create_args=$("--name" "${CE_PROJECT_NAME}")
-
-echo -e "\n${BLUE}========================================${NC}"
-echo -e "${YELLOW} IBM Cloud target... ${NC}"
-if [[ -n "${CE_ENDPOINT:-}" ]]; then
-  select_args+=("--endpoint" "${CE_ENDPOINT}")
-fi
-
-if [[ -n "${CE_PROJECT_TAG:-}" ]]; then
-  create_args+=("--tag" "${CE_PROJECT_TAG}")
-fi
-
-ibmcloud target "${target_args[@]}"
-
-if ! ibmcloud ce project select "${select_args[@]}" >/dev/null 2>&1; then
-  ibmcloud ce project create "${create_args[@]}"
-fi
-
-ibmcloud ce project select "${select_args[@]}"
+select_project
 echo "Active Code Engine project: ${CE_PROJECT_NAME}"

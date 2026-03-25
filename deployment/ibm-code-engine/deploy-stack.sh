@@ -19,11 +19,24 @@ steps=(
   06-summary.sh
 )
 
+timestamp() {
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
+log_info() {
+  printf '[%s] %s\n' "$(timestamp)" "$*"
+}
+
 # ************************
 # Execution section
 # ************************
 
+log_info "Running IBM Code Engine deployment steps from ${SCRIPTS_DIR}"
+
 for step in "${steps[@]}"; do
-  echo "==> ${step}"
+  log_info "START ${step}"
   bash "${SCRIPTS_DIR}/${step}"
+  log_info "DONE  ${step}"
 done
+
+log_info "IBM Code Engine deployment automation finished."

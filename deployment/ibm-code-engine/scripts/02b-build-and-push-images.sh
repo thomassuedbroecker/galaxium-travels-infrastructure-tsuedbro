@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd -- "${DEPLOY_DIR}/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
+
+# ************************
+# Environment definition section
+# ************************
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "ERROR: missing environment file: ${ENV_FILE}"
@@ -55,6 +63,10 @@ normalize_container_client() {
 DEPLOY_ARTIFACT_MODE="$(normalize_deploy_artifact_mode "${DEPLOY_ARTIFACT_MODE:-source_build}")"
 CONTAINER_CLIENT_RESOLVED="$(normalize_container_client "${CONTAINER_CLIENT:-docker}")"
 CONTAINER_PLATFORM_RESOLVED="${CONTAINER_PLATFORM:-linux/amd64}"
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -252,6 +264,10 @@ build_and_push_service_image() {
   "${CONTAINER_CLIENT_RESOLVED}" push "${image_ref}"
 }
 
+# ************************
+# Execution section
+# ************************
+
 require_command ibmcloud
 
 if ! prebuilt_image_mode_enabled; then
@@ -270,6 +286,10 @@ build_and_push_service_image booking_api booking_system_rest
 build_and_push_service_image mcp_api booking_system_mcp
 build_and_push_service_image web_app galaxium-booking-web-app
 build_and_push_service_image web_app_mcp galaxium-booking-web-app-mcp
+
+# ************************
+# Monitoring section
+# ************************
 
 cat <<EOF
 Prebuilt image push summary

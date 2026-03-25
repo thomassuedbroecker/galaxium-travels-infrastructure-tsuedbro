@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd -- "${DEPLOY_DIR}/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
+GENERATED_CONFIG_DIR="${DEPLOY_DIR}/generated"
+
+# ************************
+# Environment definition section
+# ************************
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "ERROR: missing environment file: ${ENV_FILE}"
@@ -103,6 +112,10 @@ if [[ "${STACK_AUTH_MODE}" == "basic" && "${FRONTEND_AUTH_REQUIRED_RESOLVED}" !=
   echo "ERROR: STACK_AUTH_MODE=basic requires FRONTEND_AUTH_REQUIRED=false."
   exit 1
 fi
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -392,49 +405,6 @@ resolve_keycloak_base_url() {
 
   ce_app_url "${KEYCLOAK_APP_NAME}"
 }
-
-GENERATED_CONFIG_DIR="${DEPLOY_DIR}/generated"
-
-require_command ibmcloud
-require_var IBM_CLOUD_REGION
-require_var IBM_CLOUD_RESOURCE_GROUP
-require_var CE_PROJECT_NAME
-require_var HR_APP_NAME
-require_var BOOKING_API_APP_NAME
-require_var MCP_APP_NAME
-require_var WEB_APP_NAME
-require_var WEB_APP_MCP_APP_NAME
-require_var BOOKING_API_CONFIGMAP_NAME
-require_var MCP_CONFIGMAP_NAME
-require_var WEB_APP_CONFIGMAP_NAME
-require_var WEB_APP_MCP_CONFIGMAP_NAME
-require_var SERVICE_CPU
-require_var SERVICE_MEMORY
-require_var SERVICE_MIN_SCALE
-require_var SERVICE_MAX_SCALE
-require_var WEB_CPU
-require_var WEB_MEMORY
-require_var WEB_MIN_SCALE
-require_var WEB_MAX_SCALE
-require_var WEB_APP_SECRET_NAME
-require_var MCP_TIMEOUT_SECONDS
-
-if [[ "${STACK_AUTH_MODE}" == "oauth2" ]]; then
-  require_var KEYCLOAK_APP_NAME
-  require_var KEYCLOAK_REALM
-  require_var OIDC_AUDIENCE
-  require_var OIDC_CLIENT_ID
-  require_var OIDC_SCOPE
-else
-  require_var BASIC_AUTH_SECRET_NAME
-fi
-
-if prebuilt_image_mode_enabled; then
-  require_prebuilt_image_settings
-fi
-
-mkdir -p "${GENERATED_CONFIG_DIR}"
-select_project
 
 config_env_file() {
   local service_slug="$1"
@@ -796,6 +766,51 @@ deploy_mcp_ui_basic() {
     --env-from-secret "${BASIC_AUTH_SECRET_NAME}"
 }
 
+# ************************
+# Execution section
+# ************************
+
+require_command ibmcloud
+require_var IBM_CLOUD_REGION
+require_var IBM_CLOUD_RESOURCE_GROUP
+require_var CE_PROJECT_NAME
+require_var HR_APP_NAME
+require_var BOOKING_API_APP_NAME
+require_var MCP_APP_NAME
+require_var WEB_APP_NAME
+require_var WEB_APP_MCP_APP_NAME
+require_var BOOKING_API_CONFIGMAP_NAME
+require_var MCP_CONFIGMAP_NAME
+require_var WEB_APP_CONFIGMAP_NAME
+require_var WEB_APP_MCP_CONFIGMAP_NAME
+require_var SERVICE_CPU
+require_var SERVICE_MEMORY
+require_var SERVICE_MIN_SCALE
+require_var SERVICE_MAX_SCALE
+require_var WEB_CPU
+require_var WEB_MEMORY
+require_var WEB_MIN_SCALE
+require_var WEB_MAX_SCALE
+require_var WEB_APP_SECRET_NAME
+require_var MCP_TIMEOUT_SECONDS
+
+if [[ "${STACK_AUTH_MODE}" == "oauth2" ]]; then
+  require_var KEYCLOAK_APP_NAME
+  require_var KEYCLOAK_REALM
+  require_var OIDC_AUDIENCE
+  require_var OIDC_CLIENT_ID
+  require_var OIDC_SCOPE
+else
+  require_var BASIC_AUTH_SECRET_NAME
+fi
+
+if prebuilt_image_mode_enabled; then
+  require_prebuilt_image_settings
+fi
+
+mkdir -p "${GENERATED_CONFIG_DIR}"
+select_project
+
 echo "Phase 1: deploy application backends"
 deploy_hr_api
 
@@ -829,6 +844,10 @@ else
   deploy_rest_ui_basic "${booking_api_url}"
   deploy_mcp_ui_basic "${mcp_base_url}"
 fi
+
+# ************************
+# Monitoring section
+# ************************
 
 web_url="$(ce_app_url "${WEB_APP_NAME}")"
 web_mcp_url="$(ce_app_url "${WEB_APP_MCP_APP_NAME}")"

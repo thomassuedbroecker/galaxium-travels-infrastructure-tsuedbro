@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
+
+# ************************
+# Environment definition section
+# ************************
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "ERROR: missing environment file: ${ENV_FILE}"
@@ -34,6 +42,10 @@ normalize_stack_auth_mode() {
 }
 
 STACK_AUTH_MODE="$(normalize_stack_auth_mode "${STACK_AUTH_MODE:-basic}")"
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -155,6 +167,10 @@ resolve_keycloak_base_url() {
   ce_app_url "${KEYCLOAK_APP_NAME}"
 }
 
+# ************************
+# Execution section
+# ************************
+
 require_command ibmcloud
 require_command curl
 require_command jq
@@ -182,6 +198,10 @@ fi
 
 select_project
 
+# ************************
+# Monitoring section
+# ************************
+
 keycloak_url="$(resolve_keycloak_base_url)"
 web_url="$(ce_app_url "${WEB_APP_NAME}")"
 web_mcp_url="$(ce_app_url "${WEB_APP_MCP_APP_NAME}")"
@@ -203,6 +223,10 @@ if [[ -z "${admin_token}" ]]; then
   echo "ERROR: failed to acquire a Keycloak admin token."
   exit 1
 fi
+
+# ************************
+# Test section
+# ************************
 
 client_payload="$(
   curl -fsS "${keycloak_url}/admin/realms/${KEYCLOAK_REALM}/clients?clientId=${OIDC_CLIENT_ID}" \

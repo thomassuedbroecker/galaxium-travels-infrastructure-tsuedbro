@@ -59,6 +59,74 @@ class CodeEngineDeploymentContractTests(unittest.TestCase):
             self.assertNotIn("common.sh", content, msg=script_path.name)
             self.assertIn('ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"', content, msg=script_path.name)
 
+    def test_code_engine_scripts_use_section_headers(self) -> None:
+        script_dir = REPO_ROOT / "deployment" / "ibm-code-engine"
+        files_to_expected_sections = {
+            "deploy-stack.sh": ["Variable definition section", "Execution section"],
+            "scripts/00-prereqs.sh": [
+                "Variable definition section",
+                "Function definition section",
+                "Execution section",
+                "Monitoring section",
+                "Test section",
+            ],
+            "scripts/01-project.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+            ],
+            "scripts/02-config-and-secrets.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+            ],
+            "scripts/02b-build-and-push-images.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+                "Monitoring section",
+            ],
+            "scripts/03-deploy-keycloak.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+                "Monitoring section",
+            ],
+            "scripts/04-deploy-services.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+                "Monitoring section",
+            ],
+            "scripts/05-sync-keycloak-client.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+                "Monitoring section",
+                "Test section",
+            ],
+            "scripts/06-summary.sh": [
+                "Variable definition section",
+                "Environment definition section",
+                "Function definition section",
+                "Execution section",
+                "Monitoring section",
+                "Test section",
+            ],
+        }
+
+        for relative_path, expected_sections in files_to_expected_sections.items():
+            content = (script_dir / relative_path).read_text(encoding="utf-8")
+            self.assertIn("# ************************", content, msg=relative_path)
+            for section_name in expected_sections:
+                self.assertIn(section_name, content, msg=f"{relative_path}: {section_name}")
+
     def test_deploy_stack_wrapper_runs_the_numbered_scripts(self) -> None:
         content = _read("deployment/ibm-code-engine/deploy-stack.sh")
         self.assertIn("steps=(", content)

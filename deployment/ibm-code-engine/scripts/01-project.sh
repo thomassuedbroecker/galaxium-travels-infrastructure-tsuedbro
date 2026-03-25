@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
+
+# ************************
+# Environment definition section
+# ************************
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "ERROR: missing environment file: ${ENV_FILE}"
@@ -16,6 +24,10 @@ fi
 source "${ENV_FILE}"
 
 IBM_CLOUD_API_KEY_RESOLVED="${IBM_CLOUD_API_KEY:-${IBMCLOUD_API_KEY:-}}"
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -86,6 +98,10 @@ ensure_ibmcloud_session() {
     exit 1
   fi
 }
+
+# ************************
+# Execution section
+# ************************
 
 require_command ibmcloud
 require_var IBM_CLOUD_REGION

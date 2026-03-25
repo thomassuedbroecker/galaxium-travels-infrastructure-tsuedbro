@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd -- "${DEPLOY_DIR}/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
+
+# ************************
+# Environment definition section
+# ************************
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "ERROR: missing environment file: ${ENV_FILE}"
@@ -103,6 +111,10 @@ if [[ "${STACK_AUTH_MODE}" == "basic" && "${FRONTEND_AUTH_REQUIRED_RESOLVED}" !=
   echo "ERROR: STACK_AUTH_MODE=basic requires FRONTEND_AUTH_REQUIRED=false."
   exit 1
 fi
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -283,6 +295,10 @@ ce_upsert_secret() {
     ibmcloud ce secret create --name "${secret_name}" "$@"
   fi
 }
+
+# ************************
+# Execution section
+# ************************
 
 require_command ibmcloud
 require_var IBM_CLOUD_REGION

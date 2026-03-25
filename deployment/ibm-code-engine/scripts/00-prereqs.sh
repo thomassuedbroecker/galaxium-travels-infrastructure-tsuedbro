@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -37,6 +45,10 @@ run_maybe_quiet() {
   fi
 }
 
+# ************************
+# Execution section
+# ************************
+
 require_command ibmcloud
 require_command curl
 require_command jq
@@ -46,6 +58,10 @@ if ! run_maybe_quiet "ibmcloud plugin show code-engine" ibmcloud plugin show cod
   echo "Install it with: ibmcloud plugin install code-engine"
   exit 1
 fi
+
+# ************************
+# Environment definition section
+# ************************
 
 env_loaded="false"
 if [[ -f "${ENV_FILE}" ]]; then
@@ -57,6 +73,10 @@ fi
 ibm_cloud_api_key_resolved="${IBM_CLOUD_API_KEY:-${IBMCLOUD_API_KEY:-}}"
 deploy_artifact_mode="$(printf '%s' "${DEPLOY_ARTIFACT_MODE:-source_build}" | tr '[:upper:]' '[:lower:]')"
 container_client="$(printf '%s' "${CONTAINER_CLIENT:-docker}" | tr '[:upper:]' '[:lower:]')"
+
+# ************************
+# Monitoring section
+# ************************
 
 echo "Prerequisite check"
 echo "=================="
@@ -115,6 +135,10 @@ else
   echo "Copy deploy.env.template to deploy.env before running the deployment scripts."
   echo
 fi
+
+# ************************
+# Test section
+# ************************
 
 echo "IBM Cloud login path"
 echo "--------------------"

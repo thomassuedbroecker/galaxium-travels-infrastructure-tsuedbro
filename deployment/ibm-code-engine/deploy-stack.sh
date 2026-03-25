@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
@@ -14,6 +18,10 @@ steps=(
   05-sync-keycloak-client.sh
   06-summary.sh
 )
+
+# ************************
+# Execution section
+# ************************
 
 for step in "${steps[@]}"; do
   echo "==> ${step}"

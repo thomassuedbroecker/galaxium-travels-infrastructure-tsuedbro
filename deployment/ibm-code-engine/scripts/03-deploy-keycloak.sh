@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ************************
+# Variable definition section
+# ************************
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 ENV_FILE="${ENV_FILE:-${DEPLOY_DIR}/deploy.env}"
 CE_DEBUG_RESOLVED="${CE_DEBUG:-0}"
+
+# ************************
+# Environment definition section
+# ************************
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "ERROR: missing environment file: ${ENV_FILE}"
@@ -34,6 +42,10 @@ normalize_stack_auth_mode() {
 }
 
 STACK_AUTH_MODE="$(normalize_stack_auth_mode "${STACK_AUTH_MODE:-basic}")"
+
+# ************************
+# Function definition section
+# ************************
 
 require_command() {
   local command_name="$1"
@@ -145,6 +157,10 @@ ce_app_url() {
   ibmcloud ce application get --name "${app_name}" --output url | tr -d '\r\n'
 }
 
+# ************************
+# Execution section
+# ************************
+
 require_command ibmcloud
 require_var IBM_CLOUD_REGION
 require_var IBM_CLOUD_RESOURCE_GROUP
@@ -192,6 +208,10 @@ if [[ -n "${KEYCLOAK_DATA_STORE_NAME:-}" ]]; then
 fi
 
 ce_upsert_application "${KEYCLOAK_APP_NAME}" "${args[@]}"
+
+# ************************
+# Monitoring section
+# ************************
 
 keycloak_url="$(ce_app_url "${KEYCLOAK_APP_NAME}")"
 echo "Keycloak URL: ${keycloak_url}"

@@ -172,6 +172,60 @@ cp testing/webui_matrix/local-machine-network.env.template testing/webui_matrix/
 bash testing/automation/run-webui-auth-matrix.sh --env-file testing/webui_matrix/local-machine-network.env
 ```
 
+## Open-Source Dependencies
+
+This repository contains multiple Python services, each with its own
+`requirements.txt`. It does not currently use a single root lockfile.
+
+The tables below show the direct dependencies declared in the repository as of
+`2026-03-31`. Where a service does not pin an exact version, the entry is marked
+as `not pinned`.
+
+Current declared Python base images:
+
+| Service | Python base image |
+| --- | --- |
+| `booking_system_rest/` | `python:3.11-slim` |
+| `booking_system_mcp/` | `python:3.11-slim` |
+| `HR_database/` | `python:3.11-slim` |
+| `galaxium-booking-web-app/` | `python:3.12-slim` |
+| `galaxium-booking-web-app-mcp/` | `python:3.12-slim` |
+
+Current declared main runtime libraries:
+
+| Library | Declared version in this repo | License | Where referenced |
+| --- | --- | --- | --- |
+| `fastapi` | `not pinned`; `0.104.1` in `HR_database/requirements.txt` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `HR_database/requirements.txt` |
+| `uvicorn` | `not pinned`; `0.24.0` in `HR_database/requirements.txt` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `HR_database/requirements.txt` |
+| `sqlalchemy` | `not pinned` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
+| `databases` | `not pinned` | BSD | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
+| `pydantic` / `pydantic[email]` | `not pinned`; `2.4.2` in `HR_database/requirements.txt` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `HR_database/requirements.txt` |
+| `python-dotenv` | `not pinned` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
+| `fastmcp` | `not pinned` | Apache-2.0 | `booking_system_mcp/requirements.txt` |
+| `PyJWT[crypto]` | `not pinned` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
+| `python-multipart` | `0.0.6` | Apache-2.0 | `HR_database/requirements.txt` |
+| `pandas` | `not pinned` | BSD-3-Clause | `HR_database/Dockerfile` |
+| `Flask` | `3.1.1` | BSD-3-Clause | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
+| `flask-cors` | `3.0.10` | MIT | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
+| `requests` | `2.31.0` | Apache-2.0 | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
+| `httpx` | `0.28.1` | BSD-3-Clause | `galaxium-booking-web-app-mcp/app/requirements.txt` |
+| `mcp` | `>=1.26.0,<2` | MIT | `galaxium-booking-web-app-mcp/app/requirements.txt` |
+
+Current declared dev and test libraries:
+
+| Library | Declared version in this repo | License | Where referenced |
+| --- | --- | --- | --- |
+| `pytest` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
+| `pytest-asyncio` | `not pinned` | Apache-2.0 | `booking_system_rest/requirements.txt` |
+| `pytest-cov` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
+| `pytest-mock` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
+
+The repository itself is licensed under Apache-2.0 in `LICENSE`.
+
+Unlike `chaindocs_MCP_example`, this repository does not currently include a
+single automated dependency license-audit script at the root. Dependency
+declarations are split across the individual service folders.
+
 ## Repository Layout
 
 ```text

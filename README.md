@@ -2,21 +2,30 @@
 
 # Galaxium Travels Infrastructure
 
-This project helps you explore one practical question:
+## Objective
+
+The main objective of this repository is to provide an example application that combines traditional application infrastructure with AI-ready functionality.
+
+The current implementation uses the same travel-booking business flow in two styles:
+
+- a REST backend and a REST-based web UI
+- an MCP server and an MCP-based web UI
+
+This makes it possible to evaluate where AI-oriented integration fits best: in the frontend, in the backend, or in both.
+
+The practical architecture question this project helps you explore is:
 
 Should an AI-ready application stay with REST, move to MCP, or support both?
 
-In this repository you can run both styles side by side:
+## What You Can Run
 
-- a REST backend and a REST-based web UI
-- an MCP backend and an MCP-based web UI
-- the same Keycloak OAuth path for both styles
-- an additional Basic Auth variant for the REST backend, MCP server, REST UI, and MCP UI
-- a mixed MCP option where the browser user logs in with Keycloak but the MCP backend itself uses shared Basic Auth
+- the same Keycloak OAuth flow for both REST and MCP
+- a shared Basic Auth variant for the REST backend, MCP server, REST UI, and MCP UI
+- a mixed MCP variant where the browser user logs in with Keycloak but the MCP backend itself uses shared Basic Auth
 
-This matches the idea discussed in the blog post [Should MCP replace REST for AI-ready applications?](https://suedbroecker.net/2026/03/10/should-mcp-replace-rest-for-ai-ready-applications/).
-The point is not that MCP always replaces REST.
-The point is that you can compare both approaches on the same business case and make a better decision.
+This repository is not meant to claim that MCP always replaces REST. It is meant to let you compare both approaches on the same business case and make a better architectural decision.
+
+The comparison idea also matches the blog post [Should MCP replace REST for AI-ready applications?](https://suedbroecker.net/2026/03/10/should-mcp-replace-rest-for-ai-ready-applications/).
 
 For deployment, the repository now keeps a single supported IBM Code Engine package in `deployment/ibm-code-engine/`.
 

@@ -2,11 +2,43 @@
 
 This guide helps you get the example running fast.
 
+## Before you begin
+
+- Docker Engine with Compose v2 installed
+- `docker` and `docker compose` available on your PATH
+- optional: `jq` for verifying JSON metadata
+
+Options 2 and 3 LAN access require a host IP that another machine can reach.
+The OAuth smoke check in option 1 also uses `LOCAL_NET_IP`. Set it once for
+your platform before running those commands:
+
+macOS:
+
+```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
+```
+
+Linux:
+
+```sh
+export LOCAL_NET_IP=$(ip route get 1.1.1.1 | awk '{print $NF; exit}')
+```
+
 Start in the repository root:
 
 ```sh
 cd galaxium-travels-infrastructure-tsuedbro
 ```
+
+## Which option should you choose?
+
+- **Option 1 — Local machine**: run the full demo on your laptop and compare REST vs MCP.
+- **Option 2 — Host machine + VM/LAN OAuth**: expose Keycloak/MCP to a second machine or VM.
+- **Option 3 — Local Basic Auth**: run REST, MCP, and both UIs without Keycloak.
+- **Option 4 — Keycloak UI + MCP Basic Auth**: use browser login for the UI and shared Basic Auth for the MCP backend.
+
+For the boundaries between the two paths and the reason they keep independent
+booking state, read [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Choose Your Path
 
@@ -79,7 +111,6 @@ The difference is the backend path:
 ### 5. Run the local smoke test
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 bash local-container/verify-keycloak-auth-e2e.sh
 ```
 
@@ -96,7 +127,6 @@ Use this option when the Galaxium stack runs on the host machine, but another ap
 ### 1. Prepare the host env file
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp local-container/vm-oauth.env.template local-container/vm-oauth.env
 ```
 
@@ -115,7 +145,6 @@ Do not use `localhost` in this option.
 Start the full host stack:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -125,7 +154,6 @@ docker compose --env-file local-container/vm-oauth.env \
 Start only the REST path:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -135,7 +163,6 @@ docker compose --env-file local-container/vm-oauth.env \
 Start only the MCP path:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -145,7 +172,6 @@ docker compose --env-file local-container/vm-oauth.env \
 ### 3. Prepare the VM-side client settings
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp local-container/vm-client.env.template local-container/vm-client.env
 ```
 
@@ -167,7 +193,6 @@ bash local-container/verify-keycloak-auth-remote.sh --env-file local-container/v
 ### 5. Stop the host stack
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file local-container/vm-oauth.env \
   -f local-container/docker_compose.yaml \
   -f local-container/docker_compose.vm-oauth.yaml \
@@ -221,7 +246,6 @@ The two web UIs keep a guest traveler profile in the browser session and send th
 If another VM or LAN client reaches this Basic Auth stack through the host IP or DNS name, prepare the matching client env file:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp local-container/vm-client-basic-auth.env.template local-container/vm-client-basic-auth.env
 ```
 

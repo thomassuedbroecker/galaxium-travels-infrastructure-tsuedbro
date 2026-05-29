@@ -9,6 +9,12 @@ You can use it in four ways:
 - run the REST path, MCP path, and inspector tooling in a small Basic Auth variant without Keycloak
 - run the MCP UI with Keycloak browser login while the MCP backend itself uses shared Basic Auth
 
+Run commands in this guide from the `local-container/` directory:
+
+```sh
+cd local-container
+```
+
 ## Runtime Options
 
 ```mermaid
@@ -23,6 +29,23 @@ flowchart TD
     H --> I["Use Keycloak traveler login<br/>with shared Basic Auth to MCP"]
 ```
 
+## Host IP Variable
+
+The OAuth verification scripts and all VM/LAN paths use `LOCAL_NET_IP`.
+Set it once in your terminal before following those paths.
+
+On macOS:
+
+```sh
+export LOCAL_NET_IP=$(ipconfig getifaddr en0)
+```
+
+On Linux:
+
+```sh
+export LOCAL_NET_IP=$(ip route get 1.1.1.1 | awk '{print $NF; exit}')
+```
+
 ## Option 1: Local Machine
 
 Use this when all services run on one machine.
@@ -32,23 +55,18 @@ Use this when all services run on one machine.
 From this folder run:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build
 ```
 
 Start only the REST path:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build keycloak booking_system web_app
 ```
 
 Start only the MCP path:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose up --build keycloak booking_system_mcp web_app_mcp
 ```
 
@@ -78,7 +96,7 @@ Use this when:
 - a second app or agent runs inside a VM or on another machine
 - OAuth and MCP must work through the host IP or DNS name
 
-Source diagram: [network-configuration.drawio](../../network-configuration.drawio)
+Related diagram sources: [../architecture/](../architecture/)
 
 ```mermaid
 flowchart LR
@@ -131,8 +149,6 @@ This gives you:
 1. Copy the env template and get IP address:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp vm-oauth.env.template vm-oauth.env
 ```
 
@@ -147,8 +163,6 @@ MCP_PUBLIC_BASE_URL=http://${LOCAL_NET_IP}:8084
 3. Start the stack:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
@@ -158,8 +172,6 @@ docker compose --env-file vm-oauth.env \
 Start only the REST path:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
@@ -169,8 +181,6 @@ docker compose --env-file vm-oauth.env \
 Start only the MCP path:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 docker compose --env-file vm-oauth.env \
   -f docker_compose.yaml \
   -f docker_compose.vm-oauth.yaml \
@@ -182,7 +192,6 @@ docker compose --env-file vm-oauth.env \
 Copy the env template and get IP address:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp vm-client.env.template vm-client.env
 ```
 
@@ -206,8 +215,6 @@ bash verify-keycloak-auth-remote.sh --env-file verify-keycloak-auth-remote.env
 Useful manual checks:
 
 ```sh
-cd local-container
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 curl -s http://${LOCAL_NET_IP}:8086/realms/galaxium/.well-known/openid-configuration | jq -r .issuer
 curl -s http://${LOCAL_NET_IP}:8084/.well-known/oauth-authorization-server | jq .
 python3 mcp_test_app.py --mcp-url http://192.168.1.50:8084/mcp --token-source http --token-url http://192.168.1.50:8086/realms/galaxium/protocol/openid-connect/token
@@ -233,7 +240,6 @@ Use this when:
 Prepare the env file:
 
 ```sh
-cd local-container
 cp basic-auth.env.template basic-auth.env
 ```
 
@@ -242,14 +248,12 @@ Edit `basic-auth.env` if you want credentials other than the demo defaults.
 Start the stack:
 
 ```sh
-cd local-container
 docker compose --env-file basic-auth.env -f docker_compose.basic-auth.yaml up --build -d
 ```
 
 If you want the dedicated VM/LAN-flavored Basic Auth compose variant from this folder, use:
 
 ```sh
-cd local-container
 docker compose --env-file basic-auth.env -f docker_compose.basic-auth-vm.yaml up --build -d
 ```
 
@@ -270,7 +274,6 @@ In this mode the web UIs do not require browser login. Instead, each UI stores a
 If a VM-side client or another machine reaches this Basic Auth stack through the host IP or DNS name, use the matching client env template:
 
 ```sh
-export LOCAL_NET_IP=$(ipconfig getifaddr en0)
 cp vm-client-basic-auth.env.template vm-client-basic-auth.env
 ```
 
@@ -287,7 +290,6 @@ The same `vm-client-basic-auth.env.template` client settings apply whether you s
 ### Verify
 
 ```sh
-cd local-container
 bash verify-basic-auth-backends.sh
 bash verify-basic-auth-frontends-and-inspector.sh
 ```
@@ -305,7 +307,6 @@ Use this when:
 Prepare the env file:
 
 ```sh
-cd local-container
 cp basic-auth.env.template basic-auth.env
 ```
 
@@ -314,7 +315,6 @@ Edit `basic-auth.env` if you want credentials other than the demo defaults.
 Start the mixed stack:
 
 ```sh
-cd local-container
 docker compose --env-file basic-auth.env \
   -f docker_compose.yaml \
   -f docker_compose.mcp-ui-keycloak-basic.yaml \
@@ -337,7 +337,6 @@ In this mode the browser session stays in Keycloak, but MCP tool calls from the 
 ### Verify
 
 ```sh
-cd local-container
 bash verify-keycloak-ui-basic-auth-mcp.sh
 ```
 
@@ -480,6 +479,7 @@ docker compose --env-file basic-auth.env \
 
 ## Related Docs
 
+- Architecture overview: [../ARCHITECTURE.md](../ARCHITECTURE.md)
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)
 - Testing guide: [../testing/README.md](../testing/README.md)
 - WebUI auth matrix: [../testing/webui_matrix/README.md](../testing/webui_matrix/README.md)

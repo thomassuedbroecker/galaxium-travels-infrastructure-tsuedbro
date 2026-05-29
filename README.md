@@ -66,6 +66,7 @@ flowchart LR
 ## Start Here
 
 - New user path: [QUICKSTART.md](./QUICKSTART.md)
+- Runtime boundaries and architecture decisions: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - Local compose, VM/LAN OAuth, and Basic Auth details: [local-container/README.md](./local-container/README.md)
 - Test commands and current test scope: [testing/README.md](./testing/README.md)
 - Manual MCP auth walkthrough with Inspector CLI: [manual_auth_check_using_the_commandline.md](./manual_auth_check_using_the_commandline.md)
@@ -77,16 +78,21 @@ flowchart LR
 
 | Path | Purpose | Default port | Main entry point |
 | --- | --- | --- | --- |
-| `booking_system_rest/` | FastAPI booking backend with SQLite | `8082` | `app.py` |
-| `booking_system_mcp/` | MCP server for the same booking domain | `8084` | `mcp_server.py` |
+| `booking_system_rest/` | FastAPI booking backend with independent SQLite state | `8082` | `app.py` |
+| `booking_system_mcp/` | MCP server with independent SQLite state for the equivalent booking domain | `8084` | `mcp_server.py` |
 | `galaxium-booking-web-app/` | Flask UI that calls the REST backend | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls MCP tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `HR_database/` | Small HR API backed by markdown data | `8081` | `app.py` |
 | `local-container/` | Docker Compose setup, OAuth and Basic Auth verifier scripts, env templates | n/a | `docker_compose.yaml` |
 
-## Current Verified State
+The REST and MCP paths model equivalent traveler actions, but they do not
+share a database. A booking created in one path is not synchronized to the
+other. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the runtime boundary and
+auth-mode comparison.
 
-Current change-set status as of `2026-03-23`:
+## Verification Evidence
+
+Recorded runtime verification evidence from `2026-03-23`:
 
 - Aggregate repo test runner passed on `2026-03-23`.
 - Local-container contract checks passed on `2026-03-23` with `15/15` tests green.
@@ -107,13 +113,19 @@ The latest full eight-variant WebUI auth matrix rerun is still the `2026-03-18` 
 
 For the exact commands and current scope split, see [testing/README.md](./testing/README.md).
 
+For this architecture and documentation update, the configuration contract
+suites were rerun on `2026-05-25`:
+
+- `python3 -m unittest testing.test_local_container_contracts testing.test_code_engine_deployment_contracts -v`
+- Result: `26` tests passed
+
 ## Test Status Overview
 
 Status meaning:
 
-- `🟢`: executed and passed for the current change set
-- `🟡`: not rerun for the current change set
-- `🔴`: executed and failed for the current change set
+- `🟢`: executed and passed on the date recorded in the row
+- `🟡`: not executed in the recorded verification period
+- `🔴`: executed and failed on the date recorded in the row
 
 | Status | Scope | Result |
 | --- | --- | --- |
@@ -128,7 +140,7 @@ Status meaning:
 | `🟢` | WebUI matrix unit config checks | `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v` passed on `2026-03-18` with `11/11` tests green |
 | `🟢` | Full WebUI auth matrix | Rerun passed on `2026-03-18`: `55` tests ran, `55` passed, `0` skipped |
 | `🟢` | VM / LAN remote auth verification | Rerun passed on `2026-03-23` against `192.168.178.154`, including the repo remote verifier, MCP OAuth metadata checks, and authenticated `mcp_test_app.py` over `Streamable HTTP` |
-| `🟢` | Current failing checks in this change set | None from the executed checks |
+| `🟢` | Failing checks in the recorded runtime verification period | None from the executed checks |
 
 ## Fast Validation
 
@@ -239,6 +251,8 @@ declarations are split across the individual service folders.
 
 ```text
 .
+├── ARCHITECTURE.md
+├── CONTRIBUTING.md
 ├── QUICKSTART.md
 ├── QUALITY-CHECK.md
 ├── HR_database/

@@ -31,8 +31,8 @@ Test the real trade-offs in a concrete application.
 | Architecture clarity | Good | REST and MCP paths are easy to compare |
 | Code structure | Good | Services are separated clearly by responsibility |
 | Testing | Good | Unit, integration, and end-to-end coverage exists |
-| Documentation | Good | Main docs, quickstart, and env templates are now aligned |
-| Open source readiness | Partial | License exists, but community files are still missing |
+| Documentation | Good | Architecture overview, quickstart, main docs, and env templates are aligned |
+| Open source readiness | Partial | License and contributing guide exist; security and conduct policies are still missing |
 | 12-factor readiness | Partial | Strong on config and port binding, weaker on release and ops maturity |
 | Production readiness | Partial | Strong demo and reference project, not yet a hardened production platform |
 
@@ -98,13 +98,13 @@ Next improvement:
 ### What Is Good
 
 - A `LICENSE` file is present
+- A `CONTRIBUTING.md` file provides local commands and documentation responsibilities
 - The repository has strong runnable examples
 - Env templates are included for the main test and compose paths
 - The README set now points users to the right start path
 
 ### What Is Partial
 
-- No `CONTRIBUTING.md`
 - No `CODE_OF_CONDUCT.md`
 - No `SECURITY.md`
 - No release or support policy
@@ -113,8 +113,8 @@ Next improvement:
 
 Next improvement:
 
-1. Add `CONTRIBUTING.md` with local setup and test commands.
-2. Add `SECURITY.md` with a simple disclosure path.
+1. Add `SECURITY.md` with a simple disclosure path.
+2. Add `CODE_OF_CONDUCT.md` or state the intended community policy.
 3. Add a short support statement so users understand the project scope.
 
 ## 12-Factor Review

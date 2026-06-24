@@ -453,6 +453,6 @@ That summary prints the public URLs and the smoke-test commands for the selected
 
 ## Related Docs
 
-- Existing repo note: [`../../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
+- Existing repo note: [`../../docs/reference/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md`](../../docs/reference/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
 - Local stack guide: [`../../local-container/README.md`](../../local-container/README.md)
 - Main repository guide: [`../../README.md`](../../README.md)

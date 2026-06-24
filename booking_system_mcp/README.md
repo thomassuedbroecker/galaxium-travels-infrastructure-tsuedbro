@@ -1,5 +1,14 @@
 # Booking MCP Server
 
+| | |
+| --- | --- |
+| **Port** | `8084` |
+| **Entry point** | `mcp_server.py` |
+| **Auth config** | `AUTH_MODE=none` (default) · `oauth2` · `basic` |
+| **Local run** | `python mcp_server.py` |
+| **Test command** | n/a (use compose smoke scripts) |
+| **Compose service** | `booking_system_mcp` |
+
 This directory contains the MCP version of the booking system.
 
 `mcp_server.py` is the active server entry point.

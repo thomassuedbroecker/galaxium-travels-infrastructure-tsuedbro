@@ -32,28 +32,15 @@ cd galaxium-travels-infrastructure-tsuedbro
 
 ## Which option should you choose?
 
-- **Option 1 — Local machine**: run the full demo on your laptop and compare REST vs MCP.
-- **Option 2 — Host machine + VM/LAN OAuth**: expose Keycloak/MCP to a second machine or VM.
-- **Option 3 — Local Basic Auth**: run REST, MCP, and both UIs without Keycloak.
-- **Option 4 — Keycloak UI + MCP Basic Auth**: use browser login for the UI and shared Basic Auth for the MCP backend.
+| Option | Use case | Auth |
+| --- | --- | --- |
+| **1 — Local machine** | Everything on one laptop | Keycloak OAuth |
+| **2 — Host + VM/LAN OAuth** | Expose Keycloak/MCP to a second machine or VM | Keycloak OAuth over LAN |
+| **3 — Local Basic Auth** | REST, MCP, and both UIs without Keycloak | Shared Basic Auth |
+| **4 — Keycloak UI + MCP Basic Auth** | Browser login via Keycloak, MCP backend uses Basic Auth | Mixed |
 
-For the boundaries between the two paths and the reason they keep independent
-booking state, read [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-## Choose Your Path
-
-```mermaid
-flowchart TD
-    Start["Start here"] --> Local["Option 1<br/>Local machine"]
-    Start --> Lan["Option 2<br/>Host machine + VM/LAN OAuth"]
-    Start --> Basic["Option 3<br/>Local Basic Auth"]
-    Start --> Mixed["Option 4<br/>Keycloak UI + MCP Basic Auth"]
-    Local --> Rest["REST UI<br/>http://localhost:8083"]
-    Local --> Mcp["MCP UI<br/>http://localhost:8085"]
-    Lan --> Public["Use host IP or DNS name<br/>for Keycloak and MCP"]
-    Basic --> Guest["Guest traveler session<br/>no Keycloak browser login"]
-    Mixed --> MixedFlow["Keycloak browser login<br/>shared Basic Auth to MCP"]
-```
+For the full auth and compose-file breakdown see [ARCHITECTURE.md — Authentication Variants](./ARCHITECTURE.md#authentication-variants).
+For architecture boundaries and the reason the two paths keep independent booking state see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Option 1: Local Machine
 
@@ -370,4 +357,4 @@ bash local-container/start-mcp-inspector-ui.sh
 
 For the full Inspector flow, including the Basic Auth config path, use [local-container/README.md](./local-container/README.md).
 
-For a step-by-step manual commandline walkthrough of both the OAuth and Basic Auth MCP variants, use [manual_auth_check_using_the_commandline.md](./manual_auth_check_using_the_commandline.md).
+For a step-by-step manual commandline walkthrough of both the OAuth and Basic Auth MCP variants, use [docs/manual_auth_check_using_the_commandline.md](./docs/manual_auth_check_using_the_commandline.md).

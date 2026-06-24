@@ -1,5 +1,14 @@
 # Galaxium Booking Web App MCP
 
+| | |
+| --- | --- |
+| **Port** | `8085` |
+| **Entry point** | `app/app.py` |
+| **Auth config** | `BACKEND_AUTH_MODE=none\|basic\|oauth2` · `FRONTEND_AUTH_REQUIRED=true\|false` |
+| **Local run** | `cd app && python app.py` |
+| **Test command** | n/a (use compose smoke scripts) |
+| **Compose service** | `web_app_mcp` |
+
 Flask UI that preserves the existing traveler experience but invokes booking tools through a direct Python MCP client integration.
 
 The existing REST-backed app in `../galaxium-booking-web-app/` remains unchanged.
@@ -159,4 +168,4 @@ Default compose URL: `http://localhost:8085`
 
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)
 - Compose flow: [../local-container/README.md](../local-container/README.md)
-- Advanced deployment notes: [../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md](../ai_generated_documentation/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)
+- Advanced deployment notes: [../docs/reference/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md](../docs/reference/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md)

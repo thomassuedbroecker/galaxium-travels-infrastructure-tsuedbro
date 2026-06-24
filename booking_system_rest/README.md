@@ -1,5 +1,14 @@
 # Galaxium Booking REST API
 
+| | |
+| --- | --- |
+| **Port** | `8082` |
+| **Entry point** | `app.py` |
+| **Auth config** | `AUTH_MODE=none` (default) · `oauth2` · `basic` |
+| **Local run** | `uvicorn app:app --reload --port 8082` |
+| **Test command** | `python3 -m pytest tests -q` |
+| **Compose service** | `booking_system` |
+
 FastAPI and SQLite backend for the booking demo.
 
 ## Run Locally

@@ -4,7 +4,7 @@ This note explains the repository's Basic Auth MCP variant for direct server-to-
 
 Use this when you want a client such as watsonx Orchestrate to call the Booking MCP server with a shared `Authorization: Basic ...` header instead of Keycloak OAuth.
 
-If you need the Keycloak OAuth 2.0 client-credentials path instead, use [ai_generated_documentation/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./ai_generated_documentation/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md).
+If you need the Keycloak OAuth 2.0 client-credentials path instead, use [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md).
 
 ## What Changes Compared With OAuth
 

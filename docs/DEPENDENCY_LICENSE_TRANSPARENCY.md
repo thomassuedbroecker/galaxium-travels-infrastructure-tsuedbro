@@ -110,7 +110,7 @@ runtime packages installed on a developer workstation.
 | `jq` | Host or container tool | JSON verification in scripts | MIT license for `jq`; related documentation/components can have separate notices. Not vendored. |
 | Images and GIFs | `images/` | README and documentation screenshots/demos | Treat as project documentation assets with embedded third-party UI/trademark rights retained by their owners. |
 | Draw.io diagrams | `architecture/` | Architecture documentation | Project diagram sources/exports; built-in shapes/icons may carry separate terms. |
-| Generated docs | `ai_generated_documentation/` | Supplemental documentation | AI-assisted/generated docs requiring human review and provenance tracking. |
+| Generated docs | `docs/reference/` | Supplemental documentation | AI-assisted/generated docs requiring human review and provenance tracking. |
 
 ## Known Compliance Gaps
 

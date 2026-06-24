@@ -137,14 +137,14 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn("OAuth token validation or Basic Auth", content)
 
     def test_watsonx_note_documents_basic_auth_mcp_variant(self) -> None:
-        content = _read("watsonx_orchestrate_basic_auth_example_integration.md")
+        content = _read("docs/watsonx_orchestrate_basic_auth_example_integration.md")
         self.assertIn("docker_compose.basic-auth.yaml", content)
         self.assertIn("vm-client-basic-auth.env.template", content)
         self.assertIn("--auth-scheme basic", content)
         self.assertIn("no Keycloak redirect URI setup is required", content)
 
     def test_manual_commandline_auth_guide_documents_oauth_and_basic_auth(self) -> None:
-        content = _read("manual_auth_check_using_the_commandline.md")
+        content = _read("docs/manual_auth_check_using_the_commandline.md")
         self.assertIn("@modelcontextprotocol/inspector", content)
         self.assertIn("Authorization: Bearer ${ACCESS_TOKEN}", content)
         self.assertIn("Authorization: Basic ${BASIC_TOKEN}", content)

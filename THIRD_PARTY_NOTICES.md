@@ -33,7 +33,7 @@ The repository contains multiple Python services with service-local
 | `mcp` | MCP web frontend | MIT |
 | `pytest`, `pytest-asyncio`, `pytest-cov`, `pytest-mock` | REST test tooling | MIT / Apache-2.0 |
 
-See `DEPENDENCY_LICENSE_TRANSPARENCY.md` for the per-service dependency
+See `docs/DEPENDENCY_LICENSE_TRANSPARENCY.md` for the per-service dependency
 mapping. This project does not currently include a root lockfile, generated
 SBOM, or transitive dependency license report.
 
@@ -108,7 +108,7 @@ copyright notices.
 
 ## Generated and AI-Assisted Documentation
 
-The `ai_generated_documentation/` directory contains supplemental generated or
+The `docs/reference/` directory contains supplemental generated or
 AI-assisted documentation. These files should be treated as project-maintained
 documentation artifacts that require human review before release. Keep a record
 of generation provenance, reviewer approval, source inputs, and any copied

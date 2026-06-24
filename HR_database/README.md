@@ -1,5 +1,14 @@
 # Galaxium HR API
 
+| | |
+| --- | --- |
+| **Port** | `8081` |
+| **Entry point** | `app.py` |
+| **Auth config** | n/a (no auth on this service) |
+| **Local run** | `python app.py` |
+| **Test command** | n/a |
+| **Compose service** | `hr_database` |
+
 Small FastAPI service backed by `data/employees.md`.
 
 ## Run Locally

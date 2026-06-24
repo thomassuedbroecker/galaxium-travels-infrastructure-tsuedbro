@@ -65,13 +65,15 @@ flowchart LR
 
 ## Start Here
 
+- Navigation hub (all paths at a glance): [NAVIGATOR.md](./NAVIGATOR.md)
 - New user path: [QUICKSTART.md](./QUICKSTART.md)
 - Runtime boundaries and architecture decisions: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - Local compose, VM/LAN OAuth, and Basic Auth details: [local-container/README.md](./local-container/README.md)
 - Test commands and current test scope: [testing/README.md](./testing/README.md)
-- Manual MCP auth walkthrough with Inspector CLI: [manual_auth_check_using_the_commandline.md](./manual_auth_check_using_the_commandline.md)
+- AI engineer / agent integration guide: [docs/AI_ENGINEER_GUIDE.md](./docs/AI_ENGINEER_GUIDE.md)
+- Manual MCP auth walkthrough with Inspector CLI: [docs/manual_auth_check_using_the_commandline.md](./docs/manual_auth_check_using_the_commandline.md)
 - WebUI auth matrix details: [testing/webui_matrix/README.md](./testing/webui_matrix/README.md)
-- Project quality review: [QUALITY-CHECK.md](./QUALITY-CHECK.md)
+- Project quality review: [docs/QUALITY-CHECK.md](./docs/QUALITY-CHECK.md)
 - IBM Code Engine deployment package: [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md)
 
 ## Main Services
@@ -253,8 +255,16 @@ declarations are split across the individual service folders.
 .
 ├── ARCHITECTURE.md
 ├── CONTRIBUTING.md
+├── NAVIGATOR.md
 ├── QUICKSTART.md
-├── QUALITY-CHECK.md
+├── LLMS.txt
+├── docs/
+│   ├── AI_ENGINEER_GUIDE.md
+│   ├── QUALITY-CHECK.md
+│   ├── DEPENDENCY_LICENSE_TRANSPARENCY.md
+│   ├── manual_auth_check_using_the_commandline.md
+│   ├── watsonx_orchestrate_basic_auth_example_integration.md
+│   └── reference/               ← supplemental background (not required for first run)
 ├── HR_database/
 ├── booking_system_mcp/
 ├── booking_system_rest/
@@ -269,4 +279,4 @@ declarations are split across the individual service folders.
 
 - This repository is a strong demo and learning project, not a finished production platform.
 - The code is structured so you can grow it toward production by improving CI, observability, release handling, and shared frontend code.
-- `ai_generated_documentation/` contains extra background and older notes. It is not required for a first run.
+- `docs/reference/` contains extra background and older notes. It is not required for a first run.

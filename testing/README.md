@@ -2,6 +2,19 @@
 
 This folder is the main entry point for automated checks in this repository.
 
+## Automation Scripts At A Glance
+
+| Script | What it runs | Requires Docker stack | Notes |
+| --- | --- | --- | --- |
+| `automation/run-all-tests.sh` | Contracts + REST pytest + UI OAuth smoke + MCP OAuth smoke + Keycloak UI→MCP Basic Auth smoke | Yes | Main regression slice |
+| `automation/run-rest-api-tests.sh` | REST API pytest suite (`booking_system_rest/tests/`) | Yes (container) | 37 tests; also runnable without Docker via `python3 -m pytest` |
+| `automation/run-local-container-contract-tests.sh` | Local-container contract checks (file/env/compose structure) | No | Fast; no running services needed |
+| `automation/run-code-engine-contract-tests.sh` | IBM Code Engine deployment package contract checks | No | Fast; validates deploy script structure |
+| `automation/run-ui-behavior-tests.sh` | UI OAuth smoke: REST auth, traveler web login, MCP web app session | Yes (Option 1) | Generates report in `testing/results/generated/ui/` |
+| `automation/run-mcp-integration-tests.sh` | MCP OAuth smoke + Keycloak UI→MCP Basic Auth slice | Yes (Option 1 or 4) | Generates reports in `testing/results/generated/mcp/` |
+| `automation/run-webui-auth-matrix.sh` | Full WebUI auth matrix (REST+MCP × OAuth+Basic Auth × local+LAN) | Yes | Requires `--env-file`; see WebUI Matrix section |
+
+
 ## What Is Covered
 
 - REST API tests from `booking_system_rest/tests/`

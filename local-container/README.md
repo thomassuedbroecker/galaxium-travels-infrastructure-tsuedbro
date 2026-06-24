@@ -15,6 +15,30 @@ Run commands in this guide from the `local-container/` directory:
 cd local-container
 ```
 
+## Compose Files At A Glance
+
+| File | Role | Use case | Required env file |
+| --- | --- | --- | --- |
+| `docker_compose.yaml` | Base | Full stack with Keycloak OAuth (Option 1 & 2) | none (or `vm-oauth.env` for Option 2) |
+| `docker_compose.vm-oauth.yaml` | Overlay | Adds LAN-reachable OAuth URLs on top of the base | `vm-oauth.env` |
+| `docker_compose.basic-auth.yaml` | Standalone | Full stack with Basic Auth, no Keycloak (Option 3) | `basic-auth.env` |
+| `docker_compose.basic-auth-vm.yaml` | Standalone | VM/LAN-flavored Basic Auth variant | `basic-auth.env` |
+| `docker_compose.mcp-ui-keycloak-basic.yaml` | Overlay | Keycloak browser login on MCP UI + Basic Auth to MCP backend (Option 4) | `basic-auth.env` |
+
+## Verification Scripts At A Glance
+
+| Script | What it verifies | Requires running stack | Notes |
+| --- | --- | --- | --- |
+| `verify-keycloak-auth-e2e.sh` | Full OAuth smoke: REST auth, traveler login, MCP auth | Yes (Option 1) | Main local OAuth health check |
+| `verify-keycloak-auth.sh` | REST API bearer-token enforcement only | Yes (Option 1) | Focused REST auth slice |
+| `verify-keycloak-auth-mcp.sh` | MCP bearer-token enforcement only | Yes (Option 1) | Focused MCP auth slice |
+| `verify-keycloak-auth-remote.sh` | LAN-facing OAuth: issuer URLs, MCP metadata, token flow | Yes (Option 2, host side) | Requires `--env-file verify-keycloak-auth-remote.env` |
+| `verify-basic-auth-backends.sh` | REST and MCP Basic Auth `401`/`200` checks | Yes (Option 3) | Covers both backends |
+| `verify-basic-auth-frontends-and-inspector.sh` | REST UI guest flow, MCP UI guest flow, inspector config | Yes (Option 3) | Includes inspector `Streamable HTTP` config check |
+| `verify-keycloak-ui-basic-auth-mcp.sh` | Keycloak browser login on MCP UI + Basic Auth on MCP backend | Yes (Option 4) | Mixed-mode smoke check |
+| `verify-keycloak-inspector-client.sh` | Keycloak realm client used by the MCP Inspector | Yes (Option 1) | Inspector-specific |
+| `sync-keycloak-inspector-client.sh` | Syncs the inspector Keycloak client config | Yes (Option 1) | Run after realm changes |
+
 ## Runtime Options
 
 ```mermaid
@@ -437,7 +461,7 @@ bash start-mcp-inspector-ui.sh
 
 Keep the MCP transport on `Streamable HTTP`. Do not switch the inspector to another transport for this repository.
 
-For a step-by-step manual commandline walkthrough of both auth variants, see [../manual_auth_check_using_the_commandline.md](../manual_auth_check_using_the_commandline.md).
+For a step-by-step manual commandline walkthrough of both auth variants, see [../docs/manual_auth_check_using_the_commandline.md](../docs/manual_auth_check_using_the_commandline.md).
 
 ## Stop
 

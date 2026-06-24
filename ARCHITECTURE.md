@@ -105,12 +105,12 @@ not use an LLM or dynamic tool planning in the booking path.
 
 ## Authentication Variants
 
-| Runtime option | Browser identity | REST backend auth | MCP backend auth | Use case |
-| --- | --- | --- | --- | --- |
-| Local OAuth | Keycloak traveler login | Bearer token | Bearer token | Compare protected REST and MCP locally |
-| VM / LAN OAuth | Keycloak traveler login through public host URL | Bearer token | Bearer token | Reach services from another machine while preserving token issuer URLs |
-| Basic Auth | Guest UI session | Shared Basic Auth | Shared Basic Auth | Run without Keycloak |
-| Mixed MCP | Keycloak traveler login | Not in this path | Shared Basic Auth | Separate UI identity from MCP backend credentials |
+| Option | Runtime label | Browser identity | REST auth | MCP auth | Use case |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Local OAuth | Keycloak traveler login | Bearer token | Bearer token | Compare protected REST and MCP on one machine |
+| 2 | VM / LAN OAuth | Keycloak traveler login via public host URL | Bearer token | Bearer token | Reach services from a VM or LAN machine while keeping token issuer URLs consistent |
+| 3 | Basic Auth | Guest UI session (no Keycloak login) | Shared Basic Auth | Shared Basic Auth | Run without Keycloak; shared backend credentials |
+| 4 | Mixed MCP | Keycloak traveler login (browser) | Not in this path | Shared Basic Auth | Separate browser identity from MCP backend credentials |
 
 In the LAN OAuth option, public clients and the configured token issuer must
 use the LAN-reachable Keycloak URL. Containers can still obtain JWKS over the
@@ -119,13 +119,16 @@ for the runtime configuration.
 
 ## Deployment View
 
-| Environment | Configuration entry point | Notes |
-| --- | --- | --- |
-| Local OAuth | `local-container/docker_compose.yaml` | Both comparison paths plus Keycloak and HR API |
-| LAN OAuth | `local-container/docker_compose.yaml` plus `docker_compose.vm-oauth.yaml` | Advertises host-reachable OAuth/MCP URLs |
-| Local Basic Auth | `local-container/docker_compose.basic-auth.yaml` | Both comparison paths without Keycloak |
-| Mixed MCP auth | `local-container/docker_compose.yaml` plus `docker_compose.mcp-ui-keycloak-basic.yaml` | MCP path only in the quickstart command |
-| IBM Code Engine | `deployment/ibm-code-engine/` | Scripted deployment package, Basic Auth first |
+| Option | Runtime label | Compose files | Env file | Notes |
+| --- | --- | --- | --- | --- |
+| 1 | Local OAuth | `local-container/docker_compose.yaml` | none required | Full stack: both paths + Keycloak + HR API |
+| 2 | VM / LAN OAuth | `docker_compose.yaml` + `docker_compose.vm-oauth.yaml` | `local-container/vm-oauth.env` | Advertises host-reachable OAuth and MCP URLs to LAN clients |
+| 3 | Local Basic Auth | `local-container/docker_compose.basic-auth.yaml` | `local-container/basic-auth.env` | Both paths without Keycloak; VM/LAN variant uses `docker_compose.basic-auth-vm.yaml` |
+| 4 | Mixed MCP auth | `docker_compose.yaml` + `docker_compose.mcp-ui-keycloak-basic.yaml` | `local-container/basic-auth.env` | MCP path only; Keycloak browser login + Basic Auth to MCP backend |
+| — | IBM Code Engine | `deployment/ibm-code-engine/deploy-stack.sh` | `deployment/ibm-code-engine/deploy.env` | Scripted cloud deployment; Basic Auth mode by default |
+
+For step-by-step commands for each option see [QUICKSTART.md](./QUICKSTART.md).
+For the full compose file reference and verification scripts see [local-container/README.md](./local-container/README.md).
 
 The SQLite databases and the file-backed HR data are suitable for a local
 demonstration. They are not a durable multi-instance data design for
@@ -162,5 +165,5 @@ production deployment.
 | Make a contribution | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 
 Editable diagram sources are stored in [`architecture/`](./architecture/).
-`ai_generated_documentation/` contains supplemental background material and is
+`docs/reference/` contains supplemental background material and is
 not required to understand or run the current system.

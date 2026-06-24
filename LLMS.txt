@@ -1,0 +1,102 @@
+# Galaxium Travels Infrastructure — Machine-Readable Summary
+# Format follows llmstxt.org conventions.
+# Use this file to orient an LLM tool or AI agent about this codebase.
+
+## Purpose
+
+Runnable comparison of REST vs MCP integration for a travel-booking domain.
+Same business flow implemented twice: once as a REST API + Flask UI, once as
+an MCP server + Flask UI. Lets engineers compare auth, integration, and
+AI-readiness trade-offs on the same domain.
+
+## Services
+
+| name              | port | entry_point          | stack                          |
+|-------------------|------|----------------------|--------------------------------|
+| booking_system_rest | 8082 | booking_system_rest/app.py | FastAPI + SQLAlchemy + SQLite |
+| booking_system_mcp  | 8084 | booking_system_mcp/mcp_server.py | FastMCP Streamable HTTP   |
+| galaxium-booking-web-app | 8083 | galaxium-booking-web-app/app/app.py | Flask proxy → REST |
+| galaxium-booking-web-app-mcp | 8085 | galaxium-booking-web-app-mcp/app/app.py | Flask → MCP tools |
+| HR_database       | 8081 | HR_database/app.py   | FastAPI + pandas + Markdown file |
+| keycloak          | 8086 | docker image         | OAuth2 / OIDC identity provider |
+
+## MCP Tools (booking_system_mcp)
+
+list_flights, book_flight, get_bookings, cancel_booking, register_user, get_user_id
+
+MCP endpoint: http://localhost:8084/mcp
+MCP alias:    http://localhost:8084/msp  (307 redirect, Watson Discovery compat)
+
+## Auth Modes
+
+AUTH_MODE env var controls auth on both booking_system_rest and booking_system_mcp.
+
+| AUTH_MODE | Header required        | Notes                                      |
+|-----------|------------------------|--------------------------------------------|
+| none      | none                   | default; dev only                          |
+| oauth2    | Authorization: Bearer  | Keycloak JWT; OIDC_ISSUER must be set      |
+| basic     | Authorization: Basic   | shared credentials; no Keycloak needed     |
+
+AUTH_ENABLED=true is a legacy alias for AUTH_MODE=oauth2.
+
+## Runtime Options (Docker Compose)
+
+| option | compose files                                         | env file                    | auth              |
+|--------|-------------------------------------------------------|-----------------------------|-------------------|
+| 1      | local-container/docker_compose.yaml                   | none                        | OAuth2 (Keycloak) |
+| 2      | docker_compose.yaml + docker_compose.vm-oauth.yaml    | local-container/vm-oauth.env | OAuth2 over LAN  |
+| 3      | local-container/docker_compose.basic-auth.yaml        | local-container/basic-auth.env | Basic Auth      |
+| 4      | docker_compose.yaml + docker_compose.mcp-ui-keycloak-basic.yaml | basic-auth.env | Mixed: Keycloak UI + MCP Basic Auth |
+
+## Key Files
+
+| path                                          | role                                          |
+|-----------------------------------------------|-----------------------------------------------|
+| NAVIGATOR.md                                  | Single decision-tree hub for all entry paths  |
+| QUICKSTART.md                                 | Step-by-step commands for all 4 options       |
+| ARCHITECTURE.md                               | Architecture decisions, component map, auth matrix |
+| local-container/README.md                     | Compose + verify scripts reference            |
+| testing/README.md                             | All test commands and verified state          |
+| docs/AI_ENGINEER_GUIDE.md                     | MCP endpoint, tools, auth, inspector          |
+| docs/manual_auth_check_using_the_commandline.md | CLI walkthrough for OAuth + Basic Auth       |
+| AGENTS.md                                     | Agent/LLM coding rules and project overview   |
+| LLMS.txt                                      | This file                                     |
+
+## Non-Obvious Patterns
+
+- Error responses are HTTP 200: booking_system_rest/app.py returns
+  JSONResponse(status_code=200) for business errors. Tests check
+  response.json()["success"] == False, not status codes.
+
+- seed() wipes DB on every startup: do not rely on DB state persisting
+  between dev server restarts.
+
+- MCP entry point: booking_system_mcp/mcp_server.py is active.
+  booking_system_mcp/app.py is a legacy reference file only.
+
+- Pydantic model alias pattern: SQLAlchemy models imported as
+  `from models import Booking as BookingModel` to avoid collision with
+  Pydantic schema classes of the same name.
+
+- Keycloak dual URL: container-to-container uses http://keycloak:8080,
+  host-side uses http://localhost:8086. Both point to the same instance.
+  Port mapping is 8086:8080.
+
+- MCP /msp alias: mcp_server.py registers /msp as 307 redirect to /mcp
+  for Watson Discovery compatibility. Both paths are intentional.
+
+## Test Commands
+
+| scope                        | command                                                                 |
+|------------------------------|-------------------------------------------------------------------------|
+| REST unit tests (fast)       | cd booking_system_rest && python3 -m pytest tests -q                   |
+| Contract tests (no Docker)   | python3 -m unittest testing.test_local_container_contracts testing.test_code_engine_deployment_contracts -v |
+| All automated tests          | bash testing/automation/run-all-tests.sh                                |
+| Basic Auth smoke (backends)  | bash local-container/verify-basic-auth-backends.sh                      |
+| OAuth smoke (full e2e)       | bash local-container/verify-keycloak-auth-e2e.sh                        |
+
+## Credentials (demo only — not for production)
+
+Keycloak admin:   admin / admin
+Traveler user:    demo-user / demo-user-password
+Basic Auth user:  demo-basic-user / demo-basic-password

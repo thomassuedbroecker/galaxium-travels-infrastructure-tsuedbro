@@ -48,6 +48,7 @@ flowchart TD
 | Watson Orchestrate setup guide | [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md) |
 | Watson Orchestrate Basic Auth example | [docs/watsonx_orchestrate_basic_auth_example_integration.md](./docs/watsonx_orchestrate_basic_auth_example_integration.md) |
 | Machine-readable repo summary for LLM tools | [LLMS.txt](./LLMS.txt) |
+| Shared agent handoff context (Bob, Claude Code, Codex) | [HANDOFF.md](./HANDOFF.md) |
 
 ## Deploy
 

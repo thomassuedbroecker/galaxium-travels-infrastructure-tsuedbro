@@ -1,0 +1,136 @@
+# Tests — no-Docker CI suite
+#
+# Runs every test that does not require a running Docker stack.
+# Three jobs run in parallel; all must pass for the workflow to be green.
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ Job 1 · rest-unit                                                       │
+# │   booking_system_rest/tests/ — pytest via in-memory SQLite              │
+# │                                                                         │
+# │   test_booking_system.py   — full booking lifecycle (register user,     │
+# │                              create flight, book seat, cancel booking)  │
+# │   test_flight_management.py — GET /flights (empty DB and with data)     │
+# │   test_user_management.py  — POST /register, duplicate email,           │
+# │                              missing required fields                    │
+# │   test_auth_modes.py       — auth-disabled default, Basic Auth mode,    │
+# │                              OAuth2 mode switching                      │
+# │   test_database.py         — init_db() smoke test                       │
+# │                                                                         │
+# │ Job 2 · contracts                                                       │
+# │   testing/test_local_container_contracts.py — env-template key sets,   │
+# │     docker-compose overlay content, script conventions (basic-auth      │
+# │     env loading, section headers), doc cross-references (README,        │
+# │     QUICKSTART, local-container/README, docs/)                          │
+# │   testing/test_code_engine_deployment_contracts.py — deploy.env keys,  │
+# │     script section headers, deploy-stack.sh wiring, generated/          │
+# │     .gitignore, 04-deploy-services.sh configmap pattern,                │
+# │     06-summary.sh output, Code Engine README wording                    │
+# │                                                                         │
+# │ Job 3 · webui-unit                                                      │
+# │   testing/webui_matrix/tests/unit/test_config.py — variant matrix      │
+# │     size, public-host defaulting, dimension expansion, ConfigurationError│
+# │     on missing env, OAuth metadata flags per variant                    │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# Not included (require Docker):
+#   testing/webui_matrix/tests/integration/  — needs running compose stack
+#   testing/webui_matrix/tests/e2e/          — needs running compose stack + browser
+#   testing/automation/run-mcp-integration-tests.sh — needs Docker + MCP server
+
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Job 1: REST API unit tests
+  # booking_system_rest/tests/ — all five test files, in-memory SQLite
+  # ---------------------------------------------------------------------------
+  rest-unit:
+    name: REST API unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: booking_system_rest/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        working-directory: booking_system_rest
+
+      - name: Run REST unit tests
+        # pytest.ini lives in booking_system_rest/ and sets testpaths = tests,
+        # so all five test files are discovered automatically.
+        run: python -m pytest tests -q
+        working-directory: booking_system_rest
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Contract / doc-consistency tests
+  # Pure file-reading tests — no network, no Docker.
+  # Run from repo root so relative paths in the test files resolve correctly.
+  # ---------------------------------------------------------------------------
+  contracts:
+    name: Contract and doc-consistency tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Run local-container contract tests
+        # Checks env-template key sets, docker-compose overlay content,
+        # script conventions, and cross-references across README / QUICKSTART /
+        # local-container docs.
+        run: python -m unittest testing.test_local_container_contracts -v
+
+      - name: Run Code Engine deployment contract tests
+        # Checks deploy.env keys, script section headers, deploy-stack.sh
+        # wiring, generated/.gitignore, configmap pattern in 04-deploy-services,
+        # summary output in 06-summary, and Code Engine README wording.
+        run: python -m unittest testing.test_code_engine_deployment_contracts -v
+
+  # ---------------------------------------------------------------------------
+  # Job 3: WebUI test-matrix unit tests
+  # Tests the variant-config logic in isolation — no running services needed.
+  # Run from repo root so the `testing` package import path resolves.
+  # ---------------------------------------------------------------------------
+  webui-unit:
+    name: WebUI matrix unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Run WebUI matrix config unit tests
+        # Checks variant matrix size, public-host defaulting, dimension
+        # expansion via env vars, ConfigurationError on missing env, and
+        # OAuth metadata flags (expects_mcp_oauth_metadata) per variant.
+        run: python -m unittest testing.webui_matrix.tests.unit.test_config -v

@@ -37,8 +37,8 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 | Field | Value |
 |---|---|
 | Branch | `main` |
-| Last known clean commit | `4291e19` — docs: improve developer and AI engineer navigation |
-| Uncommitted changes | none at last handoff |
+| Last known clean commit | `dcca719` — chore: add automated DCO sign-off via git hook and CI check |
+| Uncommitted changes | `README.md` (badges), `.github/workflows/tests.yml` (new — not yet committed) |
 
 Update this section at the end of every session.
 
@@ -109,6 +109,9 @@ python3 -m pytest tests -q
 python3 -m unittest testing.test_local_container_contracts \
                     testing.test_code_engine_deployment_contracts -v
 
+# WebUI matrix unit tests — no Docker required; run from repo root
+python3 -m unittest testing.webui_matrix.tests.unit.test_config -v
+
 # Full automated suite — requires Docker
 bash testing/automation/run-all-tests.sh
 
@@ -116,8 +119,10 @@ bash testing/automation/run-all-tests.sh
 python3 -m pytest tests/test_booking_system.py::TestClassName::test_method_name -v
 ```
 
-> Always run the smallest relevant check first. See `testing/README.md` for
-> the full scope.
+> All three no-Docker suites above are also run automatically in CI via
+> `.github/workflows/tests.yml` (three parallel jobs: `rest-unit`,
+> `contracts`, `webui-unit`). Always run the smallest relevant check first.
+> See `testing/README.md` for the full scope.
 
 ---
 
@@ -198,3 +203,4 @@ At the end of a work session update the two fields below, then commit:
 | Date | Agent / IDE | Branch | What changed | Next open task |
 |---|---|---|---|---|
 | 2026-06-20 | Bob (Cursor) | main | Initial HANDOFF.md created | — |
+| 2026-06-25 | Bob (Cursor) | main | Added DCO git hook (`.githooks/commit-msg`), `setup-hooks.sh`, `.github/workflows/dco.yml` (pinned to `dcoapp/app@113757536` v1.0.0). Fixed: mutable tag → SHA pin, `chmod +x` now persisted via `git update-index`, dead `msg` variable removed, double blank-line before sign-off trailer fixed. Added `README.md` badges (Tests, DCO, License). Added `.github/workflows/tests.yml` with three parallel no-Docker jobs: `rest-unit` (5 pytest files), `contracts` (local-container + Code Engine), `webui-unit` (matrix config). | Commit and push open changes (`README.md`, `tests.yml`) |

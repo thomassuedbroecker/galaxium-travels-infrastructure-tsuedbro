@@ -1,5 +1,9 @@
 ![](./images/galaxium-travels-login.jpg)
 
+[![Tests](https://github.com/thomassuedbroecker/galaxium-travels-infrastructure-tsuedbro/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/thomassuedbroecker/galaxium-travels-infrastructure-tsuedbro/actions/workflows/tests.yml)
+[![DCO](https://github.com/thomassuedbroecker/galaxium-travels-infrastructure-tsuedbro/actions/workflows/dco.yml/badge.svg?branch=main)](https://github.com/thomassuedbroecker/galaxium-travels-infrastructure-tsuedbro/actions/workflows/dco.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 # Galaxium Travels Infrastructure
 
 ## Objective

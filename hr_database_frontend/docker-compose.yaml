@@ -1,0 +1,13 @@
+services:
+  hr_database_frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hr_database_frontend:1.0.0
+    container_name: hr_database_frontend
+    ports:
+      - "8088:8088"
+    environment:
+      # Point at the HR Database service. Override to use a remote instance.
+      HR_API_URL: http://localhost:8081
+    restart: unless-stopped

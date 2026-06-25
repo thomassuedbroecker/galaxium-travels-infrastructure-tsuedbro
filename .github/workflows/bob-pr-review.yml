@@ -1,0 +1,110 @@
+# Bob AI Pull Request Review
+#
+# Runs automatically on every pull-request targeting any branch.
+# Bob reads the PR metadata and diff via the GitHub MCP tools, then posts
+# a structured review comment back to the PR.
+#
+# Required repository secrets:
+#   BOBSHELL_API_KEY  — Bob Shell API key (scope: Inference)
+#                       Create at: https://bob.ibm.com/docs/ide/account/api-keys
+#   BOB_GITHUB_TOKEN  — GitHub PAT with Contents:read + Pull requests:read&write
+#                       Create at: GitHub → Settings → Developer settings → PATs
+#
+# Workflow is skipped when the PR author is a bot (dependabot, etc.).
+
+name: Bob PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  bob-review:
+    name: Bob AI code review
+    runs-on: ubuntu-latest
+
+    # Skip bot-authored PRs (Dependabot, Renovate, etc.)
+    if: ${{ !contains(github.actor, '[bot]') && github.actor != 'dependabot[bot]' }}
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          # Full history so Bob can read file contents across the diff
+          fetch-depth: 0
+
+      # ── 2. Node.js (required by Bob CLI) ────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af  # v4.1.0
+        with:
+          node-version: "20"
+
+      # ── 3. Install Bob Shell ─────────────────────────────────────────────────
+      - name: Install Bob Shell
+        run: npm install -g bobshell@1.0.5
+
+      # ── 4. Accept Bob license and authenticate via API key ───────────────────
+      - name: Accept Bob license
+        run: NODE_NO_WARNINGS=1 bob --accept-license
+        env:
+          # BOBSHELL_API_KEY is the only Bob credential needed in CI.
+          # It replaces the interactive IBMid browser flow and makes
+          # BOB_INSTANCE_ID / BOB_TEAM_ID unnecessary.
+          BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
+
+      # ── 5. Write review prompt ───────────────────────────────────────────────
+      - name: Write review prompt
+        run: |
+          cat > /tmp/pr-review-prompt.txt <<'PROMPT_EOF'
+          Review pull request #${{ github.event.pull_request.number }} in the GitHub
+          repository ${{ github.repository_owner }}/${{ github.event.repository.name }}.
+
+          Steps:
+          1. Fetch PR metadata with mcp__github__get_pull_request
+             (owner="${{ github.repository_owner }}", repo="${{ github.event.repository.name }}",
+              pull_number=${{ github.event.pull_request.number }}).
+          2. Fetch every changed file with mcp__github__get_pull_request_files.
+          3. For each changed file evaluate:
+             - Correctness     — logic errors, edge cases, unhandled errors
+             - Security        — injection risks, secret exposure, unsafe patterns
+             - Code quality    — readability, naming, duplication, dead code
+             - Test coverage   — are the changes covered by tests?
+             - Project rules   — violations of AGENTS.md conventions (HTTP-200 error
+               responses, Pydantic v2 patterns, route metadata requirements, etc.)
+          4. Format findings as:
+               ## <filename>
+               - [SEVERITY] Description and recommendation
+                 (SEVERITY: CRITICAL | HIGH | MEDIUM | LOW | INFO)
+          5. End with:
+               ## Overall Summary
+               Top 5 actionable improvements ranked by severity.
+               Verdict: APPROVE | REQUEST_CHANGES | COMMENT
+          6. Post the complete review back to GitHub with
+             mcp__github__create_pull_request_review using:
+               - event = APPROVE, REQUEST_CHANGES, or COMMENT (match the verdict)
+               - body  = the full review text produced above
+
+          Do NOT write any files to disk — all output goes to stdout only.
+          PROMPT_EOF
+
+      # ── 6. Run Bob review ────────────────────────────────────────────────────
+      - name: Run Bob PR review
+        env:
+          NODE_NO_WARNINGS: "1"
+          BOBSHELL_API_KEY: ${{ secrets.BOBSHELL_API_KEY }}
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.BOB_GITHUB_TOKEN }}
+        run: |
+          bob \
+            --chat-mode arch-review \
+            --approval-mode yolo \
+            --hide-intermediary-output \
+            --trust \
+            --max-coins 10 \
+            < /tmp/pr-review-prompt.txt

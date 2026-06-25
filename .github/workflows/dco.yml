@@ -1,0 +1,32 @@
+# Developer Certificate of Origin (DCO) check
+#
+# Every commit in a pull request must carry a "Signed-off-by" trailer that
+# matches the commit author, certifying the contributor agrees to the DCO
+# (https://developercertificate.org/).
+#
+# Add the trailer with:
+#   git commit --signoff -m "Your message"
+# or amend an existing commit:
+#   git commit --amend --signoff
+#
+# When GitHub's native DCO enforcement is enabled for this repository this
+# workflow can be removed; until then it provides the same gate via Actions.
+
+name: DCO
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dco:
+    name: DCO sign-off check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check DCO
+        uses: dcoapp/app@113757536857a840e6b607a35547d7c696dfd1dd  # v1.0.0

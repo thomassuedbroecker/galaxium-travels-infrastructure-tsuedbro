@@ -67,6 +67,7 @@ flowchart LR
 
 - Navigation hub (all paths at a glance): [NAVIGATOR.md](./NAVIGATOR.md)
 - New user path: [QUICKSTART.md](./QUICKSTART.md)
+- Contributing and DCO sign-off: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Runtime boundaries and architecture decisions: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - Local compose, VM/LAN OAuth, and Basic Auth details: [local-container/README.md](./local-container/README.md)
 - Test commands and current test scope: [testing/README.md](./testing/README.md)
@@ -143,6 +144,15 @@ Status meaning:
 | `🟢` | Full WebUI auth matrix | Rerun passed on `2026-03-18`: `55` tests ran, `55` passed, `0` skipped |
 | `🟢` | VM / LAN remote auth verification | Rerun passed on `2026-03-23` against `192.168.178.154`, including the repo remote verifier, MCP OAuth metadata checks, and authenticated `mcp_test_app.py` over `Streamable HTTP` |
 | `🟢` | Failing checks in the recorded runtime verification period | None from the executed checks |
+
+## First-Time Setup
+
+After cloning, run the one-time hook setup so every commit is signed off
+automatically (required by the DCO check on pull requests):
+
+```sh
+bash setup-hooks.sh
+```
 
 ## Fast Validation
 
@@ -258,6 +268,13 @@ declarations are split across the individual service folders.
 ├── NAVIGATOR.md
 ├── QUICKSTART.md
 ├── LLMS.txt
+├── setup-hooks.sh          ← run once after cloning to auto-sign commits (DCO)
+├── .githooks/
+│   └── commit-msg          ← appends Signed-off-by to every commit automatically
+├── .github/
+│   ├── workflows/
+│   │   └── dco.yml         ← CI gate: verifies DCO trailer on every PR
+│   └── pull_request_template.md
 ├── docs/
 │   ├── AI_ENGINEER_GUIDE.md
 │   ├── QUALITY-CHECK.md

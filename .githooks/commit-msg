@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# .githooks/commit-msg
+#
+# Automatically appends a "Signed-off-by" trailer to every commit message if
+# one is not already present.  This satisfies the Developer Certificate of
+# Origin (DCO) requirement without any manual --signoff flag.
+#
+# Activated once per clone with:
+#   git config core.hooksPath .githooks
+# (setup-hooks.sh does this for you)
+
+COMMIT_MSG_FILE="$1"
+
+# Derive the identity Git will use for this commit
+NAME=$(git config user.name)
+EMAIL=$(git config user.email)
+
+if [ -z "$NAME" ] || [ -z "$EMAIL" ]; then
+  echo "DCO hook: git user.name and user.email must be set." >&2
+  echo "  git config --global user.name  \"Your Name\"" >&2
+  echo "  git config --global user.email \"you@example.com\"" >&2
+  exit 1
+fi
+
+SIGNOFF="Signed-off-by: $NAME <$EMAIL>"
+
+# Only append if the exact trailer is not already present
+if ! grep -qsF "$SIGNOFF" "$COMMIT_MSG_FILE"; then
+  # Strip trailing newlines from the file, then append one blank line + trailer
+  content=$(cat "$COMMIT_MSG_FILE")
+  printf "%s\n\n%s\n" "$(printf '%s' "$content" | sed 's/[[:space:]]*$//')" "$SIGNOFF" > "$COMMIT_MSG_FILE"
+fi

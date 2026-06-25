@@ -4,12 +4,37 @@ Thank you for improving Galaxium Travels Infrastructure.
 
 This repository is a demonstration of REST and MCP integration patterns for an AI-ready booking app. Contributions should keep the project easy to understand, runnable, and well documented.
 
+## Developer Certificate of Origin (DCO)
+
+Every commit must carry a `Signed-off-by` trailer certifying agreement with the
+[Developer Certificate of Origin](https://developercertificate.org/).
+**The hook does this for you automatically** — run the one-time setup below
+right after cloning and you never have to think about it again.
+
+```sh
+bash setup-hooks.sh
+```
+
+That script points Git at the `.githooks/` directory in this repo.
+From that point on, every `git commit` appends the trailer automatically.
+
+> **Prerequisite** — your Git identity must be configured:
+> ```sh
+> git config --global user.name  "Your Name"
+> git config --global user.email "you@example.com"
+> ```
+
+A GitHub Actions workflow (`.github/workflows/dco.yml`) verifies the trailer on
+every PR. Once GitHub's native DCO enforcement is enabled for this repository
+the workflow will be removed.
+
 ## How to contribute
 
-1. Open an issue for new feature ideas, bug fixes, or documentation changes.
-2. Work in a feature branch with a descriptive name.
-3. Keep docs in sync with code and architecture changes.
-4. Submit a pull request against `main` or the current default branch.
+1. Clone the repo and run `bash setup-hooks.sh` once.
+2. Open an issue for new feature ideas, bug fixes, or documentation changes.
+3. Work in a feature branch with a descriptive name.
+4. Keep docs in sync with code and architecture changes.
+5. Submit a pull request against `main` or the current default branch.
 
 ## Local development
 

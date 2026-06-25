@@ -35,15 +35,36 @@ Browser → :8088 (Quarkus)
 
 ## Local Development
 
-### Option A — Quarkus dev mode (full stack)
+### Option A — one-command startup (recommended)
+
+From the repository root, run:
+
+```bash
+bash hr_database_frontend/run-hr-app.sh
+```
+
+The script:
+- creates `HR_database/.venv` if needed
+- installs the Python backend dependencies from `HR_database/requirements.txt`
+- installs `pandas` required by `HR_database/app.py`
+- starts the backend on **http://localhost:8081**
+- packages the Quarkus app and starts the frontend on **http://localhost:8088**
+- waits until both services are healthy before printing the URLs
+
+Press `Ctrl+C` to stop both services.
+
+### Option B — Quarkus dev mode (full stack)
 
 Requires the Python HR Database to be running on port 8081.
 
 ```bash
-# 1. Start the Python HR Database (from repo root)
-cd HR_database && uvicorn app:app --port 8081 &
+cd HR_database
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt pandas
+python app.py
 
-# 2. Start Quarkus in dev mode (hot reload for Java)
+# in a second terminal
 cd hr_database_frontend
 mvn quarkus:dev
 ```

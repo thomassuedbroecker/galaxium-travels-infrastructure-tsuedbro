@@ -4,7 +4,7 @@ This file provides guidance to agents when working with code in this repository.
 
 ## Project Overview
 
-Python monorepo for a multi-service "Galaxium Travels" booking demo. Five services:
+Python monorepo for a multi-service "Galaxium Travels" booking demo. Six services:
 
 | Directory | Stack | Port |
 |---|---|---|
@@ -13,6 +13,7 @@ Python monorepo for a multi-service "Galaxium Travels" booking demo. Five servic
 | `galaxium-booking-web-app/` | Flask proxy → REST backend | 8083 |
 | `galaxium-booking-web-app-mcp/` | Flask proxy → MCP backend | 8085 |
 | `HR_database/` | FastAPI + pandas (reads `data/employees.md`) | 8081 |
+| `hr_database_frontend/` | Quarkus 3 + React 18 HR portal (JAX-RS proxy → `HR_database`) | 8088 |
 
 Full stack is orchestrated with `local-container/docker_compose.yaml` and Keycloak on port 8086.
 

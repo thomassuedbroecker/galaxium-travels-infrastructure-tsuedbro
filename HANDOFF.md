@@ -23,6 +23,7 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 | `galaxium-booking-web-app/` | Flask proxy → REST | 8083 | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask proxy → MCP tools | 8085 | `app/app.py` |
 | `HR_database/` | FastAPI + pandas + Markdown | 8081 | `app.py` |
+| `hr_database_frontend/` | Quarkus 3 + React 18 (JAX-RS proxy → HR_database) | 8088 | `run-hr-app.sh` / `mvn quarkus:dev` |
 | `local-container/` | Docker Compose variants + scripts | — | `docker_compose.yaml` |
 | `deployment/ibm-code-engine/` | Bash + ibmcloud CLI deploy | — | `deploy-stack.sh` |
 | `testing/` | Pytest, contract tests, smoke scripts | — | `README.md` |
@@ -36,9 +37,10 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 
 | Field | Value |
 |---|---|
-| Branch | `main` |
-| Last known clean commit | `dcca719` — chore: add automated DCO sign-off via git hook and CI check |
-| Uncommitted changes | `README.md` (badges), `.github/workflows/tests.yml` (new — not yet committed) |
+| Branch | `frontend_for_the_hr_database` |
+| Base branch | `main` |
+| Last known clean commit | see `git log --oneline -1` |
+| Uncommitted changes | See `git status` — documentation sync for `hr_database_frontend` integration |
 
 Update this section at the end of every session.
 
@@ -204,3 +206,4 @@ At the end of a work session update the two fields below, then commit:
 |---|---|---|---|---|
 | 2026-06-20 | Bob (Cursor) | main | Initial HANDOFF.md created | — |
 | 2026-06-25 | Bob (Cursor) | main | Added DCO git hook (`.githooks/commit-msg`), `setup-hooks.sh`, `.github/workflows/dco.yml` (pinned to `dcoapp/app@113757536` v1.0.0). Fixed: mutable tag → SHA pin, `chmod +x` now persisted via `git update-index`, dead `msg` variable removed, double blank-line before sign-off trailer fixed. Added `README.md` badges (Tests, DCO, License). Added `.github/workflows/tests.yml` with three parallel no-Docker jobs: `rest-unit` (5 pytest files), `contracts` (local-container + Code Engine), `webui-unit` (matrix config). | Commit and push open changes (`README.md`, `tests.yml`) |
+| 2026-06-27 | Bob (Cursor) | frontend_for_the_hr_database | Documentation sync for `hr_database_frontend` integration: added service to all navigation docs (`README.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `ARCHITECTURE.md`, `LLMS.txt`, `HANDOFF.md`, `AGENTS.md`); updated Mermaid diagrams; added Java/Maven/Node prerequisite note; updated base-image table; added `hr_database_frontend/*.log` to `.gitignore`. 31/31 contract tests passed. | Review and remove stale `docs/reference/` files |

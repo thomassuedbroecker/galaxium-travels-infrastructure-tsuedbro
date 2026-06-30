@@ -154,4 +154,5 @@ optimize_existing_github_projects.code-workspace
 hr_database_frontend/src/main/webapp/node_modules/
 hr_database_frontend/src/main/webapp/dist/
 hr_database_frontend/src/main/resources/META-INF/resources/
+hr_database_frontend/target/hr_database_frontend/*.log
 hr_database_frontend/target/

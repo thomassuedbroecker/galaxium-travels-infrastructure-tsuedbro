@@ -8,6 +8,8 @@ This guide helps you get the example running fast.
 - `docker` and `docker compose` available on your PATH
 - optional: `jq` for verifying JSON metadata
 
+> **Local dev for `hr_database_frontend/` only** (outside Docker): Java 21 (OpenJDK / Eclipse Temurin), Maven 3.9, and Node.js 20 are required. Run `bash hr_database_frontend/run-hr-app.sh` from the repository root — it starts both the Python HR backend and the Quarkus frontend.
+
 Options 2 and 3 LAN access require a host IP that another machine can reach.
 The OAuth smoke check in option 1 also uses `LOCAL_NET_IP`. Set it once for
 your platform before running those commands:
@@ -72,6 +74,7 @@ docker compose -f local-container/docker_compose.yaml up --build \
 
 - Keycloak: `http://localhost:8086`
 - HR API docs: `http://localhost:8081/docs`
+- HR portal (React UI): `http://localhost:8088`
 - Booking REST API docs: `http://localhost:8082/docs`
 - REST web UI: `http://localhost:8083`
 - MCP endpoint: `http://localhost:8084/mcp`
@@ -218,6 +221,7 @@ docker compose --env-file local-container/basic-auth.env \
 
 ### 3. Open the URLs
 
+- HR portal (React UI): `http://localhost:8088`
 - Booking REST API docs: `http://localhost:8082/docs`
 - REST web UI: `http://localhost:8083`
 - MCP endpoint: `http://localhost:8084/mcp`

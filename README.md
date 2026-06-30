@@ -167,10 +167,11 @@ bash testing/automation/run-webui-auth-matrix.sh --env-file testing/webui_matrix
 ## Open-Source Dependencies
 
 This repository contains multiple Python services, each with its own
-`requirements.txt`. It does not currently use a single root lockfile.
+`requirements.txt`, one Quarkus + React service managed via Maven (`pom.xml`)
+and npm (`package.json`), and no single root lockfile.
 
 The tables below show the direct dependencies declared in the repository as of
-`2026-03-31`. Where a service does not pin an exact version, the entry is marked
+`2026-06-30`. Where a service does not pin an exact version, the entry is marked
 as `not pinned`.
 
 Current declared base images:
@@ -184,7 +185,7 @@ Current declared base images:
 | `galaxium-booking-web-app-mcp/` | `python:3.12-slim` |
 | `hr_database_frontend/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
 
-Current declared main runtime libraries:
+Current declared main runtime libraries — Python services:
 
 | Library | Declared version in this repo | License | Where referenced |
 | --- | --- | --- | --- |
@@ -201,10 +202,28 @@ Current declared main runtime libraries:
 | `Flask` | `3.1.1` | BSD-3-Clause | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `flask-cors` | `3.0.10` | MIT | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `requests` | `2.31.0` | Apache-2.0 | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
-| `httpx` | `0.28.1` | BSD-3-Clause | `galaxium-booking-web-app-mcp/app/requirements.txt` |
+| `httpx` | `0.28.1` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `mcp` | `>=1.26.0,<2` | MIT | `galaxium-booking-web-app-mcp/app/requirements.txt` |
 
-Current declared dev and test libraries:
+Current declared main runtime libraries — Quarkus + React (`hr_database_frontend/`):
+
+| Library / Component | Declared version | License | Where referenced |
+| --- | --- | --- | --- |
+| Quarkus BOM | `3.37.0` | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `quarkus-rest-jackson` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `quarkus-rest-client-jackson` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `quarkus-smallrye-openapi` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `quarkus-smallrye-health` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `quarkus-config-yaml` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `react` | `^18.3.1` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
+| `react-dom` | `^18.3.1` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
+| `react-router-dom` | `^6.28.0` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
+| Node.js (build) | `v20.19.3` | MIT | `hr_database_frontend/pom.xml` (frontend-maven-plugin) |
+| npm (build) | `10.9.2` | Artistic-2.0 | `hr_database_frontend/pom.xml` (frontend-maven-plugin) |
+| Vite (build) | `^5.4.14` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
+| `@vitejs/plugin-react` (build) | `^4.3.4` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
+
+Current declared dev and test libraries — Python services:
 
 | Library | Declared version in this repo | License | Where referenced |
 | --- | --- | --- | --- |
@@ -213,11 +232,19 @@ Current declared dev and test libraries:
 | `pytest-cov` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
 | `pytest-mock` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
 
+Current declared dev and test libraries — Quarkus (`hr_database_frontend/`):
+
+| Library | Declared version | License | Where referenced |
+| --- | --- | --- | --- |
+| `quarkus-junit5` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `rest-assured` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+
 The repository itself is licensed under Apache-2.0 in `LICENSE`.
 
-Unlike `chaindocs_MCP_example`, this repository does not currently include a
-single automated dependency license-audit script at the root. Dependency
-declarations are split across the individual service folders.
+Dependency declarations are split across the individual service folders:
+`requirements.txt` for Python services, `pom.xml` + `package.json` for
+`hr_database_frontend/`. No single root lockfile or automated license-audit
+script is currently provided.
 
 ## Repository Layout
 

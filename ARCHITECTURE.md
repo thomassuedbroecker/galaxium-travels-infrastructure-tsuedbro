@@ -50,8 +50,16 @@ flowchart LR
         mcp_ui -->|"explicit tool calls<br/>Streamable HTTP"| mcp_server --> mcp_db
     end
 
+    subgraph hr["HR portal path"]
+        hr_frontend["Quarkus + React<br/>:8088"]
+        hr_api["FastAPI HR API<br/>:8081"]
+        hr_data[("Markdown file<br/>employees.md")]
+        hr_frontend -->|"/api proxy"| hr_api --> hr_data
+    end
+
     traveler --> rest_ui
     traveler --> mcp_ui
+    traveler --> hr_frontend
     client -->|"tool calls"| mcp_server
     traveler -. "browser login" .-> keycloak
     rest_ui -. "token request" .-> keycloak
@@ -72,7 +80,8 @@ decomposition or an event-driven synchronization design.
 | `booking_system_mcp/` | MCP tools for the equivalent booking operations | `mcp_server.py` is active; `app.py` is legacy reference only |
 | `galaxium-booking-web-app/` | Web journey backed by REST requests | Sends backend credentials according to mode |
 | `galaxium-booking-web-app-mcp/` | Same web journey backed by MCP tool calls | Uses direct Python MCP client; no autonomous agent; Streamable HTTP only |
-| `HR_database/` | Separate employee-data demonstration API | Not on either booking request path |
+| `HR_database/` | Separate employee-data demonstration API | Not on either booking request path; data backed by markdown file |
+| `hr_database_frontend/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to `HR_database` | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8088 |
 | `local-container/` | Local runtime variants, Keycloak realm, verification scripts | Source of truth for Compose behavior |
 | `deployment/ibm-code-engine/` | IBM Code Engine deployment scripts | Deployment package; not live-cloud verified here |
 | `testing/` | Contract, smoke, and auth-matrix automation | Source of truth for executed verification scope |

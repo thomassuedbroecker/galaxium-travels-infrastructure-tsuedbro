@@ -88,3 +88,15 @@ services:
       - OIDC_CLIENT_SECRET=web-app-proxy-secret
       - OIDC_SCOPE=openid profile email
       - FLASK_SECRET_KEY=local-dev-secret-key
+
+  hr_database_frontend:
+    build:
+      context: ../hr_database_frontend
+    image: hr_database_frontend:1.0.0
+    container_name: hr_database_frontend
+    ports:
+      - 8088:8088
+    depends_on:
+      - hr_database
+    environment:
+      - HR_API_URL=http://hr_database:8081

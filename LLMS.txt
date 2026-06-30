@@ -18,6 +18,7 @@ AI-readiness trade-offs on the same domain.
 | galaxium-booking-web-app | 8083 | galaxium-booking-web-app/app/app.py | Flask proxy → REST |
 | galaxium-booking-web-app-mcp | 8085 | galaxium-booking-web-app-mcp/app/app.py | Flask → MCP tools |
 | HR_database       | 8081 | HR_database/app.py   | FastAPI + pandas + Markdown file |
+| hr_database_frontend | 8088 | hr_database_frontend/run-hr-app.sh | Quarkus 3 + React 18; JAX-RS proxy → HR_database |
 | keycloak          | 8086 | docker image         | OAuth2 / OIDC identity provider |
 
 ## MCP Tools (booking_system_mcp)

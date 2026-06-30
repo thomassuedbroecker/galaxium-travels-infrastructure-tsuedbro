@@ -53,9 +53,11 @@ Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./a
 flowchart LR
     Browser1["Browser user"] --> UIREST["Flask UI :8083<br/>REST mode"]
     Browser2["Browser user"] --> UIMCP["Flask UI :8085<br/>MCP mode"]
+    Browser3["Browser user"] --> HRUI["HR Portal :8088<br/>Quarkus + React"]
     Agent["Agent or VM app"] --> MCP["MCP server :8084"]
     UIREST --> REST["REST backend :8082"]
     UIMCP --> MCP
+    HRUI --> HRAPI["HR database :8081<br/>FastAPI + pandas"]
     UIREST -. "OAuth browser login" .-> KC["Keycloak host :8086<br/>container :8080<br/>OAuth option only"]
     UIMCP -. "OAuth browser login" .-> KC
     REST -. "OAuth token validation" .-> KC
@@ -90,6 +92,7 @@ flowchart LR
 | `galaxium-booking-web-app/` | Flask UI that calls the REST backend | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls MCP tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `HR_database/` | Small HR API backed by markdown data | `8081` | `app.py` |
+| `hr_database_frontend/` | Quarkus + React HR portal; proxies CRUD calls to `HR_database` | `8088` | `run-hr-app.sh` / `mvn quarkus:dev` |
 | `local-container/` | Docker Compose setup, OAuth and Basic Auth verifier scripts, env templates | n/a | `docker_compose.yaml` |
 
 The REST and MCP paths model equivalent traveler actions, but they do not
@@ -218,15 +221,16 @@ The tables below show the direct dependencies declared in the repository as of
 `2026-03-31`. Where a service does not pin an exact version, the entry is marked
 as `not pinned`.
 
-Current declared Python base images:
+Current declared base images:
 
-| Service | Python base image |
+| Service | Base image(s) |
 | --- | --- |
 | `booking_system_rest/` | `python:3.11-slim` |
 | `booking_system_mcp/` | `python:3.11-slim` |
 | `HR_database/` | `python:3.11-slim` |
 | `galaxium-booking-web-app/` | `python:3.12-slim` |
 | `galaxium-booking-web-app-mcp/` | `python:3.12-slim` |
+| `hr_database_frontend/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
 
 Current declared main runtime libraries:
 
@@ -286,7 +290,8 @@ declarations are split across the individual service folders.
 │   ├── manual_auth_check_using_the_commandline.md
 │   ├── watsonx_orchestrate_basic_auth_example_integration.md
 │   └── reference/               ← supplemental background (not required for first run)
-├── HR_database/
+├── HR_database/             ← FastAPI + pandas HR data API (port 8081)
+├── hr_database_frontend/    ← Quarkus + React HR portal (port 8088)
 ├── booking_system_mcp/
 ├── booking_system_rest/
 ├── galaxium-booking-web-app/

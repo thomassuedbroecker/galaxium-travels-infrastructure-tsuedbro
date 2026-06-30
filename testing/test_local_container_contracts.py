@@ -180,5 +180,32 @@ class LocalContainerContractTests(unittest.TestCase):
         self.assertIn('bash "${LOCAL_CONTAINER_DIR}/verify-keycloak-ui-basic-auth-mcp.sh" \\', runner)
 
 
+class HrDatabaseFrontendContractTests(unittest.TestCase):
+    """Contract assertions for the hr_database_frontend Quarkus+React service."""
+
+    def _compose(self) -> str:
+        return _read("local-container/docker_compose.yaml")
+
+    def test_hr_database_frontend_service_present_in_compose(self) -> None:
+        self.assertIn("hr_database_frontend", self._compose())
+
+    def test_hr_database_frontend_port_mapping_is_8088(self) -> None:
+        self.assertIn("8088:8088", self._compose())
+
+    def test_hr_database_frontend_depends_on_hr_database(self) -> None:
+        compose = self._compose()
+        # The depends_on block must appear after the service declaration
+        frontend_section = compose[compose.index("hr_database_frontend"):]
+        self.assertIn("hr_database", frontend_section)
+
+    def test_hr_database_frontend_hr_api_url_env_var_present(self) -> None:
+        compose = self._compose()
+        frontend_section = compose[compose.index("hr_database_frontend"):]
+        self.assertIn("HR_API_URL", frontend_section)
+
+    def test_hr_database_frontend_image_tag_present(self) -> None:
+        self.assertIn("hr_database_frontend:1.0.0", self._compose())
+
+
 if __name__ == "__main__":
     unittest.main()

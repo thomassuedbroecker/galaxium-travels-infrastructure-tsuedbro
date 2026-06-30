@@ -1,0 +1,13 @@
+# Quarkus application configuration
+quarkus:
+  application:
+    name: hr-database-frontend
+  http:
+    port: 8088
+  smallrye-openapi:
+    info-title: HR Database Frontend API
+    info-version: "1.0.0"
+    info-description: JAX-RS proxy layer for the Galaxium Travels HR Database service
+  swagger-ui:
+    always-include: true
+    path: /q/swagger-ui

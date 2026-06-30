@@ -60,7 +60,9 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 ## Current Verified State
 
-Current verified checks are split between smoke coverage and the last full matrix run:
+> **Last reviewed:** `2026-06-30`. The test suite has not been re-executed since the dates recorded below. All results listed reflect the last known passing state.
+
+Last executed verification runs (smoke coverage and last full matrix run):
 
 - `2026-03-25`: `bash testing/automation/run-code-engine-contract-tests.sh`
   - passed with `8/8` tests green

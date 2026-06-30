@@ -102,55 +102,7 @@ auth-mode comparison.
 
 ## Verification Evidence
 
-Recorded runtime verification evidence from `2026-03-23`:
-
-- Aggregate repo test runner passed on `2026-03-23`.
-- Local-container contract checks passed on `2026-03-23` with `15/15` tests green.
-- REST API pytest suite passed on `2026-03-23` with `37` tests green and no pytest warning summary.
-- Local UI OAuth smoke rerun passed on `2026-03-23`.
-- Local MCP OAuth smoke rerun passed on `2026-03-23`.
-- Local Basic Auth backend smoke rerun passed on `2026-03-23`.
-- Local Basic Auth frontend plus MCP Inspector smoke rerun passed on `2026-03-23`.
-- Local Keycloak UI plus MCP Basic Auth smoke rerun passed on `2026-03-23`.
-- VM / LAN remote auth verification rerun passed on `2026-03-23` against `192.168.178.154`.
-
-The latest full eight-variant WebUI auth matrix rerun is still the `2026-03-18` run:
-
-- Result: `55 tests passed`, `0 skipped`
-- Environments: `local_machine_network`, `local_machine_local_network_prepare`
-- Backend modes: `rest`, `mcp`
-- OAuth modes: `backend_and_ui_oauth`, `ui_oauth`
-
-For the exact commands and current scope split, see [testing/README.md](./testing/README.md).
-
-For this architecture and documentation update, the configuration contract
-suites were rerun on `2026-05-25`:
-
-- `python3 -m unittest testing.test_local_container_contracts testing.test_code_engine_deployment_contracts -v`
-- Result: `26` tests passed
-
-## Test Status Overview
-
-Status meaning:
-
-- `🟢`: executed and passed on the date recorded in the row
-- `🟡`: not executed in the recorded verification period
-- `🔴`: executed and failed on the date recorded in the row
-
-| Status | Scope | Result |
-| --- | --- | --- |
-| `🟢` | Aggregate repo regression slice | `bash testing/automation/run-all-tests.sh` passed on `2026-03-23`, including local-container contracts, REST pytest, UI OAuth smoke, MCP OAuth smoke, and Keycloak UI -> MCP Basic Auth smoke. Artifacts: `local-container-contracts-20260323T200030Z.log`, `rest-api-pytest-20260323T200031Z.log`, `oauth-e2e-ui-rest-20260323T200045Z.md`, `oauth-e2e-mcp-20260323T200102Z.md`, `keycloak-ui-basic-auth-mcp-20260323T200115Z.md` |
-| `🟢` | Local-container contract checks | `bash testing/automation/run-local-container-contract-tests.sh` passed on `2026-03-23` with `15/15` tests green. Log: `testing/results/generated/contracts/local-container-contracts-20260323T200030Z.log` |
-| `🟢` | REST API pytest suite | `bash testing/automation/run-rest-api-tests.sh` passed on `2026-03-23` with `37` tests green and no pytest warning summary. Log: `testing/results/generated/rest/rest-api-pytest-20260323T200031Z.log` |
-| `🟢` | Local UI OAuth smoke test | `bash testing/automation/run-ui-behavior-tests.sh` passed on `2026-03-23`, including REST auth, traveler web login, and MCP web app traveler session checks. Report: `testing/results/generated/ui/oauth-e2e-ui-rest-20260323T200045Z.md` |
-| `🟢` | Local MCP OAuth smoke test | `bash testing/automation/run-mcp-integration-tests.sh` passed on `2026-03-23` for the MCP OAuth slice. Report: `testing/results/generated/mcp/oauth-e2e-mcp-20260323T200102Z.md` |
-| `🟢` | Local Basic Auth backend smoke test | `bash local-container/verify-basic-auth-backends.sh` passed on `2026-03-23`, including REST `401/200` checks plus authenticated MCP `initialize`, `tools/list`, and `tools/call(list_flights)` |
-| `🟢` | Local Basic Auth frontend + MCP Inspector smoke test | `bash local-container/verify-basic-auth-frontends-and-inspector.sh` passed on `2026-03-23`, including REST UI guest flow, MCP UI guest flow, and Basic Auth Inspector config generation with `Streamable HTTP` |
-| `🟢` | Local Keycloak UI -> MCP Basic Auth smoke test | `bash local-container/verify-keycloak-ui-basic-auth-mcp.sh` passed on `2026-03-23`, including Keycloak browser login on the MCP UI, authenticated flight lookup, booking flow, and direct MCP Basic Auth verification. Report: `testing/results/generated/mcp/keycloak-ui-basic-auth-mcp-20260323T200115Z.md` |
-| `🟢` | WebUI matrix unit config checks | `python3 -m unittest testing.webui_matrix.tests.unit.test_config -v` passed on `2026-03-18` with `11/11` tests green |
-| `🟢` | Full WebUI auth matrix | Rerun passed on `2026-03-18`: `55` tests ran, `55` passed, `0` skipped |
-| `🟢` | VM / LAN remote auth verification | Rerun passed on `2026-03-23` against `192.168.178.154`, including the repo remote verifier, MCP OAuth metadata checks, and authenticated `mcp_test_app.py` over `Streamable HTTP` |
-| `🟢` | Failing checks in the recorded runtime verification period | None from the executed checks |
+For test commands, scope, and the current verified state see [testing/README.md](./testing/README.md).
 
 ## First-Time Setup
 

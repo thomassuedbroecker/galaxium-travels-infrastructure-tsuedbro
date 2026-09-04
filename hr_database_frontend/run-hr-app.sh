@@ -23,10 +23,14 @@ if [[ ! -d "$BACKEND_VENV" ]]; then
   python3 -m venv "$BACKEND_VENV"
 fi
 
+source "$BACKEND_VENV/bin/activate"
 "$BACKEND_VENV/bin/pip" install -r "$BACKEND_DIR/requirements.txt" pandas
 
-"$BACKEND_VENV/bin/python" "$BACKEND_DIR/app.py" >"$BACKEND_LOG" 2>&1 &
+# Start the backend service in the folder, because it needs to find the database file in the current working directory.
+cd "$BACKEND_DIR"
+"$BACKEND_VENV/bin/python" "./app.py" >"$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
+cd "$ROOT_DIR"
 
 echo "Waiting for HR backend on http://localhost:8081 ..."
 until curl -sf http://localhost:8081/employees >/dev/null; do

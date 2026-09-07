@@ -20,7 +20,9 @@ def _shell_assignments(relative_path: str) -> set[str]:
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        match = re.match(r"^([A-Z0-9_]+)=", line)
+        # Templates that are sourced by the shell scripts use an "export" prefix
+        # so the values reach the verification scripts' subprocesses.
+        match = re.match(r"^(?:export\s+)?([A-Z0-9_]+)=", line)
         if match:
             assignments.add(match.group(1))
     return assignments
@@ -181,30 +183,42 @@ class LocalContainerContractTests(unittest.TestCase):
 
 
 class HrDatabaseFrontendContractTests(unittest.TestCase):
-    """Contract assertions for the hr_database_frontend Quarkus+React service."""
+    """Contract assertions for the hr_database_frontend_java Quarkus service."""
+
+    SERVICE_NAME = "hr_database_frontend_java"
 
     def _compose(self) -> str:
         return _read("local-container/docker_compose.yaml")
 
-    def test_hr_database_frontend_service_present_in_compose(self) -> None:
-        self.assertIn("hr_database_frontend", self._compose())
+    def _frontend_section(self) -> str:
+        compose = self._compose()
+        start = compose.index(f"  {self.SERVICE_NAME}:")
+        remainder = compose[start:]
+        # Stop at the next service (same indentation) or top-level key.
+        next_service = re.search(r"\n(?: {2})?[A-Za-z0-9_]+:\s*\n", remainder)
+        return remainder[: next_service.start()] if next_service else remainder
 
-    def test_hr_database_frontend_port_mapping_is_8088(self) -> None:
-        self.assertIn("8088:8088", self._compose())
+    def test_hr_database_frontend_service_present_in_compose(self) -> None:
+        self.assertIn(f"  {self.SERVICE_NAME}:", self._compose())
+
+    def test_hr_database_frontend_port_mapping_is_8090_to_8088(self) -> None:
+        # Quarkus listens on 8088 in the container; 8090 keeps the host port
+        # clear of the other services in this compose file.
+        self.assertIn("8090:8088", self._frontend_section())
 
     def test_hr_database_frontend_depends_on_hr_database(self) -> None:
-        compose = self._compose()
-        # The depends_on block must appear after the service declaration
-        frontend_section = compose[compose.index("hr_database_frontend"):]
+        frontend_section = self._frontend_section()
+        self.assertIn("depends_on", frontend_section)
         self.assertIn("hr_database", frontend_section)
 
-    def test_hr_database_frontend_hr_api_url_env_var_present(self) -> None:
-        compose = self._compose()
-        frontend_section = compose[compose.index("hr_database_frontend"):]
-        self.assertIn("HR_API_URL", frontend_section)
+    def test_hr_database_frontend_hr_backend_url_env_var_present(self) -> None:
+        frontend_section = self._frontend_section()
+        # java.net.URI.getHost() returns null for hosts containing underscores,
+        # so the REST client base URI must use the hyphenated network alias.
+        self.assertIn("HR_BACKEND_URL=http://hr-database:8081", frontend_section)
 
     def test_hr_database_frontend_image_tag_present(self) -> None:
-        self.assertIn("hr_database_frontend:1.0.0", self._compose())
+        self.assertIn(f"{self.SERVICE_NAME}:1.0.0", self._compose())
 
 
 if __name__ == "__main__":

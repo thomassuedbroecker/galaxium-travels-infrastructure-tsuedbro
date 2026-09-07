@@ -1,26 +1,28 @@
 # Latest Validation
 
 - Summary date: `2026-09-07`
-- Reviewed code commit: `12867a5` (documentation updates applied afterward)
+- Reviewed code commit: `67746dc`
 - Latest executed scope: local-container and Code Engine contract tests
-- Result: **FAIL — 31 tests run, 27 passed, 4 failed**
+- Result: **PASS — 31 tests run, 31 passed, 0 failed**
 
 ```sh
 python3 -B -m unittest testing.test_local_container_contracts testing.test_code_engine_deployment_contracts -q
 ```
 
-The four failures are in the local-container suite:
+The four failures previously recorded here were stale test expectations, not
+runtime defects, and the local-container suite has been realigned with the
+current checkout:
 
-- HR frontend assertions still expect `8088:8088`, `HR_API_URL`, and
-  `hr_database_frontend:1.0.0`. Compose now uses `8090:8088`,
-  `HR_BACKEND_URL`, and `hr_database_frontend_java:1.0.0`.
-- The env-template parser only recognizes bare assignments; the Basic Auth
-  template now uses `export BASIC_AUTH_USERNAME=...` and
-  `export BASIC_AUTH_PASSWORD=...`.
+- HR frontend assertions expected `8088:8088`, `HR_API_URL`, and
+  `hr_database_frontend:1.0.0`. They now assert the shipped contract —
+  `8090:8088`, `HR_BACKEND_URL=http://hr-database:8081`, and
+  `hr_database_frontend_java:1.0.0`.
+- The env-template parser only recognized bare assignments. It now also accepts
+  the `export` prefix used by `basic-auth.env.template`, which the Basic Auth
+  verification scripts `source`.
 
-These failures identify stale test expectations and parser limitations; they
-are not runtime failure evidence. Tests were not changed during this documentation
-update. No Docker smoke tests, full auth matrix, or cloud deployment were rerun.
+Only the contract suites were rerun. No Docker smoke tests, full auth matrix, or
+cloud deployment were rerun.
 
 ## Historical Runtime Evidence
 

@@ -92,7 +92,7 @@ flowchart LR
 | `galaxium-booking-web-app/` | Flask UI that calls the REST backend | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls MCP tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `HR_database/` | Small HR API backed by markdown data | `8081` | `app.py` |
-| `hr_database_frontend/` | Quarkus + React HR portal; proxies CRUD calls to `HR_database` | `8088` | `run-hr-app.sh` / `mvn quarkus:dev` |
+| `hr_database_frontend_java/` | Quarkus + React HR portal; proxies CRUD calls to `HR_database` | `8090` (container) / `8088` (local) | `run-hr-app.sh` / `mvn quarkus:dev` |
 | `local-container/` | Docker Compose setup, OAuth and Basic Auth verifier scripts, env templates | n/a | `docker_compose.yaml` |
 
 The REST and MCP paths model equivalent traveler actions, but they do not
@@ -183,7 +183,7 @@ Current declared base images:
 | `HR_database/` | `python:3.11-slim` |
 | `galaxium-booking-web-app/` | `python:3.12-slim` |
 | `galaxium-booking-web-app-mcp/` | `python:3.12-slim` |
-| `hr_database_frontend/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
+| `hr_database_frontend_java/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
 
 Current declared main runtime libraries — Python services:
 
@@ -205,23 +205,23 @@ Current declared main runtime libraries — Python services:
 | `httpx` | `0.28.1` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `mcp` | `>=1.26.0,<2` | MIT | `galaxium-booking-web-app-mcp/app/requirements.txt` |
 
-Current declared main runtime libraries — Quarkus + React (`hr_database_frontend/`):
+Current declared main runtime libraries — Quarkus + React (`hr_database_frontend_java/`):
 
 | Library / Component | Declared version | License | Where referenced |
 | --- | --- | --- | --- |
-| Quarkus BOM | `3.37.0` | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `quarkus-rest-jackson` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `quarkus-rest-client-jackson` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `quarkus-smallrye-openapi` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `quarkus-smallrye-health` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `quarkus-config-yaml` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `react` | `^18.3.1` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
-| `react-dom` | `^18.3.1` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
-| `react-router-dom` | `^6.28.0` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
-| Node.js (build) | `v20.19.3` | MIT | `hr_database_frontend/pom.xml` (frontend-maven-plugin) |
-| npm (build) | `10.9.2` | Artistic-2.0 | `hr_database_frontend/pom.xml` (frontend-maven-plugin) |
-| Vite (build) | `^5.4.14` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
-| `@vitejs/plugin-react` (build) | `^4.3.4` | MIT | `hr_database_frontend/src/main/webapp/package.json` |
+| Quarkus BOM | `3.37.0` | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `quarkus-rest-jackson` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `quarkus-rest-client-jackson` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `quarkus-smallrye-openapi` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `quarkus-smallrye-health` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `quarkus-config-yaml` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `react` | `^18.3.1` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
+| `react-dom` | `^18.3.1` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
+| `react-router-dom` | `^6.28.0` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
+| Node.js (build) | `v20.19.3` | MIT | `hr_database_frontend_java/pom.xml` (frontend-maven-plugin) |
+| npm (build) | `10.9.2` | Artistic-2.0 | `hr_database_frontend_java/pom.xml` (frontend-maven-plugin) |
+| Vite (build) | `^5.4.14` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
+| `@vitejs/plugin-react` (build) | `^4.3.4` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
 
 Current declared dev and test libraries — Python services:
 
@@ -232,18 +232,18 @@ Current declared dev and test libraries — Python services:
 | `pytest-cov` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
 | `pytest-mock` | `not pinned` | MIT | `booking_system_rest/requirements.txt` |
 
-Current declared dev and test libraries — Quarkus (`hr_database_frontend/`):
+Current declared dev and test libraries — Quarkus (`hr_database_frontend_java/`):
 
 | Library | Declared version | License | Where referenced |
 | --- | --- | --- | --- |
-| `quarkus-junit5` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
-| `rest-assured` | managed by BOM | Apache-2.0 | `hr_database_frontend/pom.xml` |
+| `quarkus-junit5` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
+| `rest-assured` | managed by BOM | Apache-2.0 | `hr_database_frontend_java/pom.xml` |
 
 The repository itself is licensed under Apache-2.0 in `LICENSE`.
 
 Dependency declarations are split across the individual service folders:
 `requirements.txt` for Python services, `pom.xml` + `package.json` for
-`hr_database_frontend/`. No single root lockfile or automated license-audit
+`hr_database_frontend_java/`. No single root lockfile or automated license-audit
 script is currently provided.
 
 ## Repository Layout
@@ -270,7 +270,7 @@ script is currently provided.
 │   ├── watsonx_orchestrate_basic_auth_example_integration.md
 │   └── reference/               ← supplemental background (not required for first run)
 ├── HR_database/             ← FastAPI + pandas HR data API (port 8081)
-├── hr_database_frontend/    ← Quarkus + React HR portal (port 8088)
+├── hr_database_frontend_java/    ← Quarkus + React HR portal (port 8090/container, 8088/local)
 ├── booking_system_mcp/
 ├── booking_system_rest/
 ├── galaxium-booking-web-app/

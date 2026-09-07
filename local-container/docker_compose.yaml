@@ -89,13 +89,13 @@ services:
       - OIDC_SCOPE=openid profile email
       - FLASK_SECRET_KEY=local-dev-secret-key
 
-  hr_database_frontend:
+  hr_database_frontend_java:
     build:
-      context: ../hr_database_frontend
-    image: hr_database_frontend:1.0.0
-    container_name: hr_database_frontend
+      context: ../hr_database_frontend_java
+    image: hr_database_frontend_java:1.0.0
+    container_name: hr_database_frontend_java
     ports:
-      - 8088:8088
+      - 8090:8088
     depends_on:
       - hr_database
     environment:

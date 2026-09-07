@@ -81,7 +81,7 @@ decomposition or an event-driven synchronization design.
 | `galaxium-booking-web-app/` | Web journey backed by REST requests | Sends backend credentials according to mode |
 | `galaxium-booking-web-app-mcp/` | Same web journey backed by MCP tool calls | Uses direct Python MCP client; no autonomous agent; Streamable HTTP only |
 | `HR_database/` | Separate employee-data demonstration API | Not on either booking request path; data backed by markdown file |
-| `hr_database_frontend/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to `HR_database` | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8088 |
+| `hr_database_frontend_java/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to `HR_database` | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8090 (container) / 8088 (local) |
 | `local-container/` | Local runtime variants, Keycloak realm, verification scripts | Source of truth for Compose behavior |
 | `deployment/ibm-code-engine/` | IBM Code Engine deployment scripts | Deployment package; not live-cloud verified here |
 | `testing/` | Contract, smoke, and auth-matrix automation | Source of truth for executed verification scope |

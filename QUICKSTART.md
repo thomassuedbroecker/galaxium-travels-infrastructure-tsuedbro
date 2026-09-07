@@ -8,7 +8,7 @@ This guide helps you get the example running fast.
 - `docker` and `docker compose` available on your PATH
 - optional: `jq` for verifying JSON metadata
 
-> **Local dev for `hr_database_frontend/` only** (outside Docker): Java 21 (OpenJDK / Eclipse Temurin), Maven 3.9, and Node.js 20 are required. Run `bash hr_database_frontend/run-hr-app.sh` from the repository root — it starts both the Python HR backend and the Quarkus frontend.
+> **Local dev for `hr_database_frontend_java/` only** (outside Docker): Java 21 (OpenJDK / Eclipse Temurin), Maven 3.9, and Node.js 20 are required. Run `bash hr_database_frontend_java/run-hr-app.sh` from the repository root — it starts both the Python HR backend and the Quarkus frontend (local port 8088; container port mapped to 8090).
 
 Options 2 and 3 LAN access require a host IP that another machine can reach.
 The OAuth smoke check in option 1 also uses `LOCAL_NET_IP`. Set it once for

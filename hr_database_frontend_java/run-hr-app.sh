@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/HR_database"
-FRONTEND_DIR="$ROOT_DIR/hr_database_frontend"
+FRONTEND_DIR="$ROOT_DIR/hr_database_frontend_java"
 BACKEND_VENV="$BACKEND_DIR/.venv"
 BACKEND_LOG="$FRONTEND_DIR/hr_database_backend.log"
 FRONTEND_LOG="$FRONTEND_DIR/hr_database_frontend.log"

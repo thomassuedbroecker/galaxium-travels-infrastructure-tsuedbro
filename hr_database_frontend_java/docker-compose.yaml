@@ -1,13 +1,49 @@
+# docker-compose.yaml
+# Stack: Python HR backend (port 8081) + Quarkus Java frontend (port 8090)
+# Use: ./start-hr-app.sh --backend python   (default)
+#      ./stop-hr-app.sh  --backend python
+
 services:
+
+  hr_database:
+    build:
+      context: ../HR_database
+      dockerfile: Dockerfile
+    image: hr_database:1.0.0
+    container_name: hr_database
+    expose:
+      - "8081"
+    volumes:
+      - ../HR_database/data:/app/data
+    restart: unless-stopped
+    networks:
+      - hr-net
+    healthcheck:
+      test: ["CMD", "python3", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8081/employees')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   hr_database_frontend_java:
     build:
       context: .
       dockerfile: Dockerfile
-    image: hr_database_frontend_java:1.0.0
+      args:
+        # Baked into Quarkus augmented bytecode at mvn package time.
+        # Must use the Docker network service name of the backend.
+        HR_BACKEND_URL: http://hr_database:8081
+    image: hr_database_frontend_java:python-backend-1.0.0
     container_name: hr_database_frontend_java
     ports:
       - "8090:8088"
-    environment:
-      # Point at the HR Database service. Override to use a remote instance.
-      HR_API_URL: http://localhost:8081
+    depends_on:
+      hr_database:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - hr-net
+
+networks:
+  hr-net:
+    driver: bridge

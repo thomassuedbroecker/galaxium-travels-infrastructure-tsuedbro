@@ -19,6 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import java.util.List;
 
@@ -44,6 +45,8 @@ import java.util.List;
 @Tag(name = "Employees", description = "CRUD proxy to the HR Database service")
 public class EmployeeResource {
 
+    private static final Logger LOG = Logger.getLogger(EmployeeResource.class);
+
     @Inject
     @RestClient
     HrApiClient hrApiClient;
@@ -65,6 +68,7 @@ public class EmployeeResource {
         } catch (WebApplicationException e) {
             throw e;
         } catch (Exception e) {
+            LOG.errorf(e, "Failed to reach HR backend on listAll: %s", e.getMessage());
             throw new WebApplicationException("Failed to reach HR backend: " + e.getMessage(),
                     Response.Status.BAD_GATEWAY);
         }

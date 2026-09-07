@@ -156,3 +156,5 @@ hr_database_frontend_java/src/main/webapp/dist/
 hr_database_frontend_java/src/main/resources/META-INF/resources/
 hr_database_frontend_java/target/hr_database_frontend_java/*.log
 hr_database_frontend_java/target/
+# Runtime artefacts
+*.log

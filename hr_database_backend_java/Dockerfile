@@ -21,12 +21,17 @@ RUN mvn package -DskipTests -q
 # ─────────────────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
+# Install wget for the Docker healthcheck (not present in the base JRE image)
+RUN apt-get update -qq && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Quarkus fast-jar layout: quarkus-run.jar + lib/ + app/ + quarkus/
 COPY --from=builder /build/target/quarkus-app/ ./
 
-# Create data directory and copy initial employees database
+# Seed data — used as fallback when no host volume is mounted.
+# When docker-compose mounts ../hr_database_backend_java/data:/app/data,
+# the volume takes precedence and this baked-in file is not used.
 RUN mkdir -p data
 COPY data/employees.md data/employees.md
 

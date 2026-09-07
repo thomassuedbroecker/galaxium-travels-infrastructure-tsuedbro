@@ -15,61 +15,32 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.util.List;
 
 /**
- * MicroProfile REST Client interface for the Python HR Database service.
+ * MicroProfile REST Client for the HR Database backend.
  *
- * <p>The base URL is resolved from {@code quarkus.rest-client.hr-api.url}
- * which defaults to {@code http://localhost:8081} and can be overridden
- * at runtime via the {@code HR_API_URL} environment variable.
+ * Base URL is set via the QUARKUS_REST_CLIENT_HRBACKEND_URL env var in Compose:
+ *   Java backend:   QUARKUS_REST_CLIENT_HRBACKEND_URL=http://hr_database_backend_java:8089
+ *   Python backend: QUARKUS_REST_CLIENT_HRBACKEND_URL=http://hr_database:8081
  */
-@RegisterRestClient(configKey = "hr-api")
+@RegisterRestClient(configKey = "hrbackend")
 @Path("/employees")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface HrApiClient {
 
-    /**
-     * Retrieve all employees.
-     *
-     * @return list of all employees
-     */
     @GET
     List<Employee> listAll();
 
-    /**
-     * Retrieve a single employee by ID.
-     *
-     * @param id employee identifier
-     * @return the matching employee
-     */
     @GET
     @Path("/{id}")
     Employee getById(@PathParam("id") String id);
 
-    /**
-     * Create a new employee.
-     *
-     * @param employee employee data (id may be null)
-     * @return the created employee with assigned id
-     */
     @POST
     Employee create(Employee employee);
 
-    /**
-     * Update an existing employee.
-     *
-     * @param id       employee identifier
-     * @param employee updated employee data
-     * @return the updated employee
-     */
     @PUT
     @Path("/{id}")
     Employee update(@PathParam("id") String id, Employee employee);
 
-    /**
-     * Delete an employee by ID.
-     *
-     * @param id employee identifier
-     */
     @DELETE
     @Path("/{id}")
     void delete(@PathParam("id") String id);

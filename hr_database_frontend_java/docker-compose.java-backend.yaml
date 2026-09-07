@@ -1,0 +1,48 @@
+# docker-compose.java-backend.yaml
+# Stack: Java HR backend (port 8089) + Quarkus Java frontend (port 8090)
+# Use: ./start-hr-app.sh --backend java
+#      ./stop-hr-app.sh  --backend java
+
+services:
+
+  hr_database_backend_java:
+    build:
+      context: ../hr_database_backend_java
+      dockerfile: Dockerfile
+    image: hr_database_backend_java:1.0.0
+    container_name: hr_database_backend_java
+    ports:
+      - "8089:8089"
+    volumes:
+      - ../hr_database_backend_java/data:/app/data
+    restart: unless-stopped
+    networks:
+      - hr-java-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8089/q/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  hr_database_frontend_java:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Baked into Quarkus augmented bytecode at mvn package time.
+        # Must use the Docker network service name of the backend.
+        HR_BACKEND_URL: http://hr_database_backend_java:8089
+    image: hr_database_frontend_java:java-backend-1.0.0
+    container_name: hr_database_frontend_java
+    ports:
+      - "8090:8088"
+    depends_on:
+      hr_database_backend_java:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - hr-java-net
+
+networks:
+  hr-java-net:
+    driver: bridge

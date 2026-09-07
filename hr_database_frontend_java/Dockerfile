@@ -8,25 +8,29 @@ WORKDIR /build
 COPY pom.xml .
 RUN mvn dependency:go-offline -q || true
 
+# Copy full source (Java + webapp)
 COPY src/ src/
 
-# Write the backend URL into application.properties before Quarkus augmentation
-# so it is recorded into the fast-jar bytecode.  This is the only reliable way
-# to set a REST client base URL for Quarkus fast-jar production builds.
-# Each compose file passes the correct Docker-network URL via build.args.
-ARG HR_BACKEND_URL=http://localhost:8089
-RUN printf '\nquarkus.rest-client.hrbackend.url=%s\n' "${HR_BACKEND_URL}" \
-    >> src/main/resources/application.properties && \
-    mvn package -DskipTests -q
+# Build: frontend-maven-plugin runs npm install + npm run build inside Maven,
+# then Maven packages the Quarkus fast-jar containing the React static assets.
+RUN mvn package -DskipTests -q
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2: Runtime — minimal JRE only
 # ─────────────────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
+# Install wget for the Docker healthcheck (not present in the base JRE image)
+RUN apt-get update -qq && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
+# Quarkus fast-jar layout: quarkus-run.jar + lib/ + app/ + quarkus/
 COPY --from=builder /build/target/quarkus-app/ ./
+
+# HR Database backend URL — overridable at runtime, so one image serves both
+# the Java and the Python backend. Each compose file sets it via environment.
+ENV HR_BACKEND_URL=http://localhost:8089
 
 EXPOSE 8088
 

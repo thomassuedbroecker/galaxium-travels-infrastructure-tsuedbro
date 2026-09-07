@@ -13,7 +13,13 @@ The application:
 ## Architecture
 
 Two backend variants are supported. The frontend image is identical in both cases;
-only the `HR_API_URL` environment variable differs.
+only the `HR_BACKEND_URL` environment variable differs — it is read at runtime, so
+switching backends never requires a rebuild.
+
+> The backend host **must not contain underscores**. `java.net.URI.getHost()`
+> returns `null` for such hosts and the REST client then silently falls back to
+> `localhost:80`. Both compose files therefore give the backend services the
+> hyphenated network aliases `hr-database` and `hr-database-backend-java`.
 
 ```
 Browser → :8090 (Quarkus container)
@@ -103,8 +109,10 @@ docker compose -f docker-compose.java-backend.yaml logs -f
 
 | File | Backend | Network |
 |------|---------|---------|
-| [`docker-compose.yaml`](docker-compose.yaml) | Python FastAPI (`HR_database`, port 8081 internal) | `hr-net` |
-| [`docker-compose.java-backend.yaml`](docker-compose.java-backend.yaml) | Quarkus Java (`hr_database_backend_java`, port 8089 internal) | `hr-java-net` |
+| [`docker-compose.yaml`](docker-compose.yaml) | Python FastAPI (`hr_database`, alias `hr-database`, port 8081 internal) | `hr-net` |
+| [`docker-compose.java-backend.yaml`](docker-compose.java-backend.yaml) | Quarkus Java (`hr_database_backend_java`, alias `hr-database-backend-java`, port 8089 internal) | `hr-java-net` |
+
+Both files build the same image, `hr_database_frontend_java:1.0.0`.
 
 ---
 
@@ -126,14 +134,14 @@ cd hr_database_frontend_java
 mvn quarkus:dev        # → http://localhost:8088
 ```
 
-To use the Java backend instead, set `HR_API_URL` before starting Quarkus:
+To use the Java backend instead, set `HR_BACKEND_URL` before starting Quarkus:
 
 ```bash
 cd hr_database_backend_java
 mvn quarkus:dev        # → http://localhost:8089
 
 cd hr_database_frontend_java
-HR_API_URL=http://localhost:8089 mvn quarkus:dev
+HR_BACKEND_URL=http://localhost:8089 mvn quarkus:dev
 ```
 
 ### React hot-reload (Vite dev server)
@@ -155,7 +163,7 @@ npm run dev            # → http://localhost:3000  (proxies /api → :8088)
 
 | Variable     | Default                 | Description                              |
 |--------------|-------------------------|------------------------------------------|
-| `HR_API_URL` | `http://localhost:8081` | Base URL of the HR Database backend API  |
+| `HR_BACKEND_URL` | `http://localhost:8089` | Base URL of the HR Database backend API (host must not contain underscores) |
 
 ### React build variable
 
@@ -197,7 +205,7 @@ The multi-stage [`Dockerfile`](Dockerfile):
 
 ```bash
 docker run -p 8090:8088 \
-  -e HR_API_URL=http://host.docker.internal:8081 \
+  -e HR_BACKEND_URL=http://host.docker.internal:8081 \
   hr_database_frontend_java:1.0.0
 ```
 

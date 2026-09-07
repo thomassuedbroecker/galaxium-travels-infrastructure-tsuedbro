@@ -18,7 +18,13 @@ services:
     container_name: hr_database
     ports:
       - 8081:8081
-  
+    networks:
+      default:
+        # java.net.URI.getHost() returns null for hosts containing underscores,
+        # so hr_database is unusable as the Java frontend's REST client base URI.
+        aliases:
+          - hr-database
+
   booking_system:
     build:
       context: ../booking_system_rest
@@ -99,4 +105,4 @@ services:
     depends_on:
       - hr_database
     environment:
-      - HR_API_URL=http://hr_database:8081
+      - HR_BACKEND_URL=http://hr-database:8081

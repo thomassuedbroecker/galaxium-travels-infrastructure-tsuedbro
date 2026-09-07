@@ -75,6 +75,20 @@ ELAPSED=0
 until curl -sf http://localhost:8090/q/health >/dev/null 2>&1; do
   if (( ELAPSED >= TIMEOUT )); then
     echo ""
+    # Distinguish "the app is broken" from "the container is fine but the
+    # runtime does not forward published ports to the host" (seen with some
+    # Rancher Desktop / Podman machine setups).
+    if docker inspect -f '{{.State.Health.Status}}' hr_database_frontend_java 2>/dev/null \
+         | grep -q healthy; then
+      echo "WARNING: The frontend container reports HEALTHY, but http://localhost:8090"
+      echo "         is not reachable from this host after ${TIMEOUT}s."
+      echo "         The stack is running — your container runtime is most likely not"
+      echo "         forwarding published ports to the host. Verify with:"
+      echo "           docker run --rm --network <stack>_hr-java-net curlimages/curl \\"
+      echo "             -s http://hr_database_frontend_java:8088/q/health"
+      echo "         Then restart Docker Desktop / Rancher Desktop to restore forwarding."
+      exit 1
+    fi
     echo "ERROR: HR frontend did not become healthy within ${TIMEOUT}s."
     echo "       Check logs with:  $COMPOSE -f \"$COMPOSE_FILE\" logs"
     exit 1

@@ -17,7 +17,12 @@ services:
       - ../HR_database/data:/app/data
     restart: unless-stopped
     networks:
-      - hr-net
+      hr-net:
+        # java.net.URI.getHost() returns null for hosts containing underscores,
+        # so the service name hr_database is unusable as a REST client base URI.
+        # This hyphenated alias is what the frontend calls.
+        aliases:
+          - hr-database
     healthcheck:
       test: ["CMD", "python3", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8081/employees')"]
@@ -29,12 +34,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        # Baked into Quarkus augmented bytecode at mvn package time.
-        # Must use the Docker network service name of the backend.
-        HR_BACKEND_URL: http://hr_database:8081
-    image: hr_database_frontend_java:python-backend-1.0.0
+    image: hr_database_frontend_java:1.0.0
     container_name: hr_database_frontend_java
+    environment:
+      # Resolved at runtime by the REST client. Must use the hyphenated network
+      # alias, not the service name — see the alias comment on the backend.
+      HR_BACKEND_URL: http://hr-database:8081
     ports:
       - "8090:8088"
     depends_on:
@@ -43,6 +48,11 @@ services:
     restart: unless-stopped
     networks:
       - hr-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/q/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
 networks:
   hr-net:

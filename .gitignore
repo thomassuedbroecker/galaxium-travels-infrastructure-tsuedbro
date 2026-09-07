@@ -158,3 +158,4 @@ hr_database_frontend_java/target/hr_database_frontend_java/*.log
 hr_database_frontend_java/target/
 # Runtime artefacts
 *.log
+.claude/settings.json

@@ -51,6 +51,35 @@ public class EmployeeResource {
     @RestClient
     HrApiClient hrApiClient;
 
+    /**
+     * Re-wraps an upstream error so the original status code and body reach the
+     * React client.
+     *
+     * <p>The REST client raises a {@code ClientWebApplicationException} whose
+     * {@code Response} is a <em>client</em> response. Rethrowing it as-is makes
+     * Quarkus's default error handler answer 500, which would mask upstream 404s.
+     * Reading the body and building a fresh server {@code Response} forwards the
+     * status and the FastAPI-style {@code {"detail": ...}} payload unchanged.
+     */
+    private WebApplicationException forward(WebApplicationException e) {
+        Response upstream = e.getResponse();
+        if (upstream == null) {
+            return new WebApplicationException(Response.Status.BAD_GATEWAY);
+        }
+        String body = null;
+        try {
+            body = upstream.readEntity(String.class);
+        } catch (Exception ignored) {
+            // body not readable — forward the status only
+        }
+        Response.ResponseBuilder rb = Response.status(upstream.getStatus())
+                .type(MediaType.APPLICATION_JSON);
+        if (body != null && !body.isBlank()) {
+            rb.entity(body);
+        }
+        return new WebApplicationException(rb.build());
+    }
+
     // -----------------------------------------------------------------------
     // GET /api/employees
     // -----------------------------------------------------------------------
@@ -66,7 +95,7 @@ public class EmployeeResource {
         try {
             return hrApiClient.listAll();
         } catch (WebApplicationException e) {
-            throw e;
+            throw forward(e);
         } catch (Exception e) {
             LOG.errorf(e, "Failed to reach HR backend on listAll: %s", e.getMessage());
             throw new WebApplicationException("Failed to reach HR backend: " + e.getMessage(),
@@ -93,7 +122,7 @@ public class EmployeeResource {
         try {
             return hrApiClient.getById(id);
         } catch (WebApplicationException e) {
-            throw e;
+            throw forward(e);
         } catch (Exception e) {
             throw new WebApplicationException("Failed to reach HR backend: " + e.getMessage(),
                     Response.Status.BAD_GATEWAY);
@@ -115,7 +144,7 @@ public class EmployeeResource {
         try {
             return hrApiClient.create(employee);
         } catch (WebApplicationException e) {
-            throw e;
+            throw forward(e);
         } catch (Exception e) {
             throw new WebApplicationException("Failed to reach HR backend: " + e.getMessage(),
                     Response.Status.BAD_GATEWAY);
@@ -142,7 +171,7 @@ public class EmployeeResource {
         try {
             return hrApiClient.update(id, employee);
         } catch (WebApplicationException e) {
-            throw e;
+            throw forward(e);
         } catch (Exception e) {
             throw new WebApplicationException("Failed to reach HR backend: " + e.getMessage(),
                     Response.Status.BAD_GATEWAY);
@@ -169,7 +198,7 @@ public class EmployeeResource {
             hrApiClient.delete(id);
             return Response.ok().entity("{\"message\":\"Employee deleted successfully\"}").build();
         } catch (WebApplicationException e) {
-            throw e;
+            throw forward(e);
         } catch (Exception e) {
             throw new WebApplicationException("Failed to reach HR backend: " + e.getMessage(),
                     Response.Status.BAD_GATEWAY);

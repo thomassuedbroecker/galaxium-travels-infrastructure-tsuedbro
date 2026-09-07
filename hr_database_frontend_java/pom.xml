@@ -25,7 +25,10 @@
     <frontend.plugin.version>1.15.1</frontend.plugin.version>
     <webapp.dir>${project.basedir}/src/main/webapp</webapp.dir>
     <webapp.build.dir>${webapp.dir}/dist</webapp.build.dir>
-    <static.resources.dir>${project.basedir}/src/main/resources/META-INF/resources</static.resources.dir>
+    <!-- Must target target/classes, NOT src/main/resources: the copy runs at
+         prepare-package, long after process-resources has already populated
+         target/classes, so anything written back into src/ is never packaged. -->
+    <static.resources.dir>${project.build.outputDirectory}/META-INF/resources</static.resources.dir>
   </properties>
 
   <dependencyManagement>

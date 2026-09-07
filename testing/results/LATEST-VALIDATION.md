@@ -1,10 +1,36 @@
 # Latest Validation
 
-- Summary date: `2026-03-18`
-- Validation type: composite committed validation summary
-- Overall status: `PASS`
+- Summary date: `2026-09-07`
+- Reviewed code commit: `12867a5` (documentation updates applied afterward)
+- Latest executed scope: local-container and Code Engine contract tests
+- Result: **FAIL — 31 tests run, 27 passed, 4 failed**
 
-## Verified Checks
+```sh
+python3 -B -m unittest testing.test_local_container_contracts testing.test_code_engine_deployment_contracts -q
+```
+
+The four failures are in the local-container suite:
+
+- HR frontend assertions still expect `8088:8088`, `HR_API_URL`, and
+  `hr_database_frontend:1.0.0`. Compose now uses `8090:8088`,
+  `HR_BACKEND_URL`, and `hr_database_frontend_java:1.0.0`.
+- The env-template parser only recognizes bare assignments; the Basic Auth
+  template now uses `export BASIC_AUTH_USERNAME=...` and
+  `export BASIC_AUTH_PASSWORD=...`.
+
+These failures identify stale test expectations and parser limitations; they
+are not runtime failure evidence. Tests were not changed during this documentation
+update. No Docker smoke tests, full auth matrix, or cloud deployment were rerun.
+
+## Historical Runtime Evidence
+
+[testing/README.md](../README.md#current-verified-state) records later March
+runs, including the March 23 aggregate regression, March 24 local contracts,
+and March 25 Code Engine contracts. Those historical passes do not establish
+that the current checkout passes. Generated artifacts are not tracked in Git.
+The March 18 details below are retained as historical evidence only.
+
+## Historical March 18 Checks
 
 - Local compose OAuth smoke: `PASS`
   - Command: `bash local-container/verify-keycloak-auth-e2e.sh`
@@ -40,8 +66,3 @@
   - Additional checks:
     - MCP metadata checks for `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`
     - `python3 local-container/mcp_test_app.py --mcp-url http://192.168.2.88:8084/mcp --token-source http --token-url http://192.168.2.88:8086/realms/galaxium/protocol/openid-connect/token`
-
-## Notes
-
-- This file tracks the latest committed validation state across the active validation slices.
-- `bash testing/automation/run-all-tests.sh` is still useful, but it does not include the Basic Auth smoke checks, the full WebUI matrix, or the VM / LAN remote verification.

@@ -53,11 +53,12 @@ Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./a
 flowchart LR
     Browser1["Browser user"] --> UIREST["Flask UI :8083<br/>REST mode"]
     Browser2["Browser user"] --> UIMCP["Flask UI :8085<br/>MCP mode"]
-    Browser3["Browser user"] --> HRUI["HR Portal :8088<br/>Quarkus + React"]
+    Browser3["Browser user"] --> HRUI["HR Portal :8090 (Docker)<br/>Quarkus + React"]
     Agent["Agent or VM app"] --> MCP["MCP server :8084"]
     UIREST --> REST["REST backend :8082"]
     UIMCP --> MCP
-    HRUI --> HRAPI["HR database :8081<br/>FastAPI + pandas"]
+    HRUI --> HRAPI["HR database :8081<br/>FastAPI + pandas (default Compose)"]
+    HRUI -. "standalone Java variant" .-> HRJAVA["Java HR backend :8089<br/>Quarkus"]
     UIREST -. "OAuth browser login" .-> KC["Keycloak host :8086<br/>container :8080<br/>OAuth option only"]
     UIMCP -. "OAuth browser login" .-> KC
     REST -. "OAuth token validation" .-> KC
@@ -92,7 +93,8 @@ flowchart LR
 | `galaxium-booking-web-app/` | Flask UI that calls the REST backend | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls MCP tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `HR_database/` | Small HR API backed by markdown data | `8081` | `app.py` |
-| `hr_database_frontend_java/` | Quarkus + React HR portal; proxies CRUD calls to `HR_database` | `8090` (container) / `8088` (local) | `run-hr-app.sh` / `mvn quarkus:dev` |
+| `hr_database_backend_java/` | Alternative Quarkus HR API backed by `data/employees.md`; standalone HR stack | `8089` | `mvn quarkus:dev` |
+| `hr_database_frontend_java/` | Quarkus + React HR portal; proxies CRUD calls to the Python or Java HR backend | `8090` (container) / `8088` (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
 | `local-container/` | Docker Compose setup, OAuth and Basic Auth verifier scripts, env templates | n/a | `docker_compose.yaml` |
 
 The REST and MCP paths model equivalent traveler actions, but they do not
@@ -167,7 +169,7 @@ bash testing/automation/run-webui-auth-matrix.sh --env-file testing/webui_matrix
 ## Open-Source Dependencies
 
 This repository contains multiple Python services, each with its own
-`requirements.txt`, one Quarkus + React service managed via Maven (`pom.xml`)
+`requirements.txt`, one Quarkus HR backend and one Quarkus + React portal managed via Maven (`pom.xml`)
 and npm (`package.json`), and no single root lockfile.
 
 The tables below show the direct dependencies declared in the repository as of
@@ -243,7 +245,7 @@ The repository itself is licensed under Apache-2.0 in `LICENSE`.
 
 Dependency declarations are split across the individual service folders:
 `requirements.txt` for Python services, `pom.xml` + `package.json` for
-`hr_database_frontend_java/`. No single root lockfile or automated license-audit
+`hr_database_frontend_java/`, plus `pom.xml` for `hr_database_backend_java/`. No single root lockfile or automated license-audit
 script is currently provided.
 
 ## Repository Layout
@@ -270,6 +272,7 @@ script is currently provided.
 │   ├── watsonx_orchestrate_basic_auth_example_integration.md
 │   └── reference/               ← supplemental background (not required for first run)
 ├── HR_database/             ← FastAPI + pandas HR data API (port 8081)
+├── hr_database_backend_java/     ← alternative Quarkus HR API (port 8089; standalone HR stack)
 ├── hr_database_frontend_java/    ← Quarkus + React HR portal (port 8090/container, 8088/local)
 ├── booking_system_mcp/
 ├── booking_system_rest/

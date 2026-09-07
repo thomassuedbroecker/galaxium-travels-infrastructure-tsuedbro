@@ -18,7 +18,8 @@ AI-readiness trade-offs on the same domain.
 | galaxium-booking-web-app | 8083 | galaxium-booking-web-app/app/app.py | Flask proxy → REST |
 | galaxium-booking-web-app-mcp | 8085 | galaxium-booking-web-app-mcp/app/app.py | Flask → MCP tools |
 | HR_database       | 8081 | HR_database/app.py   | FastAPI + pandas + Markdown file |
-| hr_database_frontend_java | 8090 (container) / 8088 (local) | hr_database_frontend_java/run-hr-app.sh | Quarkus 3 + React 18; JAX-RS proxy → HR_database |
+| hr_database_frontend_java | 8090 (container) / 8088 (local) | hr_database_frontend_java/start-hr-app.sh | Quarkus 3 + React 18; JAX-RS proxy → HR_database |
+| hr_database_backend_java | 8089 | mvn quarkus:dev (service directory) | Alternative Quarkus HR API + Markdown file; standalone HR stack |
 | keycloak          | 8086 | docker image         | OAuth2 / OIDC identity provider |
 
 ## MCP Tools (booking_system_mcp)

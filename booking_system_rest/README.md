@@ -103,3 +103,10 @@ Compose service name: `booking_system`
 - Examples: [docs/error-handling-examples.md](docs/error-handling-examples.md)
 - Repository quickstart: [../QUICKSTART.md](../QUICKSTART.md)
 - Compose flow: [../local-container/README.md](../local-container/README.md)
+
+## Booking Data On Restart
+
+Every backend startup calls `seed()`, which deletes existing bookings, users,
+and flights before inserting demo data. Restarting a REST or MCP backend
+therefore discards changes in that backend, even if its SQLite file survives.
+The two backends maintain separate databases.

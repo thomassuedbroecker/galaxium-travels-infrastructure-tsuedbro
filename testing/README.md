@@ -60,7 +60,9 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 ## Current Verified State
 
-> **Last reviewed:** `2026-06-30`. The test suite has not been re-executed since the dates recorded below. All results listed reflect the last known passing state.
+> **Last reviewed:** `2026-09-07`, code commit `12867a5`. The combined local-container and Code Engine contract run executed 31 tests: **27 passed, 4 failed**. Three failures expect the old HR frontend configuration; one parser does not recognize `export` assignments in the Basic Auth template. See [LATEST-VALIDATION.md](./results/LATEST-VALIDATION.md) for details. Runtime smoke tests and the full matrix were not rerun.
+
+The following results are historical passing runs, not a passing status for the current checkout.
 
 Last executed verification runs (smoke coverage and last full matrix run):
 

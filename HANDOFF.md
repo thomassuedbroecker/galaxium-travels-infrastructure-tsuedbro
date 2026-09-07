@@ -23,7 +23,8 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 | `galaxium-booking-web-app/` | Flask proxy → REST | 8083 | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask proxy → MCP tools | 8085 | `app/app.py` |
 | `HR_database/` | FastAPI + pandas + Markdown | 8081 | `app.py` |
-| `hr_database_frontend_java/` | Quarkus 3 + React 18 (JAX-RS proxy → HR_database) | 8090 (container) / 8088 (local) | `run-hr-app.sh` / `mvn quarkus:dev` |
+| `hr_database_frontend_java/` | Quarkus 3 + React 18 (JAX-RS proxy → HR_database) | 8090 (container) / 8088 (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
+| `hr_database_backend_java/` | Alternative Quarkus HR API + Markdown | 8089 | `mvn quarkus:dev` |
 | `local-container/` | Docker Compose variants + scripts | — | `docker_compose.yaml` |
 | `deployment/ibm-code-engine/` | Bash + ibmcloud CLI deploy | — | `deploy-stack.sh` |
 | `testing/` | Pytest, contract tests, smoke scripts | — | `README.md` |

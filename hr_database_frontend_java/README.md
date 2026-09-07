@@ -31,7 +31,7 @@ Variant A — Python backend (default)
   backend = hr_database container  :8081 (FastAPI, internal network only)
 
 Variant B — Java backend
-  backend = hr_database_backend_java container  :8089 (Quarkus, internal network only)
+  backend = hr_database_backend_java container  :8089 (Quarkus, also published on host port 8089)
 ```
 
 ---
@@ -110,7 +110,7 @@ docker compose -f docker-compose.java-backend.yaml logs -f
 | File | Backend | Network |
 |------|---------|---------|
 | [`docker-compose.yaml`](docker-compose.yaml) | Python FastAPI (`hr_database`, alias `hr-database`, port 8081 internal) | `hr-net` |
-| [`docker-compose.java-backend.yaml`](docker-compose.java-backend.yaml) | Quarkus Java (`hr_database_backend_java`, alias `hr-database-backend-java`, port 8089 internal) | `hr-java-net` |
+| [`docker-compose.java-backend.yaml`](docker-compose.java-backend.yaml) | Quarkus Java (`hr_database_backend_java`, alias `hr-database-backend-java`, port 8089 published on host) | `hr-java-net` |
 
 Both files build the same image, `hr_database_frontend_java:1.0.0`.
 
@@ -131,10 +131,10 @@ python app.py          # → http://localhost:8081
 
 # In a second terminal — start the Quarkus frontend
 cd hr_database_frontend_java
-mvn quarkus:dev        # → http://localhost:8088
+HR_BACKEND_URL=http://localhost:8081 mvn quarkus:dev  # → http://localhost:8088
 ```
 
-To use the Java backend instead, set `HR_BACKEND_URL` before starting Quarkus:
+The frontend defaults to `http://localhost:8089`, so the Python backend requires the explicit override above. To use the Java backend:
 
 ```bash
 cd hr_database_backend_java

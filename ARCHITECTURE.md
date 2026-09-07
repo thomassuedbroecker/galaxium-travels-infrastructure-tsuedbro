@@ -28,6 +28,11 @@ shared transactional state.
 Compose stack. The booking UIs and booking backends do not call it in the
 current implementation.
 
+The default full Compose stack uses the Python HR backend. The standalone
+[HR portal stack](./hr_database_frontend_java/README.md) also supports
+`hr_database_backend_java/` on port 8089. Each backend uses its own Markdown
+data file; the variants do not synchronize employee data.
+
 ## Container View
 
 ```mermaid
@@ -51,10 +56,13 @@ flowchart LR
     end
 
     subgraph hr["HR portal path"]
-        hr_frontend["Quarkus + React<br/>:8088"]
+        hr_frontend["Quarkus + React<br/>:8090 Docker / :8088 local"]
         hr_api["FastAPI HR API<br/>:8081"]
         hr_data[("Markdown file<br/>employees.md")]
-        hr_frontend -->|"/api proxy"| hr_api --> hr_data
+        hr_frontend -->|"/api proxy (default Compose)"| hr_api --> hr_data
+        hr_java["Alternative Quarkus HR API<br/>:8089"]
+        hr_frontend -. "standalone Java variant" .-> hr_java
+        hr_java --> hr_java_data[("Java backend Markdown file<br/>employees.md")]
     end
 
     traveler --> rest_ui
@@ -81,7 +89,8 @@ decomposition or an event-driven synchronization design.
 | `galaxium-booking-web-app/` | Web journey backed by REST requests | Sends backend credentials according to mode |
 | `galaxium-booking-web-app-mcp/` | Same web journey backed by MCP tool calls | Uses direct Python MCP client; no autonomous agent; Streamable HTTP only |
 | `HR_database/` | Separate employee-data demonstration API | Not on either booking request path; data backed by markdown file |
-| `hr_database_frontend_java/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to `HR_database` | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8090 (container) / 8088 (local) |
+| `hr_database_backend_java/` | Alternative Quarkus employee-data API | Markdown-backed; standalone HR stack, port 8089 |
+| `hr_database_frontend_java/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to the Python or Java HR backend | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8090 (container) / 8088 (local) |
 | `local-container/` | Local runtime variants, Keycloak realm, verification scripts | Source of truth for Compose behavior |
 | `deployment/ibm-code-engine/` | IBM Code Engine deployment scripts | Deployment package; not live-cloud verified here |
 | `testing/` | Contract, smoke, and auth-matrix automation | Source of truth for executed verification scope |
@@ -176,3 +185,10 @@ production deployment.
 Editable diagram sources are stored in [`architecture/`](./architecture/).
 `docs/reference/` contains supplemental background material and is
 not required to understand or run the current system.
+
+## Booking Data On Restart
+
+Every backend startup calls `seed()`, which deletes existing bookings, users,
+and flights before inserting demo data. Restarting a REST or MCP backend
+therefore discards changes in that backend, even if its SQLite file survives.
+The two backends maintain separate databases.

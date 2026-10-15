@@ -173,7 +173,7 @@ This repository contains multiple Python services, each with its own
 and npm (`package.json`), and no single root lockfile.
 
 The tables below show the direct dependencies declared in the repository as of
-`2026-06-30`. Where a service does not pin an exact version, the entry is marked
+`2026-10-15`. Where a service does not pin an exact version, the entry is marked
 as `not pinned`.
 
 Current declared base images:
@@ -205,10 +205,15 @@ Current declared main runtime libraries — Python services:
 | `Flask` | `3.1.1` | BSD-3-Clause | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `flask-cors` | `3.0.10` | MIT | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `requests` | `2.31.0` | Apache-2.0 | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
-| `httpx` | `0.28.1` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
+| `httpx` | `not pinned` in REST tests; `0.28.1` in MCP frontend | BSD-3-Clause | `booking_system_rest/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `mcp` | `>=1.26.0,<2` | MIT | `galaxium-booking-web-app-mcp/app/requirements.txt` |
 
 Current declared main runtime libraries — Quarkus + React (`hr_database_frontend_java/`):
+
+The Java backend also declares Quarkus BOM `3.37.0`,
+`quarkus-rest-jackson`, `quarkus-smallrye-openapi`, and
+`quarkus-smallrye-health`; its test dependencies are `quarkus-junit5` and
+`rest-assured` (Apache-2.0 project licenses; versions managed by the BOM).
 
 | Library / Component | Declared version | License | Where referenced |
 | --- | --- | --- | --- |
@@ -224,6 +229,7 @@ Current declared main runtime libraries — Quarkus + React (`hr_database_fronte
 | Node.js (build) | `v20.19.3` | MIT | `hr_database_frontend_java/pom.xml` (frontend-maven-plugin) |
 | npm (build) | `10.9.2` | Artistic-2.0 | `hr_database_frontend_java/pom.xml` (frontend-maven-plugin) |
 | Vite (build) | `^5.4.14` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
+| `@types/react`, `@types/react-dom` (build) | `^18.3.1` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
 | `@vitejs/plugin-react` (build) | `^4.3.4` | MIT | `hr_database_frontend_java/src/main/webapp/package.json` |
 
 Current declared dev and test libraries — Python services:
@@ -246,8 +252,10 @@ The repository itself is licensed under Apache-2.0 in `LICENSE`.
 
 Dependency declarations are split across the individual service folders:
 `requirements.txt` for Python services, `pom.xml` + `package.json` for
-`hr_database_frontend_java/`, plus `pom.xml` for `hr_database_backend_java/`. No single root lockfile or automated license-audit
-script is currently provided.
+`hr_database_frontend_java/`, plus `pom.xml` for `hr_database_backend_java/`. The React frontend has a committed `package-lock.json`; its Maven build currently
+runs `npm install`. No single root lockfile or automated license-audit script
+is currently provided. See the [detailed dependency inventory](docs/DEPENDENCY_LICENSE_TRANSPARENCY.md)
+and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 
 ## Repository Layout
 

@@ -1,10 +1,10 @@
 # Dependency License Transparency
 
-Review date: 2026-05-29
+Review date: 2026-10-15
 
 This document maps the repository's observed direct dependencies by service and
 runtime surface. It is based on the service `requirements.txt` files,
-Dockerfiles, local-container compose files, verification scripts, and frontend
+Maven POMs, the React package manifest and lockfile, Dockerfiles, compose files, verification scripts, and frontend
 templates present in the repository at review time.
 
 This is not a full SBOM. It does not enumerate transitive Python packages,
@@ -15,6 +15,7 @@ runtime packages installed on a developer workstation.
 
 - The repository does not currently have a single root dependency manifest or
   lockfile.
+- The React portal has a committed `hr_database_frontend_java/src/main/webapp/package-lock.json`. Its Maven build runs `npm install`, not `npm ci`; the lockfile is evidence of a recorded resolution, not proof of built image contents.
 - Several Python dependencies are not version pinned, so resolved versions and
   license metadata can drift between installs.
 - Container image contents are summarized by base image only. Their full OS and
@@ -68,8 +69,8 @@ runtime packages installed on a developer workstation.
 | `Flask` | `3.1.1` | BSD-3-Clause | `galaxium-booking-web-app/app/requirements.txt` |
 | `flask-cors` | `3.0.10` | MIT | `galaxium-booking-web-app/app/requirements.txt` |
 | `requests` | `2.31.0` | Apache-2.0 | `galaxium-booking-web-app/app/requirements.txt` |
-| IBM Plex Sans | Remote Google Fonts load | Verify font license and Google Fonts terms | `galaxium-booking-web-app/app/templates/*.html` |
-| Space Grotesk | Remote Google Fonts load | Verify font license and Google Fonts terms | `galaxium-booking-web-app/app/templates/*.html` |
+| IBM Plex Sans | Remote Google Fonts load | OFL-1.1; Google Fonts service terms are separate | `galaxium-booking-web-app/app/templates/*.html` |
+| Space Grotesk | Remote Google Fonts load | OFL-1.1; Google Fonts service terms are separate | `galaxium-booking-web-app/app/templates/*.html` |
 
 ### `galaxium-booking-web-app-mcp/`
 
@@ -81,8 +82,8 @@ runtime packages installed on a developer workstation.
 | `httpx` | `0.28.1` | BSD-3-Clause | `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `mcp` | `>=1.26.0,<2` | MIT | `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `requests` | `2.31.0` | Apache-2.0 | `galaxium-booking-web-app-mcp/app/requirements.txt` |
-| IBM Plex Sans | Remote Google Fonts load | Verify font license and Google Fonts terms | `galaxium-booking-web-app-mcp/app/templates/*.html` |
-| Space Grotesk | Remote Google Fonts load | Verify font license and Google Fonts terms | `galaxium-booking-web-app-mcp/app/templates/*.html` |
+| IBM Plex Sans | Remote Google Fonts load | OFL-1.1; Google Fonts service terms are separate | `galaxium-booking-web-app-mcp/app/templates/*.html` |
+| Space Grotesk | Remote Google Fonts load | OFL-1.1; Google Fonts service terms are separate | `galaxium-booking-web-app-mcp/app/templates/*.html` |
 
 ### `hr_database_backend/`
 
@@ -94,6 +95,70 @@ runtime packages installed on a developer workstation.
 | `python-multipart` | `0.0.6` | Apache-2.0 | `hr_database_backend/requirements.txt` |
 | `pydantic` | `2.4.2` | MIT | `hr_database_backend/requirements.txt` |
 | `pandas` | Not pinned | BSD-3-Clause | `hr_database_backend/Dockerfile` |
+
+### Java HR services
+
+Both `hr_database_backend_java/pom.xml` and
+`hr_database_frontend_java/pom.xml` import Quarkus BOM `3.37.0` and target Java 21.
+The BOM manages dependency versions; it is not a complete resolved dependency list.
+
+| Dependency | Services | Scope | Project license |
+| --- | --- | --- | --- |
+| `quarkus-rest-jackson` | Both | Runtime | Apache-2.0 |
+| `quarkus-smallrye-openapi` | Both | Runtime | Apache-2.0 |
+| `quarkus-smallrye-health` | Both | Runtime | Apache-2.0 |
+| `quarkus-rest-client-jackson` | Frontend | Runtime | Apache-2.0 |
+| `quarkus-config-yaml` | Frontend | Runtime | Apache-2.0 |
+| `quarkus-junit5` | Both | Test | Apache-2.0 |
+| `io.rest-assured:rest-assured` | Both | Test | Apache-2.0 |
+
+Build plugins declared in both POMs: `quarkus-maven-plugin` `3.37.0` and
+`maven-compiler-plugin` `3.13.0`. The frontend additionally declares
+`frontend-maven-plugin` `1.15.1` and `maven-resources-plugin` `3.3.1`.
+Plugin dependencies have not been resolved or audited in this inventory.
+
+Both Dockerfiles build with `maven:3.9-eclipse-temurin-21` and run with
+`eclipse-temurin:21-jre-jammy`. Maven's project license is Apache-2.0;
+Temurin/OpenJDK includes GPL-2.0-with-classpath-exception components and
+additional notices. Image layers and Ubuntu packages require their own inventory;
+neither image has a single blanket license.
+
+### React portal and build tooling
+
+Source: `hr_database_frontend_java/src/main/webapp/package.json`, with resolved
+versions and package license metadata recorded in the adjacent `package-lock.json`.
+These are manifest constraints, not claimed installed versions.
+
+| Dependency | Constraint | Scope | Project license |
+| --- | --- | --- | --- |
+| `react` | `^18.3.1` | Runtime | MIT |
+| `react-dom` | `^18.3.1` | Runtime | MIT |
+| `react-router-dom` | `^6.28.0` | Runtime | MIT |
+| `@types/react` | `^18.3.1` | Build | MIT |
+| `@types/react-dom` | `^18.3.1` | Build | MIT |
+| `@vitejs/plugin-react` | `^4.3.4` | Build | MIT |
+| `vite` | `^5.4.14` | Build | MIT |
+| Node.js | `v20.19.3` (frontend POM) | Build | MIT plus bundled third-party notices |
+| npm | `10.9.2` (frontend POM) | Build | Artistic-2.0 plus dependency licenses |
+
+The Java portal's `src/main/webapp/index.html` also remotely loads IBM Plex Sans
+and Space Grotesk, as do the Flask templates. Both font projects use OFL-1.1.
+Font files are not vendored; retain their notices if bundled later.
+
+## Upstream evidence for added entries
+
+Checked on 2026-10-15. These upstream project sources complement local manifests;
+they do not certify every transitive artifact or older inventory entry.
+
+- [Maven license](https://github.com/apache/maven/blob/master/LICENSE).
+- [OpenJDK/Temurin 21 license](https://github.com/adoptium/jdk21u/blob/master/LICENSE) and component-specific legal notices in the JDK distribution.
+- [Quarkus license](https://github.com/quarkusio/quarkus/blob/main/LICENSE).
+- [REST Assured license](https://github.com/rest-assured/rest-assured/blob/master/LICENSE).
+- [DefinitelyTyped license](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/LICENSE).
+- React/Vite direct-package license fields: committed frontend `package-lock.json`.
+- [npm 10.9.2 license and bundled-dependency distinction](https://github.com/npm/cli/blob/v10.9.2/LICENSE).
+- [IBM Plex license](https://github.com/IBM/plex/blob/master/LICENSE.txt).
+- [Space Grotesk license](https://github.com/google/fonts/blob/main/ofl/spacegrotesk/OFL.txt).
 
 ## Shared Runtime, Verification, and Deployment Dependencies
 
@@ -116,8 +181,8 @@ runtime packages installed on a developer workstation.
 
 | Gap | Impact | Recommended remediation |
 | --- | --- | --- |
-| No root lockfile or generated dependency report | Install-time drift can change resolved dependencies and license obligations. | Pin service dependencies or generate per-service lockfiles before release. |
-| No transitive dependency license inventory | Direct-license table is not enough for redistribution or audit review. | Generate `pip-licenses` or CycloneDX reports for each service environment. |
+| No Python locks or resolved Maven/license report (React lockfile exists) | Install-time drift can change resolved dependencies and license obligations. | Pin service dependencies or generate per-service lockfiles before release. |
+| No transitive dependency license inventory | Direct-license tables and npm lock metadata do not cover resolved Python/Maven artifacts, extras such as `crypto`/`email`, or complete distribution notices. | Generate `pip-licenses` or CycloneDX reports for each service environment. |
 | No container image SBOM | Base image and OS package obligations are not fully visible. | Generate SBOMs for built images using `syft`, `docker scout sbom`, or equivalent. |
 | MCP Inspector fetched dynamically with `npx` | Runtime package version and license can change. | Pin the npm package version in scripts or document the verified version in release evidence. |
 | `pandas` installed separately and unpinned in `hr_database_backend/Dockerfile` | Build output can drift independently from `requirements.txt`. | Move `pandas` into `hr_database_backend/requirements.txt` with an explicit version constraint. |

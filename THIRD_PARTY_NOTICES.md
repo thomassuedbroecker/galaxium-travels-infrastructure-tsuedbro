@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Review date: 2026-05-29
+Review date: 2026-10-15
 
 This project is licensed under the Apache License 2.0 as described in
 `LICENSE`. This notice documents known third-party components, tools,
@@ -36,6 +36,23 @@ The repository contains multiple Python services with service-local
 See `docs/DEPENDENCY_LICENSE_TRANSPARENCY.md` for the per-service dependency
 mapping. This project does not currently include a root lockfile, generated
 SBOM, or transitive dependency license report.
+
+## Java HR Services and React Portal
+
+Both Java services use Quarkus BOM `3.37.0` (Apache-2.0 project license).
+Their direct runtime and test extensions, REST Assured, Maven build plugins,
+and Java container bases are listed in the
+[detailed inventory](docs/DEPENDENCY_LICENSE_TRANSPARENCY.md#java-hr-services).
+Quarkus extensions can bring additional components under separate licenses.
+
+The portal declares React, React DOM, React Router DOM, Vite, the React Vite
+plugin, and React/React DOM type definitions (MIT project licenses).
+Its Maven build installs Node.js `v20.19.3` (MIT plus bundled component notices)
+and npm `10.9.2` (Artistic-2.0 plus dependency licenses). A committed frontend
+`package-lock.json` records package metadata; it is not a complete distribution
+notice bundle. The Java images use Maven/Temurin build stages and a Temurin
+JRE runtime with OpenJDK and OS component licenses, including GPL with the
+Classpath Exception. Preserve the notices for actual redistributed artifacts.
 
 ## Containers, Base Images, and Runtime Tools
 
@@ -100,8 +117,8 @@ The web frontend templates load fonts from Google Fonts:
 
 | Font | Observed use | Notes |
 | --- | --- | --- |
-| IBM Plex Sans | Web frontend templates and CSS font stack | Loaded remotely from Google Fonts; not vendored in this repository. Verify the font license and Google Fonts terms before bundling or redistributing font files. |
-| Space Grotesk | Web frontend templates and CSS font stack | Loaded remotely from Google Fonts; not vendored in this repository. Verify the font license and Google Fonts terms before bundling or redistributing font files. |
+| IBM Plex Sans | Flask templates and React portal HTML | OFL-1.1; loaded remotely from Google Fonts, not vendored. Font notices and hosted-service terms are separate; see upstream evidence in the detailed inventory. |
+| Space Grotesk | Flask templates and React portal HTML | OFL-1.1; loaded remotely from Google Fonts, not vendored. Font notices and hosted-service terms are separate; see upstream evidence in the detailed inventory. |
 
 If the project later vendors font files, add the exact font license files and
 copyright notices.

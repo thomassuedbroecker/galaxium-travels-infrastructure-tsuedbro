@@ -13,6 +13,7 @@ This folder is the main entry point for automated checks in this repository.
 | `automation/run-ui-behavior-tests.sh` | UI OAuth smoke: REST auth, traveler web login, MCP web app session | Yes (Option 1) | Generates report in `testing/results/generated/ui/` |
 | `automation/run-mcp-integration-tests.sh` | MCP OAuth smoke + Keycloak UI→MCP Basic Auth slice | Yes (Option 1 or 4) | Generates reports in `testing/results/generated/mcp/` |
 | `automation/run-webui-auth-matrix.sh` | Full WebUI auth matrix (REST+MCP × OAuth+Basic Auth × local+LAN) | Yes | Requires `--env-file`; see WebUI Matrix section |
+| `../local-container/booking_system_mcp_<option>/verify.sh` | MCP-only access option: `no_auth`, `basic_auth`, `oauth2_no_implicit_flow` | Yes (start with `start.sh` in the same folder) | Not part of `run-all-tests.sh`; see [docs/mcp_access_options.md](../docs/mcp_access_options.md) |
 
 
 ## What Is Covered
@@ -60,9 +61,9 @@ If the caller runs inside Docker, `8080` is the correct target.
 
 ## Current Verified State
 
-> **Last reviewed:** `2026-10-15`, code commit `bf68ee7`. The combined local-container and Code Engine contract run executed 31 tests: **31 passed, 0 failed**. The REST pytest suite passed `37/37`. See [LATEST-VALIDATION.md](./results/LATEST-VALIDATION.md) for details. Runtime smoke tests and the full matrix were not rerun.
+> **Last reviewed:** `2026-10-15`, code commit `af29c97` plus the MCP access option folders. **Every supported local combination passed**: compose Options 1–4, the Basic Auth VM stack, the full WebUI matrix (55/55), the three MCP-only folders (also over the LAN IP), and both standalone HR stacks. The no-Docker suites passed too: REST pytest `37/37`, contracts `39/39`, WebUI unit `11/11`, and the Java HR backend `12/12`. See [LATEST-VALIDATION.md](./results/LATEST-VALIDATION.md) for the per-combination table and the findings.
 
-The following results are historical passing runs, not a passing status for the current checkout.
+The following results are older historical runs.
 
 Last executed verification runs (smoke coverage and last full matrix run):
 

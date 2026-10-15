@@ -1,0 +1,50 @@
+# Booking MCP server protected with OAuth 2.0 bearer tokens from Keycloak (AUTH_MODE=oauth2).
+# Allowed grants: client_credentials (machine-to-machine, e.g. watsonx Orchestrate) and
+# authorization_code (interactive clients such as MCP Inspector). The implicit flow is disabled.
+#
+# Usage (from the repository root):
+#   bash local-container/booking_system_mcp_oauth2_no_implicit_flow/start.sh
+#   bash local-container/booking_system_mcp_oauth2_no_implicit_flow/verify.sh
+#   docker compose -f local-container/booking_system_mcp_oauth2_no_implicit_flow/docker_compose.yaml down
+#
+# KEYCLOAK_PUBLIC_BASE_URL must be the Keycloak URL your MCP clients use to request
+# tokens. Keycloak pins its issuer to that URL, and the MCP server only accepts tokens
+# whose "iss" claim matches it. JWKS keys are fetched over the internal network.
+
+name: galaxium-mcp-oauth2
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak_mcp_oauth2
+    command:
+      - start-dev
+      - --import-realm
+      - --http-port=8080
+      - --hostname=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}
+      - --hostname-strict=false
+    ports:
+      - ${KEYCLOAK_HOST_PORT:-8086}:8080
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    volumes:
+      # Realm import folder; see ../keycloak/README.md before changing it.
+      - ${KEYCLOAK_REALM_DIR:-../keycloak/realm}:/opt/keycloak/data/import:ro
+
+  booking_system_mcp:
+    build:
+      context: ../../booking_system_mcp
+    image: booking_system_mcp:1.0.0
+    container_name: booking_system_mcp_oauth2
+    ports:
+      - ${MCP_HOST_PORT:-8084}:8084
+    depends_on:
+      - keycloak
+    environment:
+      - AUTH_MODE=oauth2
+      - OIDC_ISSUER=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium
+      - OIDC_JWKS_URL=http://keycloak:8080/realms/galaxium/protocol/openid-connect/certs
+      - OIDC_AUDIENCE=booking-api
+      - OIDC_AUTHORIZATION_SERVER_URL=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium
+      - MCP_PUBLIC_BASE_URL=${MCP_PUBLIC_BASE_URL:-http://localhost:8084}

@@ -44,6 +44,10 @@ cd galaxium-travels-infrastructure-tsuedbro
 | **3 — Local Basic Auth** | REST, MCP, and both UIs without Keycloak | Shared Basic Auth |
 | **4 — Keycloak UI + MCP Basic Auth** | Browser login via Keycloak, MCP backend uses Basic Auth | Mixed |
 
+To run only the MCP server (`booking_system_mcp`, the only service provided as MCP) for an MCP client such as watsonx Orchestrate, use one of the three standalone folders instead: no auth, Basic Auth, or OAuth 2.0 without the implicit flow. See [docs/mcp_access_options.md](./docs/mcp_access_options.md).
+
+All options publish fixed host ports, so run only one at a time. If you used the standalone HR stack (`hr_database_frontend_java/start-hr-app.sh`), stop it with `stop-hr-app.sh` first. Its containers use the same names as the full stack's HR services.
+
 For the full auth and compose-file breakdown see [ARCHITECTURE.md — Authentication Variants](./ARCHITECTURE.md#authentication-variants).
 For architecture boundaries and the reason the two paths keep independent booking state see [ARCHITECTURE.md](./ARCHITECTURE.md).
 

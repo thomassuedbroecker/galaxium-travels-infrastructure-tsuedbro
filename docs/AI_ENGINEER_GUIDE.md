@@ -54,7 +54,7 @@ Choose the auth mode that matches your deployment:
 | `oauth2` | `Authorization: Bearer <token>` from Keycloak | Full OAuth flow (local or LAN) |
 | `basic` | `Authorization: Basic <base64(user:pass)>` | No Keycloak; shared credentials |
 
-The active mode is set via `AUTH_MODE` on the MCP server. The compose stacks set this automatically.
+The active mode is set via `AUTH_MODE` on the MCP server. The compose stacks set this automatically. To run only the MCP server in one of these modes, use the standalone folders described in [mcp_access_options.md](./mcp_access_options.md). Each has `start.sh`, `verify.sh`, and the values to hand over to an MCP client.
 
 Supported OAuth grant types for this demo:
 
@@ -234,7 +234,9 @@ bash local-container/start-mcp-inspector-ui.sh
 
 ## watsonx Orchestrate
 
-See the full watsonx Orchestrate setup guide:
+The watsonx Orchestrate integration itself lives in the [galaxium-travels-watsonx-orchestrate-mcp-bob-guide](https://github.com/thomassuedbroecker/galaxium-travels-watsonx-orchestrate-mcp-bob-guide) repository. This repository provides the MCP server configurations it uses: see [mcp_access_options.md](./mcp_access_options.md), including how watsonx Orchestrate Developer Edition reaches the server over the LAN IP. For the OAuth option, [the Keycloak guide](../local-container/keycloak/README.md) explains how to adjust clients and the issuer.
+
+Background reading in this repository:
 [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md)
 
 For a Basic Auth variant example:

@@ -88,6 +88,8 @@ waits until the frontend health endpoint is up, and prints the access URLs.
 ./stop-hr-app.sh --backend java   # stops the Java-backend stack
 ```
 
+Stop this stack before you start `local-container/docker_compose.yaml`. Both use the container names `hr_database` and `hr_database_frontend_java`, and leftover containers from this stack make the full stack fail with `Conflict. The container name ... is already in use`.
+
 ### Access
 
 | URL | Description |

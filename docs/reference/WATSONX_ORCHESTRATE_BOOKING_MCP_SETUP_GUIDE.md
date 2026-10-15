@@ -25,6 +25,8 @@ Repository references:
 - MCP transport and OAuth metadata endpoints: [`../booking_system_mcp/mcp_server.py`](../../booking_system_mcp/mcp_server.py)
 - Public deployment example for IBM Code Engine: [`../deployment/ibm-code-engine/README.md`](../../deployment/ibm-code-engine/README.md)
 - Local Keycloak realm example: [`../local-container/keycloak/realm/galaxium-realm.json`](../../local-container/keycloak/realm/galaxium-realm.json)
+- Keycloak configuration guide, including a tested dedicated-client recipe: [`../local-container/keycloak/README.md`](../../local-container/keycloak/README.md)
+- Standalone OAuth MCP setup (MCP + Keycloak only, implicit flow disabled): [`../local-container/booking_system_mcp_oauth2_no_implicit_flow/`](../../local-container/booking_system_mcp_oauth2_no_implicit_flow/README.md)
 
 Current behavior in this repo:
 

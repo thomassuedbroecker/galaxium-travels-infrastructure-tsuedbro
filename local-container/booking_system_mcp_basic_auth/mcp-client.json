@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "galaxium-booking": {
+      "type": "http",
+      "url": "http://localhost:8084/mcp",
+      "headers": {
+        "Authorization": "Basic ${GALAXIUM_MCP_BASIC_TOKEN}"
+      }
+    }
+  }
+}

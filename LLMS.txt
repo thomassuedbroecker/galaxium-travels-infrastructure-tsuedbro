@@ -51,12 +51,26 @@ AUTH_ENABLED=true is a legacy alias for AUTH_MODE=oauth2.
 | 3      | local-container/docker_compose.basic-auth.yaml        | local-container/basic-auth.env | Basic Auth      |
 | 4      | docker_compose.yaml + docker_compose.mcp-ui-keycloak-basic.yaml | basic-auth.env | Mixed: Keycloak UI + MCP Basic Auth |
 
+MCP server only (one folder per auth mode, each with start.sh, verify.sh, mcp.env.template):
+
+| folder                                          | AUTH_MODE | auth                                                         |
+|-------------------------------------------------|-----------|--------------------------------------------------------------|
+| local-container/booking_system_mcp_no_auth/                  | none      | none                                                         |
+| local-container/booking_system_mcp_basic_auth/               | basic     | Basic Auth, no Keycloak                                      |
+| local-container/booking_system_mcp_oauth2_no_implicit_flow/  | oauth2    | Keycloak bearer; client_credentials / authorization_code; no implicit |
+
+Overview: docs/mcp_access_options.md. Consumed by the external repo
+galaxium-travels-watsonx-orchestrate-mcp-bob-guide (watsonx Orchestrate integration).
+
 ## Key Files
 
 | path                                          | role                                          |
 |-----------------------------------------------|-----------------------------------------------|
 | NAVIGATOR.md                                  | Single decision-tree hub for all entry paths  |
 | QUICKSTART.md                                 | Step-by-step commands for all 4 options       |
+| docs/mcp_access_options.md                    | MCP-only options: no auth / Basic / OAuth 2.0 |
+| local-container/keycloak/README.md            | Keycloak realm, clients, how to adjust them   |
+| testing/results/LATEST-VALIDATION.md          | Latest per-combination validation results     |
 | ARCHITECTURE.md                               | Architecture decisions, component map, auth matrix |
 | local-container/README.md                     | Compose + verify scripts reference            |
 | testing/README.md                             | All test commands and verified state          |

@@ -26,6 +26,7 @@ Should an AI-ready application stay with REST, move to MCP, or support both?
 - the same Keycloak OAuth flow for both REST and MCP
 - a shared Basic Auth variant for the REST backend, MCP server, REST UI, and MCP UI
 - a mixed MCP variant where the browser user logs in with Keycloak but the MCP backend itself uses shared Basic Auth
+- the MCP server on its own in three access options: no auth, Basic Auth, or OAuth 2.0 without the implicit flow (`local-container/booking_system_mcp_*`; see [docs/mcp_access_options.md](./docs/mcp_access_options.md)). `booking_system_mcp` is the only service provided as MCP, and these folders are the base for the [watsonx Orchestrate guide repository](https://github.com/thomassuedbroecker/galaxium-travels-watsonx-orchestrate-mcp-bob-guide)
 
 This repository is not meant to claim that MCP always replaces REST. It is meant to let you compare both approaches on the same business case and make a better architectural decision.
 
@@ -77,6 +78,8 @@ flowchart LR
 - Contributing and DCO sign-off: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Runtime boundaries and architecture decisions: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - Local compose, VM/LAN OAuth, and Basic Auth details: [local-container/README.md](./local-container/README.md)
+- MCP server access options (no auth / Basic Auth / OAuth 2.0) for MCP clients such as watsonx Orchestrate: [docs/mcp_access_options.md](./docs/mcp_access_options.md)
+- Keycloak configuration and how to adjust it: [local-container/keycloak/README.md](./local-container/keycloak/README.md)
 - Test commands and current test scope: [testing/README.md](./testing/README.md)
 - AI engineer / agent integration guide: [docs/AI_ENGINEER_GUIDE.md](./docs/AI_ENGINEER_GUIDE.md)
 - Manual MCP auth walkthrough with Inspector CLI: [docs/manual_auth_check_using_the_commandline.md](./docs/manual_auth_check_using_the_commandline.md)
@@ -151,6 +154,14 @@ Run the Keycloak UI + MCP Basic Auth smoke test:
 
 ```sh
 bash local-container/verify-keycloak-ui-basic-auth-mcp.sh
+```
+
+Run one MCP-only access option (replace `basic_auth` with `no_auth` or `oauth2_no_implicit_flow`):
+
+```sh
+bash local-container/booking_system_mcp_basic_auth/start.sh
+bash local-container/booking_system_mcp_basic_auth/verify.sh
+docker compose -f local-container/booking_system_mcp_basic_auth/docker_compose.yaml down
 ```
 
 Run the current aggregate repo regression slice:
@@ -261,8 +272,10 @@ and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 
 ```text
 .
+├── AGENTS.md               ← agent rules, patterns, commands (canonical)
 ├── ARCHITECTURE.md
 ├── CONTRIBUTING.md
+├── HANDOFF.md              ← current branch state and session log
 ├── NAVIGATOR.md
 ├── QUICKSTART.md
 ├── LLMS.txt
@@ -271,13 +284,16 @@ and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 │   └── commit-msg          ← appends Signed-off-by to every commit automatically
 ├── .github/
 │   ├── workflows/
-│   │   └── dco.yml         ← CI gate: verifies DCO trailer on every PR
+│   │   ├── dco.yml         ← CI gate: verifies DCO trailer on every PR
+│   │   ├── tests.yml       ← CI: REST unit, contracts, WebUI unit (no Docker)
+│   │   └── bob-pr-review.yml
 │   └── pull_request_template.md
 ├── docs/
 │   ├── AI_ENGINEER_GUIDE.md
 │   ├── QUALITY-CHECK.md
 │   ├── DEPENDENCY_LICENSE_TRANSPARENCY.md
 │   ├── manual_auth_check_using_the_commandline.md
+│   ├── mcp_access_options.md    ← MCP no auth / Basic Auth / OAuth 2.0 options
 │   ├── watsonx_orchestrate_basic_auth_example_integration.md
 │   └── reference/               ← supplemental background (not required for first run)
 ├── hr_database_backend/             ← FastAPI + pandas HR data API (port 8081)
@@ -288,6 +304,11 @@ and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 ├── galaxium-booking-web-app/
 ├── galaxium-booking-web-app-mcp/
 ├── local-container/
+│   ├── docker_compose*.yaml          ← full stacks (Options 1–4)
+│   ├── keycloak/                     ← realm import + Keycloak guide
+│   ├── booking_system_mcp_no_auth/   ← MCP only, AUTH_MODE=none
+│   ├── booking_system_mcp_basic_auth/ ← MCP only, AUTH_MODE=basic
+│   └── booking_system_mcp_oauth2_no_implicit_flow/ ← MCP + Keycloak, AUTH_MODE=oauth2
 ├── testing/
 └── deployment/
 ```

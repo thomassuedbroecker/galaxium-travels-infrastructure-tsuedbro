@@ -138,6 +138,8 @@ desktop.ini
 .tmp-fastmcp-venv/
 local-container/*.env
 !local-container/*.env.template
+local-container/booking_system_mcp_*/*.env
+!local-container/booking_system_mcp_*/*.env.template
 testing/webui_matrix/*.env
 !testing/webui_matrix/*.env.template
 

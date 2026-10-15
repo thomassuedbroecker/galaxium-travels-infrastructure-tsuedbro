@@ -28,6 +28,7 @@ flowchart TD
 | Stack on host, agent or VM on LAN | [QUICKSTART.md — Option 2](./QUICKSTART.md#option-2-host-machine-with-vm--lan-oauth) |
 | No Keycloak, Basic Auth only | [QUICKSTART.md — Option 3](./QUICKSTART.md#option-3-local-basic-auth) |
 | Keycloak browser login + MCP Basic Auth | [QUICKSTART.md — Option 4](./QUICKSTART.md#option-4-keycloak-ui--mcp-basic-auth) |
+| Only the MCP server (no auth / Basic Auth / OAuth 2.0), for example for watsonx Orchestrate | [docs/mcp_access_options.md](./docs/mcp_access_options.md) |
 | Full compose file and script reference | [local-container/README.md](./local-container/README.md) |
 
 ## Understand The Architecture
@@ -44,6 +45,8 @@ flowchart TD
 | Goal | Start here |
 | --- | --- |
 | MCP endpoint, tools, auth options — all in one place | [docs/AI_ENGINEER_GUIDE.md](./docs/AI_ENGINEER_GUIDE.md) |
+| Choose and hand over an MCP access option (`booking_system_mcp` is the only MCP service) | [docs/mcp_access_options.md](./docs/mcp_access_options.md) |
+| Keycloak realm, clients, and how to adjust them | [local-container/keycloak/README.md](./local-container/keycloak/README.md) |
 | Step-by-step CLI walkthrough (OAuth + Basic Auth) | [docs/manual_auth_check_using_the_commandline.md](./docs/manual_auth_check_using_the_commandline.md) |
 | watsonx Orchestrate setup guide | [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md) |
 | watsonx Orchestrate Basic Auth example | [docs/watsonx_orchestrate_basic_auth_example_integration.md](./docs/watsonx_orchestrate_basic_auth_example_integration.md) |

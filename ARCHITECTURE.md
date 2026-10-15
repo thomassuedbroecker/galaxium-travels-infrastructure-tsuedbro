@@ -131,6 +131,16 @@ not use an LLM or dynamic tool planning in the booking path.
 | 3 | Basic Auth | Guest UI session (no Keycloak login) | Shared Basic Auth | Shared Basic Auth | Run without Keycloak; shared backend credentials |
 | 4 | Mixed MCP | Keycloak traveler login (browser) | Not in this path | Shared Basic Auth | Separate browser identity from MCP backend credentials |
 
+The MCP server can also run on its own, without the REST path, the UIs, or the HR services, in one of three access modes. These are the configurations an external MCP client such as watsonx Orchestrate uses. `booking_system_mcp` is the only service provided as MCP.
+
+| MCP-only option | Folder | MCP auth |
+| --- | --- | --- |
+| No auth | `local-container/booking_system_mcp_no_auth/` | none |
+| Basic Auth | `local-container/booking_system_mcp_basic_auth/` | Shared Basic Auth |
+| OAuth 2.0 | `local-container/booking_system_mcp_oauth2_no_implicit_flow/` | Bearer token from Keycloak (`client_credentials` or `authorization_code`; implicit flow disabled) |
+
+See [docs/mcp_access_options.md](./docs/mcp_access_options.md) for the comparison and [local-container/keycloak/README.md](./local-container/keycloak/README.md) for the Keycloak configuration.
+
 In the LAN OAuth option, public clients and the configured token issuer must
 use the LAN-reachable Keycloak URL. Containers can still obtain JWKS over the
 internal Docker network. See [local-container/README.md](./local-container/README.md)
@@ -179,6 +189,8 @@ production deployment.
 | Run the demo quickly | [QUICKSTART.md](./QUICKSTART.md) |
 | Understand architecture and trade-offs | This document |
 | Configure local or LAN runtime variants | [local-container/README.md](./local-container/README.md) |
+| Run only the MCP server in a chosen access mode | [docs/mcp_access_options.md](./docs/mcp_access_options.md) |
+| Understand or adjust Keycloak (realm, clients, issuer) | [local-container/keycloak/README.md](./local-container/keycloak/README.md) |
 | Check validation scope and commands | [testing/README.md](./testing/README.md) |
 | Deploy using IBM Code Engine scripts | [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md) |
 | Make a contribution | [CONTRIBUTING.md](./CONTRIBUTING.md) |

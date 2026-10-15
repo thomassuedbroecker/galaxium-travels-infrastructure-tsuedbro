@@ -221,5 +221,63 @@ class HrDatabaseFrontendContractTests(unittest.TestCase):
         self.assertIn(f"{self.SERVICE_NAME}:1.0.0", self._compose())
 
 
+class McpAccessOptionContractTests(unittest.TestCase):
+    """Contract assertions for the MCP-only booking_system_mcp_* access option folders."""
+
+    OPTIONS = {
+        "booking_system_mcp_no_auth": "AUTH_MODE=none",
+        "booking_system_mcp_basic_auth": "AUTH_MODE=basic",
+        "booking_system_mcp_oauth2_no_implicit_flow": "AUTH_MODE=oauth2",
+    }
+
+    def test_each_option_folder_has_its_files_and_auth_mode(self) -> None:
+        for folder, auth_mode in self.OPTIONS.items():
+            with self.subTest(folder=folder):
+                for name in ("README.md", "docker_compose.yaml", "mcp.env.template", "start.sh", "verify.sh"):
+                    self.assertTrue((LOCAL_CONTAINER_DIR / folder / name).is_file(), name)
+                self.assertIn(auth_mode, _read(f"local-container/{folder}/docker_compose.yaml"))
+
+    def test_each_option_readme_has_integration_handover(self) -> None:
+        for folder in self.OPTIONS:
+            with self.subTest(folder=folder):
+                content = _read(f"local-container/{folder}/README.md")
+                self.assertIn("## Integration Handover", content)
+                self.assertIn("MCP_REMOTE_SERVER_URL", content)
+
+    def test_option_env_templates_are_gitignored_except_templates(self) -> None:
+        gitignore = _read(".gitignore")
+        self.assertIn("local-container/booking_system_mcp_*/*.env", gitignore)
+        self.assertIn("!local-container/booking_system_mcp_*/*.env.template", gitignore)
+
+    def test_oauth_option_pins_keycloak_issuer_to_public_url(self) -> None:
+        compose = _read("local-container/booking_system_mcp_oauth2_no_implicit_flow/docker_compose.yaml")
+        self.assertIn("--hostname=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}", compose)
+        self.assertIn("OIDC_ISSUER=${KEYCLOAK_PUBLIC_BASE_URL:-http://localhost:8086}/realms/galaxium", compose)
+
+    def test_oauth_option_verifier_rejects_implicit_flow(self) -> None:
+        verifier = _read("local-container/booking_system_mcp_oauth2_no_implicit_flow/verify.sh")
+        self.assertIn("implicitFlowEnabled", verifier)
+        self.assertIn('response_types_supported"] == ["code"]', verifier)
+
+    def test_overview_doc_links_all_options(self) -> None:
+        overview = _read("docs/mcp_access_options.md")
+        for folder in self.OPTIONS:
+            self.assertIn(f"local-container/{folder}/", overview)
+
+    def test_overview_states_booking_system_mcp_is_the_only_mcp_service(self) -> None:
+        self.assertIn(
+            "Only one service is provided as MCP: `booking_system_mcp`",
+            _read("docs/mcp_access_options.md"),
+        )
+
+    def test_oauth_option_realm_dir_is_configurable_and_documented(self) -> None:
+        compose = _read("local-container/booking_system_mcp_oauth2_no_implicit_flow/docker_compose.yaml")
+        self.assertIn("${KEYCLOAK_REALM_DIR:-../keycloak/realm}:/opt/keycloak/data/import:ro", compose)
+        keycloak_readme = _read("local-container/keycloak/README.md")
+        self.assertIn("KEYCLOAK_REALM_DIR", keycloak_readme)
+        self.assertIn('"implicitFlowEnabled": false', keycloak_readme)
+        self.assertIn("aud-booking-api", keycloak_readme)
+
+
 if __name__ == "__main__":
     unittest.main()

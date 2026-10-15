@@ -31,8 +31,8 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 |---|---|
 | Branch | `main` |
 | Base branch | `main` |
-| Last commit | `bf68ee7` — update handoff |
-| Uncommitted changes | 2026-10-15 Claude Code session (see log): Java HR backend `/jobs` endpoint, docs sync, AI engineer guide rewrite |
+| Last commit | `af29c97` — docs: align open-source dependency and license overview |
+| Uncommitted changes | 2026-10-15 Claude Code session (see log): MCP-only access option folders (`local-container/booking_system_mcp_*`), Keycloak guide, full local validation, docs sync |
 
 Update this section at the end of every session.
 
@@ -48,6 +48,8 @@ Update this section at the end of every session.
 | Architecture decisions and component map | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | MCP endpoint, tools, session handshake, auth | [`docs/AI_ENGINEER_GUIDE.md`](./docs/AI_ENGINEER_GUIDE.md) |
 | Compose variants and verification scripts | [`local-container/README.md`](./local-container/README.md) |
+| MCP-only access options (no auth / Basic / OAuth 2.0) | [`docs/mcp_access_options.md`](./docs/mcp_access_options.md) |
+| Keycloak realm, clients, adjustment recipes | [`local-container/keycloak/README.md`](./local-container/keycloak/README.md) |
 | Test scope and evidence | [`testing/README.md`](./testing/README.md) |
 | Machine-readable repo summary for LLM tools | [`LLMS.txt`](./LLMS.txt) |
 
@@ -94,3 +96,4 @@ At the end of a work session:
 | 2026-09-07/08 | Manual commits | main | Added `hr_database_backend_java/` (alternative Quarkus HR API). Added Jobs domain to `hr_database_frontend_java/` (JAX-RS `JobResource`, `JobApiClient`, React pages `JobListPage`, `JobDetailPage`, `JobFormPage`, `jobsApiService`). Configured HR frontend backend URL at runtime (env var) instead of build time. Updated `hr_database_backend/` with `Dockerfile`, `README.md`, `app.py`, and data files (`employees.md`, `jobs.md`). `.gitignore` updated to exclude compiled Java/Maven artifacts. Contract tests realigned to current HR frontend. | — |
 | 2026-10-15 | IBM Bob | main | Fixed Bash "unbound variable" errors on macOS (`set -u`) in three verify scripts by replacing empty-array expansion with robust `${arr[@]+"${arr[@]}"}` syntax. Updated `testing/test_local_container_contracts.py` to match. Corrected `/msp` endpoint alias description from "Watson Discovery" → "watsonx Orchestrate" in `docs/AI_ENGINEER_GUIDE.md`, `AGENTS.md`, `LLMS.txt`. Removed stale `docs/reference/suggestions-for-better-developer-navigation.md`. Minor doc/Bob config cleanup (`.bob/mcp.json`, `.bob/rules-ask/AGENTS.md`, `.bob/settings.json`). | — |
 | 2026-10-15 | Claude Code | main | Added `/jobs` CRUD to `hr_database_backend_java/` (`Job`, `JobRepository`, `JobResource`, `JobResourceTest`, `data/jobs.md`; 12/12 Maven tests pass) so the HR portal's Jobs pages work with either backend. Docs sync: Jobs + Java backend across README/ARCHITECTURE/NAVIGATOR/LLMS/AGENTS, documented 9 missing MCP/REST env vars, fixed 11 broken links in `docs/`, refreshed `testing/README.md` status. Rewrote `docs/AI_ENGINEER_GUIDE.md`: correct MCP session handshake (verified against a local server), `client_credentials` token instead of password grant, tool argument/return table, booking flow, error shape. Made `AGENTS.md` canonical for rules (added OAuth rule: implicit flow not allowed); slimmed this file to state + log. | Commit the session's changes; add a Maven job for `hr_database_backend_java` to CI |
+| 2026-10-15 | Claude Code | main | Added MCP-only access option folders `local-container/booking_system_mcp_no_auth/`, `booking_system_mcp_basic_auth/`, `booking_system_mcp_oauth2_no_implicit_flow/` (compose, `start.sh`, `verify.sh`, `mcp.env.template`, integration handover for the external watsonx Orchestrate guide repo), shared `local-container/booking_system_mcp_lib.sh`, `docs/mcp_access_options.md`, `local-container/keycloak/README.md` (realm, clients, issuer, `KEYCLOAK_REALM_DIR` override, tested dedicated-client recipe). Validated every supported local combination (Options 1–4, basic-auth-vm, WebUI matrix 55/55, MCP-only incl. LAN IP, both HR standalone stacks, Java HR backend 12/12); see `testing/results/LATEST-VALIDATION.md`. Fixed `local-container/README.md` compose commands missing `-f docker_compose.yaml`; documented the HR container-name conflict; docs sync across README/NAVIGATOR/QUICKSTART/ARCHITECTURE/AI guide/LLMS/AGENTS. 39/39 contract tests. | Commit; optional: give standalone HR stacks distinct container names; drop `password` from MCP OAuth metadata once legacy scripts move to `client_credentials` |

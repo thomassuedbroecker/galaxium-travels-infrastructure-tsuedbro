@@ -1,0 +1,23 @@
+# Booking MCP server only, protected with HTTP Basic Auth (AUTH_MODE=basic).
+#
+# Usage (from the repository root):
+#   cp local-container/booking_system_mcp_basic_auth/mcp.env.template local-container/booking_system_mcp_basic_auth/mcp.env
+#   bash local-container/booking_system_mcp_basic_auth/start.sh
+#   bash local-container/booking_system_mcp_basic_auth/verify.sh
+#   docker compose -f local-container/booking_system_mcp_basic_auth/docker_compose.yaml down
+
+name: galaxium-mcp-basic-auth
+
+services:
+  booking_system_mcp:
+    build:
+      context: ../../booking_system_mcp
+    image: booking_system_mcp:1.0.0
+    container_name: booking_system_mcp_basic_auth
+    ports:
+      - ${MCP_HOST_PORT:-8084}:8084
+    environment:
+      - AUTH_MODE=basic
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-demo-basic-user}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-demo-basic-password}
+      - BASIC_AUTH_REALM=${BASIC_AUTH_REALM:-Galaxium Booking MCP}

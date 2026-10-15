@@ -6,6 +6,8 @@ Use this when you want a client such as watsonx Orchestrate to call the Booking 
 
 If you need the Keycloak OAuth 2.0 client-credentials path instead, use [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md).
 
+To run only the Basic Auth MCP server, without the REST path and UIs, use [`local-container/booking_system_mcp_basic_auth/`](../local-container/booking_system_mcp_basic_auth/README.md) (`start.sh`, `verify.sh`). Its MCP server has the same configuration as the stack below. All three access options are compared in [mcp_access_options.md](./mcp_access_options.md).
+
 ## What Changes Compared With OAuth
 
 In the Basic Auth variant:

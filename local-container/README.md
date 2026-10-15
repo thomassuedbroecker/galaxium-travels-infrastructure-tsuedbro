@@ -2,7 +2,7 @@
 
 This folder contains the runnable Docker Compose setup for the Galaxium demo.
 
-You can use it in four ways:
+You can run the full stack in four ways (or run only the MCP server; see [MCP Server Only](#mcp-server-only-three-access-options)):
 
 - run everything on one local machine
 - run the protected stack on the host machine and let another app or agent connect from a VM or another machine in the LAN
@@ -14,6 +14,18 @@ Run commands in this guide from the `local-container/` directory:
 ```sh
 cd local-container
 ```
+
+## MCP Server Only: Three Access Options
+
+`booking_system_mcp` is the only service in this repository that is provided as MCP. To run only that service in one specific access mode, use the standalone folders below. They are the base for the [watsonx Orchestrate guide repository](https://github.com/thomassuedbroecker/galaxium-travels-watsonx-orchestrate-mcp-bob-guide). For the comparison and decision table, see [docs/mcp_access_options.md](../docs/mcp_access_options.md).
+
+| Folder | `AUTH_MODE` | Client sends | Containers |
+| --- | --- | --- | --- |
+| [`booking_system_mcp_no_auth/`](./booking_system_mcp_no_auth/README.md) | `none` | nothing | MCP |
+| [`booking_system_mcp_basic_auth/`](./booking_system_mcp_basic_auth/README.md) | `basic` | `Authorization: Basic ...` | MCP |
+| [`booking_system_mcp_oauth2_no_implicit_flow/`](./booking_system_mcp_oauth2_no_implicit_flow/README.md) | `oauth2` | `Authorization: Bearer ...` (`client_credentials` or `authorization_code`) | Keycloak + MCP |
+
+Each folder has `start.sh`, `verify.sh`, `mcp.env.template` and a generic MCP client example. The Keycloak realm, its clients, and how to adjust them are documented in [`keycloak/README.md`](./keycloak/README.md). They all publish port `8084`, so run only one at a time, and not alongside the full stacks below.
 
 ## Compose Files At A Glance
 
@@ -79,19 +91,19 @@ Use this when all services run on one machine.
 From this folder run:
 
 ```sh
-docker compose up --build
+docker compose -f docker_compose.yaml up --build
 ```
 
 Start only the REST path:
 
 ```sh
-docker compose up --build keycloak booking_system web_app
+docker compose -f docker_compose.yaml up --build keycloak booking_system web_app
 ```
 
 Start only the MCP path:
 
 ```sh
-docker compose up --build keycloak booking_system_mcp web_app_mcp
+docker compose -f docker_compose.yaml up --build keycloak booking_system_mcp web_app_mcp
 ```
 
 If you start only one path, only the matching backend and frontend URLs will be available.
@@ -465,10 +477,12 @@ For a step-by-step manual commandline walkthrough of both auth variants, see [..
 
 ## Stop
 
+Run only one stack at a time, because they share host ports. The standalone HR stacks in `../hr_database_frontend_java/` use the same container names as this stack's HR services (`hr_database`, `hr_database_frontend_java`). If you see `Conflict. The container name "/hr_database" is already in use`, run `../hr_database_frontend_java/stop-hr-app.sh` (add `--backend java` for the Java variant) and start again.
+
 Stop the local stack:
 
 ```sh
-docker compose down
+docker compose -f docker_compose.yaml down
 ```
 
 Stop the VM/LAN host stack:

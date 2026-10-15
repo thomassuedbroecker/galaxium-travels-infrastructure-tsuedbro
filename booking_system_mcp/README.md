@@ -9,7 +9,7 @@
 | **Test command** | n/a (use compose smoke scripts) |
 | **Compose service** | `booking_system_mcp` |
 
-This directory contains the MCP version of the booking system.
+This directory contains the MCP version of the booking system. It is the **only service in this repository that is provided as MCP**. External MCP clients such as watsonx Orchestrate connect only to this service.
 
 `mcp_server.py` is the active server entry point.
 `app.py` is a legacy reference file and is not used by the compose stack.
@@ -37,6 +37,8 @@ Default endpoint: `http://localhost:8084/mcp`
 ## Auth
 
 Auth is off by default.
+
+Ready-to-run configurations for each mode (compose file, env template, verify script, integration handover values) are in `../local-container/booking_system_mcp_no_auth/`, `booking_system_mcp_basic_auth/` and `booking_system_mcp_oauth2_no_implicit_flow/`. For which one to choose, see [../docs/mcp_access_options.md](../docs/mcp_access_options.md).
 
 Use one of these modes:
 

@@ -221,12 +221,11 @@ run_mcp_inspector_cli() {
 
   if command -v npx >/dev/null 2>&1; then
     set +e
-    npx -y @modelcontextprotocol/inspector \
+    npx -y @modelcontextprotocol/inspector@latest \
       --cli "${endpoint_url}" \
       --transport http \
       --method tools/list \
-      --verbose \
-      "${extra_args[@]}" >"${output_file}" 2>&1
+      ${extra_args[@]+"${extra_args[@]}"} >"${output_file}" 2>&1
     cli_status=$?
     set -e
     return "${cli_status}"
@@ -243,8 +242,7 @@ run_mcp_inspector_cli() {
     --cli "${container_endpoint_url}"
     --transport http
     --method tools/list
-    --verbose
-    "${extra_args[@]}"
+    ${extra_args[@]+"${extra_args[@]}"}
   )
 
   set +e
@@ -487,7 +485,7 @@ run_mcp_inspector_cli_checks() {
   if run_mcp_inspector_cli "${MCP_ENDPOINT_URL}" "${TMP_MCP_NO_TOKEN_OUT}"; then
     fail_step "MCP Inspector CLI unexpectedly succeeded without bearer token"
   fi
-  if ! grep -Eiq "401|Missing bearer token|UNAUTHORIZED" "${TMP_MCP_NO_TOKEN_OUT}"; then
+  if ! grep -Eiq "401|Missing bearer token|UNAUTHORIZED|auth_required" "${TMP_MCP_NO_TOKEN_OUT}"; then
     fail_step "MCP Inspector CLI output without token did not show auth rejection"
   fi
   if ! run_mcp_inspector_cli \

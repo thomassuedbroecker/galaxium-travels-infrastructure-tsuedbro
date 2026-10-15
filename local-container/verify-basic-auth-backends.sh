@@ -30,7 +30,7 @@ if [[ -f "${BASIC_AUTH_ENV_FILE}" ]]; then
 fi
 
 cleanup() {
-  docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
+  docker compose ${COMPOSE_ENV_ARGS[@]+"${COMPOSE_ENV_ARGS[@]}"} -f "${COMPOSE_FILE}" down --remove-orphans >/dev/null 2>&1 || true
 }
 
 fail() {
@@ -75,7 +75,7 @@ wait_for_http() {
 
 echo "Starting basic-auth backend stack..."
 trap cleanup EXIT
-docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${COMPOSE_FILE}" up --build -d booking_system booking_system_mcp
+docker compose ${COMPOSE_ENV_ARGS[@]+"${COMPOSE_ENV_ARGS[@]}"} -f "${COMPOSE_FILE}" up --build -d booking_system booking_system_mcp
 
 wait_for_http "${REST_HEALTH_URL}" "200"
 wait_for_http "${MCP_ROOT_URL}" "200"

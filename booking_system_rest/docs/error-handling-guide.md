@@ -52,7 +52,7 @@ Similar improvements were made to the MCP server tools, with error messages adap
 - **User retrieval errors** suggest using the `register_user` tool
 - **Booking management errors** provide clear context about what went wrong
 
-### 3. HR Database System (`HR_database/app.py`)
+### 3. HR Database System (`hr_database_backend/app.py`)
 
 #### Database Operation Errors
 - **Before**: "Error reading database: {error}"

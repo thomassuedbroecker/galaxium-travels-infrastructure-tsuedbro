@@ -84,16 +84,16 @@ runtime packages installed on a developer workstation.
 | IBM Plex Sans | Remote Google Fonts load | Verify font license and Google Fonts terms | `galaxium-booking-web-app-mcp/app/templates/*.html` |
 | Space Grotesk | Remote Google Fonts load | Verify font license and Google Fonts terms | `galaxium-booking-web-app-mcp/app/templates/*.html` |
 
-### `HR_database/`
+### `hr_database_backend/`
 
 | Dependency | Version constraint | License | Source |
 | --- | --- | --- | --- |
-| `python:3.11-slim` | Docker base image | Python/Debian image contents under separate licenses | `HR_database/Dockerfile` |
-| `fastapi` | `0.104.1` | MIT | `HR_database/requirements.txt` |
-| `uvicorn` | `0.24.0` | BSD-3-Clause | `HR_database/requirements.txt` |
-| `python-multipart` | `0.0.6` | Apache-2.0 | `HR_database/requirements.txt` |
-| `pydantic` | `2.4.2` | MIT | `HR_database/requirements.txt` |
-| `pandas` | Not pinned | BSD-3-Clause | `HR_database/Dockerfile` |
+| `python:3.11-slim` | Docker base image | Python/Debian image contents under separate licenses | `hr_database_backend/Dockerfile` |
+| `fastapi` | `0.104.1` | MIT | `hr_database_backend/requirements.txt` |
+| `uvicorn` | `0.24.0` | BSD-3-Clause | `hr_database_backend/requirements.txt` |
+| `python-multipart` | `0.0.6` | Apache-2.0 | `hr_database_backend/requirements.txt` |
+| `pydantic` | `2.4.2` | MIT | `hr_database_backend/requirements.txt` |
+| `pandas` | Not pinned | BSD-3-Clause | `hr_database_backend/Dockerfile` |
 
 ## Shared Runtime, Verification, and Deployment Dependencies
 
@@ -120,7 +120,7 @@ runtime packages installed on a developer workstation.
 | No transitive dependency license inventory | Direct-license table is not enough for redistribution or audit review. | Generate `pip-licenses` or CycloneDX reports for each service environment. |
 | No container image SBOM | Base image and OS package obligations are not fully visible. | Generate SBOMs for built images using `syft`, `docker scout sbom`, or equivalent. |
 | MCP Inspector fetched dynamically with `npx` | Runtime package version and license can change. | Pin the npm package version in scripts or document the verified version in release evidence. |
-| `pandas` installed separately and unpinned in `HR_database/Dockerfile` | Build output can drift independently from `requirements.txt`. | Move `pandas` into `HR_database/requirements.txt` with an explicit version constraint. |
+| `pandas` installed separately and unpinned in `hr_database_backend/Dockerfile` | Build output can drift independently from `requirements.txt`. | Move `pandas` into `hr_database_backend/requirements.txt` with an explicit version constraint. |
 | Generated docs lack explicit provenance metadata | Future audits may not distinguish human-authored, AI-assisted, copied, or generated content. | Add provenance notes, human-review evidence, and source attribution for generated documentation. |
 
 ## Suggested Release-Time Verification Commands

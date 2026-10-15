@@ -107,6 +107,7 @@ jq \
   --arg expected_secret "${EXPECTED_CLIENT_SECRET}" \
   '
   .standardFlowEnabled = true
+  | .implicitFlowEnabled = false
   | .directAccessGrantsEnabled = true
   | .publicClient = false
   | .protocol = "openid-connect"

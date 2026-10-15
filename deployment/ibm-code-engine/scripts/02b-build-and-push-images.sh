@@ -327,7 +327,7 @@ require_prebuilt_image_settings
 ensure_icr_namespace
 login_container_client_to_icr
 
-build_and_push_service_image hr HR_database
+build_and_push_service_image hr hr_database_backend
 build_and_push_service_image booking_api booking_system_rest
 build_and_push_service_image mcp_api booking_system_mcp
 build_and_push_service_image web_app galaxium-booking-web-app

@@ -82,7 +82,7 @@ class LocalContainerContractTests(unittest.TestCase):
                 msg=script_path,
             )
             self.assertIn(
-                'docker compose "${COMPOSE_ENV_ARGS[@]}" -f "${COMPOSE_FILE}" up --build -d',
+                'docker compose ${COMPOSE_ENV_ARGS[@]+"${COMPOSE_ENV_ARGS[@]}"} -f "${COMPOSE_FILE}" up --build -d',
                 content,
                 msg=script_path,
             )

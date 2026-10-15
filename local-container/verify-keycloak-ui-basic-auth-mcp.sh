@@ -70,7 +70,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 cleanup() {
-  docker compose "${COMPOSE_ENV_ARGS[@]}" \
+  docker compose ${COMPOSE_ENV_ARGS[@]+"${COMPOSE_ENV_ARGS[@]}"} \
     -f "${BASE_COMPOSE_FILE}" \
     -f "${OVERLAY_COMPOSE_FILE}" \
     down --remove-orphans >/dev/null 2>&1 || true
@@ -184,7 +184,7 @@ login_response_file="$(mktemp)"
 trap 'rm -f "${login_page_file}" "${health_file}" "${root_headers_file}" "${unauth_flights_file}" "${traveler_file}" "${flights_file}" "${book_file}" "${bookings_file}" "${cookie_file}" "${mcp_no_auth_file}" "${login_response_file}"; cleanup' EXIT
 
 echo "Starting Keycloak UI + Basic Auth MCP stack..."
-docker compose "${COMPOSE_ENV_ARGS[@]}" \
+docker compose ${COMPOSE_ENV_ARGS[@]+"${COMPOSE_ENV_ARGS[@]}"} \
   -f "${BASE_COMPOSE_FILE}" \
   -f "${OVERLAY_COMPOSE_FILE}" \
   up --build -d keycloak booking_system_mcp web_app_mcp

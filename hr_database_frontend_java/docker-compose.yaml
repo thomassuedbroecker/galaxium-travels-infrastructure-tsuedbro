@@ -7,14 +7,14 @@ services:
 
   hr_database:
     build:
-      context: ../HR_database
+      context: ../hr_database_backend
       dockerfile: Dockerfile
     image: hr_database:1.0.0
     container_name: hr_database
     expose:
       - "8081"
     volumes:
-      - ../HR_database/data:/app/data
+      - ../hr_database_backend/data:/app/data
     restart: unless-stopped
     networks:
       hr-net:

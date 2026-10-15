@@ -150,7 +150,7 @@ This follows the same practical issue from older Code Engine automation: public 
 | Component | Artifact Source | Container Port | Notes |
 | --- | --- | --- | --- |
 | Keycloak | `quay.io/keycloak/keycloak:26.0` | `8080` | `8080` is the in-container listen port only. Public access uses the generated Code Engine app URL, not `:8080` |
-| HR API | local source `HR_database/` or prebuilt ICR image | `8081` | File-backed data is ephemeral without a mounted data store |
+| HR API | local source `hr_database_backend/` or prebuilt ICR image | `8081` | File-backed data is ephemeral without a mounted data store |
 | Booking REST API | local source `booking_system_rest/` or prebuilt ICR image | `8082` | Supports `AUTH_MODE=oauth2` or `AUTH_MODE=basic` |
 | Booking MCP server | local source `booking_system_mcp/` or prebuilt ICR image | `8084` | Public MCP endpoint stays `${MCP_URL}/mcp` with Streamable HTTP |
 | REST Web UI | local source `galaxium-booking-web-app/` or prebuilt ICR image | `8083` | Supports OAuth browser login or Basic Auth guest mode |

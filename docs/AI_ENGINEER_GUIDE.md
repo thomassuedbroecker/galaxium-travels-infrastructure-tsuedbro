@@ -7,7 +7,7 @@ This guide is for AI engineers, agent developers, and LLM tool integrators who w
 The Galaxium MCP server exposes a booking domain as explicit MCP tools over **Streamable HTTP**. You can call it from any MCP-compatible client — Watson Orchestrate, a custom agent, or the MCP Inspector CLI.
 
 **MCP endpoint:** `http://localhost:8084/mcp`
-**Alternate alias:** `http://localhost:8084/msp` (307 redirect to `/mcp`, for Watson Discovery compatibility)
+**Alternate alias:** `http://localhost:8084/msp` (307 redirect to `/mcp`, for watsonx Orchestrate compatibility)
 
 ## Available Tools
 

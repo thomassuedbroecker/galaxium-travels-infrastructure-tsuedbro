@@ -4,6 +4,9 @@ import WelcomePage from './pages/WelcomePage'
 import EmployeeListPage from './pages/EmployeeListPage'
 import EmployeeDetailPage from './pages/EmployeeDetailPage'
 import EmployeeFormPage from './pages/EmployeeFormPage'
+import JobListPage from './pages/JobListPage'
+import JobDetailPage from './pages/JobDetailPage'
+import JobFormPage from './pages/JobFormPage'
 
 /**
  * Root application component.
@@ -14,6 +17,10 @@ import EmployeeFormPage from './pages/EmployeeFormPage'
  *   /employees/new       → EmployeeFormPage (create)
  *   /employees/:id       → EmployeeDetailPage
  *   /employees/:id/edit  → EmployeeFormPage (edit)
+ *   /jobs                → JobListPage
+ *   /jobs/new            → JobFormPage (create)
+ *   /jobs/:id            → JobDetailPage
+ *   /jobs/:id/edit       → JobFormPage (edit)
  */
 export default function App() {
   return (
@@ -28,6 +35,11 @@ export default function App() {
           <Route path="/employees/new" element={<EmployeeFormPage />} />
           <Route path="/employees/:id" element={<EmployeeDetailPage />} />
           <Route path="/employees/:id/edit" element={<EmployeeFormPage />} />
+          <Route path="/jobs" element={<JobListPage />} />
+          {/* Create must come before :id to avoid shadowing */}
+          <Route path="/jobs/new" element={<JobFormPage />} />
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
+          <Route path="/jobs/:id/edit" element={<JobFormPage />} />
           {/* 404 fallback */}
           <Route path="*" element={
             <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>

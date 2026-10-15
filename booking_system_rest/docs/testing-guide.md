@@ -74,7 +74,7 @@ Important:
 
 ## HR API Validation
 
-Run the HR service from `HR_database/`:
+Run the HR service from `hr_database_backend/`:
 
 ```sh
 python3 -m venv .venv

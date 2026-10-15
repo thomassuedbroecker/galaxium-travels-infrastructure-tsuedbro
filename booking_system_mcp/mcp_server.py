@@ -95,7 +95,7 @@ def _csv_values(value: str) -> list[str]:
 
 class BasicAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if not basic_auth_enabled():
+        if not basic_auth_enabled() and not oauth2_auth_enabled():
             return await call_next(request)
 
         if request.method.upper() == "OPTIONS":

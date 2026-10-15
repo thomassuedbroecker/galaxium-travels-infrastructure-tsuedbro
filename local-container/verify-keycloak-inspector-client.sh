@@ -130,12 +130,14 @@ if [[ "${CLIENT_SECRET_STATUS}" != "200" ]]; then
 fi
 
 STANDARD_FLOW_ENABLED="$(jq -r '.standardFlowEnabled' "${TMP_CLIENT_BODY}")"
+IMPLICIT_FLOW_ENABLED="$(jq -r '.implicitFlowEnabled' "${TMP_CLIENT_BODY}")"
 DIRECT_ACCESS_ENABLED="$(jq -r '.directAccessGrantsEnabled' "${TMP_CLIENT_BODY}")"
 PUBLIC_CLIENT="$(jq -r '.publicClient' "${TMP_CLIENT_BODY}")"
 PROTOCOL="$(jq -r '.protocol' "${TMP_CLIENT_BODY}")"
 CLIENT_SECRET_VALUE="$(jq -r '.value // empty' "${TMP_CLIENT_SECRET_BODY}")"
 
 assert_json_equals "true" "${STANDARD_FLOW_ENABLED}" "standardFlowEnabled"
+assert_json_equals "false" "${IMPLICIT_FLOW_ENABLED}" "implicitFlowEnabled"
 assert_json_equals "true" "${DIRECT_ACCESS_ENABLED}" "directAccessGrantsEnabled"
 assert_json_equals "false" "${PUBLIC_CLIENT}" "publicClient"
 assert_json_equals "openid-connect" "${PROTOCOL}" "protocol"

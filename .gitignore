@@ -142,7 +142,7 @@ testing/webui_matrix/*.env
 !testing/webui_matrix/*.env.template
 
 ### Additional files
-HR_database/.venv/
+hr_database_backend/.venv/
 booking_system_rest/.venv/
 galaxium-booking-web-app/.venv/
 architecture/.$galaxim-travel-infrastructure.drawio.dtmp

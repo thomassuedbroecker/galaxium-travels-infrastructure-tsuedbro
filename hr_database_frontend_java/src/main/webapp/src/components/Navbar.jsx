@@ -20,6 +20,12 @@ export default function Navbar() {
         <NavLink to="/employees/new">
           + Add Employee
         </NavLink>
+        <NavLink to="/jobs">
+          Jobs
+        </NavLink>
+        <NavLink to="/jobs/new">
+          + Add Job
+        </NavLink>
       </div>
     </nav>
   )

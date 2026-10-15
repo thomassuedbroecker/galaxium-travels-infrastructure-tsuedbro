@@ -13,7 +13,7 @@ services:
 
   hr_database:
     build:
-      context: ../HR_database
+      context: ../hr_database_backend
     image: hr_database:1.0.0
     container_name: hr_database
     ports:

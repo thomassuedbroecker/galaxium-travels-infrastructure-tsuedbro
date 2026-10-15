@@ -92,7 +92,7 @@ flowchart LR
 | `booking_system_mcp/` | MCP server with independent SQLite state for the equivalent booking domain | `8084` | `mcp_server.py` |
 | `galaxium-booking-web-app/` | Flask UI that calls the REST backend | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls MCP tools through a direct Python MCP client | `8085` | `app/app.py` |
-| `HR_database/` | Small HR API backed by markdown data | `8081` | `app.py` |
+| `hr_database_backend/` | Small HR API backed by markdown data | `8081` | `app.py` |
 | `hr_database_backend_java/` | Alternative Quarkus HR API backed by `data/employees.md`; standalone HR stack | `8089` | `mvn quarkus:dev` |
 | `hr_database_frontend_java/` | Quarkus + React HR portal; proxies CRUD calls to the Python or Java HR backend | `8090` (container) / `8088` (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
 | `local-container/` | Docker Compose setup, OAuth and Basic Auth verifier scripts, env templates | n/a | `docker_compose.yaml` |
@@ -182,7 +182,7 @@ Current declared base images:
 | --- | --- |
 | `booking_system_rest/` | `python:3.11-slim` |
 | `booking_system_mcp/` | `python:3.11-slim` |
-| `HR_database/` | `python:3.11-slim` |
+| `hr_database_backend/` | `python:3.11-slim` |
 | `galaxium-booking-web-app/` | `python:3.12-slim` |
 | `galaxium-booking-web-app-mcp/` | `python:3.12-slim` |
 | `hr_database_frontend_java/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
@@ -191,16 +191,16 @@ Current declared main runtime libraries — Python services:
 
 | Library | Declared version in this repo | License | Where referenced |
 | --- | --- | --- | --- |
-| `fastapi` | `not pinned`; `0.104.1` in `HR_database/requirements.txt` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `HR_database/requirements.txt` |
-| `uvicorn` | `not pinned`; `0.24.0` in `HR_database/requirements.txt` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `HR_database/requirements.txt` |
+| `fastapi` | `not pinned`; `0.104.1` in `hr_database_backend/requirements.txt` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `hr_database_backend/requirements.txt` |
+| `uvicorn` | `not pinned`; `0.24.0` in `hr_database_backend/requirements.txt` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `hr_database_backend/requirements.txt` |
 | `sqlalchemy` | `not pinned` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
 | `databases` | `not pinned` | BSD | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
-| `pydantic` / `pydantic[email]` | `not pinned`; `2.4.2` in `HR_database/requirements.txt` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `HR_database/requirements.txt` |
+| `pydantic` / `pydantic[email]` | `not pinned`; `2.4.2` in `hr_database_backend/requirements.txt` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt`, `hr_database_backend/requirements.txt` |
 | `python-dotenv` | `not pinned` | BSD-3-Clause | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
 | `fastmcp` | `not pinned` | Apache-2.0 | `booking_system_mcp/requirements.txt` |
 | `PyJWT[crypto]` | `not pinned` | MIT | `booking_system_rest/requirements.txt`, `booking_system_mcp/requirements.txt` |
-| `python-multipart` | `0.0.6` | Apache-2.0 | `HR_database/requirements.txt` |
-| `pandas` | `not pinned` | BSD-3-Clause | `HR_database/Dockerfile` |
+| `python-multipart` | `0.0.6` | Apache-2.0 | `hr_database_backend/requirements.txt` |
+| `pandas` | `not pinned` | BSD-3-Clause | `hr_database_backend/Dockerfile` |
 | `Flask` | `3.1.1` | BSD-3-Clause | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `flask-cors` | `3.0.10` | MIT | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
 | `requests` | `2.31.0` | Apache-2.0 | `galaxium-booking-web-app/app/requirements.txt`, `galaxium-booking-web-app-mcp/app/requirements.txt` |
@@ -271,7 +271,7 @@ script is currently provided.
 │   ├── manual_auth_check_using_the_commandline.md
 │   ├── watsonx_orchestrate_basic_auth_example_integration.md
 │   └── reference/               ← supplemental background (not required for first run)
-├── HR_database/             ← FastAPI + pandas HR data API (port 8081)
+├── hr_database_backend/             ← FastAPI + pandas HR data API (port 8081)
 ├── hr_database_backend_java/     ← alternative Quarkus HR API (port 8089; standalone HR stack)
 ├── hr_database_frontend_java/    ← Quarkus + React HR portal (port 8090/container, 8088/local)
 ├── booking_system_mcp/

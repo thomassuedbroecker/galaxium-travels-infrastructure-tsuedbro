@@ -24,7 +24,7 @@ This means a booking made through the REST UI is not expected to appear in the
 MCP UI, or vice versa. Compare the interaction pattern and auth behavior, not
 shared transactional state.
 
-`HR_database/` is a standalone supporting example service included in the full
+`hr_database_backend/` is a standalone supporting example service included in the full
 Compose stack. The booking UIs and booking backends do not call it in the
 current implementation.
 
@@ -88,7 +88,7 @@ decomposition or an event-driven synchronization design.
 | `booking_system_mcp/` | MCP tools for the equivalent booking operations | `mcp_server.py` is active; `app.py` is legacy reference only |
 | `galaxium-booking-web-app/` | Web journey backed by REST requests | Sends backend credentials according to mode |
 | `galaxium-booking-web-app-mcp/` | Same web journey backed by MCP tool calls | Uses direct Python MCP client; no autonomous agent; Streamable HTTP only |
-| `HR_database/` | Separate employee-data demonstration API | Not on either booking request path; data backed by markdown file |
+| `hr_database_backend/` | Separate employee-data demonstration API | Not on either booking request path; data backed by markdown file |
 | `hr_database_backend_java/` | Alternative Quarkus employee-data API | Markdown-backed; standalone HR stack, port 8089 |
 | `hr_database_frontend_java/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to the Python or Java HR backend | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8090 (container) / 8088 (local) |
 | `local-container/` | Local runtime variants, Keycloak realm, verification scripts | Source of truth for Compose behavior |

@@ -16,6 +16,7 @@
       "bearerOnly": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "secret": "booking-api-secret"
     },
@@ -27,6 +28,7 @@
       "publicClient": false,
       "serviceAccountsEnabled": true,
       "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": true,
       "secret": "web-app-proxy-secret",
       "redirectUris": [

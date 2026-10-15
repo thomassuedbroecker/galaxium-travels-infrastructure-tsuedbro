@@ -12,8 +12,8 @@ Python monorepo for a multi-service "Galaxium Travels" booking demo. Six service
 | `booking_system_mcp/` | FastMCP (streamable-HTTP MCP server) | 8084 |
 | `galaxium-booking-web-app/` | Flask proxy → REST backend | 8083 |
 | `galaxium-booking-web-app-mcp/` | Flask proxy → MCP backend | 8085 |
-| `HR_database/` | FastAPI + pandas (reads `data/employees.md`) | 8081 |
-| `hr_database_frontend_java/` | Quarkus 3 + React 18 HR portal (JAX-RS proxy → `HR_database`) | 8090 (container) / 8088 (local) |
+| `hr_database_backend/` | FastAPI + pandas (reads `data/employees.md`) | 8081 |
+| `hr_database_frontend_java/` | Quarkus 3 + React 18 HR portal (JAX-RS proxy → `hr_database_backend`) | 8090 (container) / 8088 (local) |
 
 Full stack is orchestrated with `local-container/docker_compose.yaml` and Keycloak on port 8086.
 
@@ -59,12 +59,12 @@ Both `booking_system_rest/auth.py` and `booking_system_mcp/auth.py` share the sa
 `booking_system_mcp/app.py` is a **legacy reference file**, not used. The active entry point is `booking_system_mcp/mcp_server.py`. Dockerfile runs `python mcp_server.py`.
 
 ### MCP `/msp` alias
-`mcp_server.py` registers `/msp` routes as 307 redirects to `/mcp` for Watson Discovery compatibility — both paths are intentional.
+`mcp_server.py` registers `/msp` routes as 307 redirects to `/mcp` for watsonx Orchestrate compatibility — both paths are intentional.
 
 ### Database
 - SQLite file `booking.db` in service directory (production); in-memory SQLite for tests
 - `seed()` is called at **every startup** and **wipes all data first** (`DELETE` before inserting)
-- `HR_database` reads employees from a Markdown pipe-table (`data/employees.md`), not a SQL DB
+- `hr_database_backend` reads employees from a Markdown pipe-table (`data/employees.md`), not a SQL DB
 
 ### Pydantic model naming
 In `booking_system_rest/app.py`, SQLAlchemy models are imported with an alias (`from models import Booking as BookingModel`) to avoid collision with Pydantic schema classes named identically (`Booking`, `Flight`, `User`). Follow this pattern when adding new models.

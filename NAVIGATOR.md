@@ -74,6 +74,6 @@ flowchart TD
 | `booking_system_mcp/` | `8084` | `mcp_server.py` | FastMCP booking server |
 | `galaxium-booking-web-app/` | `8083` | `app/app.py` | Flask UI → REST backend |
 | `galaxium-booking-web-app-mcp/` | `8085` | `app/app.py` | Flask UI → MCP tools |
-| `HR_database/` | `8081` | `app.py` | HR data API (backed by markdown file) |
+| `hr_database_backend/` | `8081` | `app.py` | HR data API (backed by markdown file) |
 | `hr_database_backend_java/` | `8089` | `mvn quarkus:dev` | Alternative Quarkus HR API; [run with the HR portal](./hr_database_frontend_java/README.md) |
 | `hr_database_frontend_java/` | `8090` (container) / `8088` (local) | `start-hr-app.sh` / `mvn quarkus:dev` | Quarkus + React HR portal (proxies `/api/employees` → Python or Java HR backend) |

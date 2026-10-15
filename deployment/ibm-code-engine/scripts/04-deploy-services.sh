@@ -479,7 +479,7 @@ upsert_configmap_from_file() {
 }
 
 deploy_hr_api() {
-  set_service_artifact_args "HR_database" "hr"
+  set_service_artifact_args "hr_database_backend" "hr"
   local hr_args=(
     "${ARTIFACT_ARGS[@]}"
     --port 8081

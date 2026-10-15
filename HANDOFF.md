@@ -22,8 +22,8 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 | `booking_system_mcp/` | FastMCP Streamable HTTP | 8084 | `mcp_server.py` ← active |
 | `galaxium-booking-web-app/` | Flask proxy → REST | 8083 | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask proxy → MCP tools | 8085 | `app/app.py` |
-| `HR_database/` | FastAPI + pandas + Markdown | 8081 | `app.py` |
-| `hr_database_frontend_java/` | Quarkus 3 + React 18 (JAX-RS proxy → HR_database) | 8090 (container) / 8088 (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
+| `hr_database_backend/` | FastAPI + pandas + Markdown | 8081 | `app.py` |
+| `hr_database_frontend_java/` | Quarkus 3 + React 18 (JAX-RS proxy → hr_database_backend) | 8090 (container) / 8088 (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
 | `hr_database_backend_java/` | Alternative Quarkus HR API + Markdown | 8089 | `mvn quarkus:dev` |
 | `local-container/` | Docker Compose variants + scripts | — | `docker_compose.yaml` |
 | `deployment/ibm-code-engine/` | Bash + ibmcloud CLI deploy | — | `deploy-stack.sh` |

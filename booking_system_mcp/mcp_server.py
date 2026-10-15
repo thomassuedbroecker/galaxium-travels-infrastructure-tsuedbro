@@ -434,12 +434,11 @@ def _oauth_protected_resource_payload() -> dict[str, object]:
         "resource": mcp_resource,
         "scopes_supported": ["openid", "profile", "email"],
     }
-    # Local Inspector compatibility:
-    # advertise MCP base first so clients discover the MCP-hosted
-    # oauth-authorization-server metadata (which includes registration_endpoint).
-    authorization_servers: list[str] = [mcp_base_url]
-    if issuer and issuer not in authorization_servers:
+    authorization_servers: list[str] = []
+    if issuer:
         authorization_servers.append(issuer)
+    elif mcp_base_url:
+        authorization_servers.append(mcp_base_url)
     payload["authorization_servers"] = authorization_servers
     return payload
 

@@ -70,6 +70,8 @@ Optional metadata overrides:
 
 If neither authorization-server variable is set, the server derives it from `OIDC_ISSUER` and rewrites `keycloak:8080` to `localhost:8086`.
 
+`/.well-known/oauth-protected-resource` advertises `authorization_servers` pointing directly to the Keycloak realm issuer (e.g. `http://localhost:8086/realms/galaxium` or `KEYCLOAK_PUBLIC_BASE_URL/realms/galaxium`). This ensures standard OAuth clients (such as MCP Inspector) resolve Keycloak metadata directly and avoid RFC 8414 issuer mismatch errors.
+
 MCP Inspector dynamic client registration (`/oauth/register`, OAuth mode only):
 
 | Variable | Default | Purpose |

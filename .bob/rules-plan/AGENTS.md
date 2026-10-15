@@ -8,7 +8,7 @@ This file provides guidance to agents when working with code in this repository.
 
 - **`AUTH_ENABLED=true` is deprecated shorthand for `AUTH_MODE=oauth2`**: New code should use `AUTH_MODE` explicitly. The legacy var is supported for backwards compat with compose configs.
 
-- **MCP OAuth metadata is self-hosted**: `mcp_server.py` serves its own `/.well-known/oauth-authorization-server`, `/.well-known/oauth-protected-resource`, and `/oauth/register` endpoints — it does not delegate to Keycloak directly. It proxies/rewrites Keycloak URLs so MCP Inspector can discover them from the host network.
+- **MCP OAuth metadata is self-hosted**: `mcp_server.py` serves its own `/.well-known/oauth-authorization-server`, `/.well-known/oauth-protected-resource`, and `/oauth/register` endpoints. `oauth-protected-resource` advertises the Keycloak authorization server issuer directly in `authorization_servers` so OAuth clients (e.g. MCP Inspector) resolve Keycloak without RFC 8414 issuer mismatch.
 
 - **Seed data is not idempotent**: `seed()` deletes all rows and re-inserts on every startup. Persistent state between runs is not supported by design.
 

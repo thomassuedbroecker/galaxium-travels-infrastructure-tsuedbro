@@ -208,7 +208,7 @@ curl -s http://localhost:8084/.well-known/oauth-authorization-server | jq .
 curl -s http://localhost:8084/.well-known/oauth-protected-resource | jq .
 ```
 
-These are used by watsonx Orchestrate and automated clients to discover the token URL and registration endpoint.
+These are used by MCP Inspector, watsonx Orchestrate, and automated clients to discover the authorization server (`authorization_servers` points to Keycloak), token URL, and registration endpoint.
 
 ## MCP Inspector (manual exploration)
 

@@ -15,7 +15,7 @@
 | Client | Grant | How the client gets the token |
 | --- | --- | --- |
 | Service, agent, or integration platform (for example watsonx Orchestrate) | `client_credentials` | Posts its client ID and secret to the token URL |
-| Interactive MCP client (for example MCP Inspector) | `authorization_code` + PKCE | Discovers Keycloak through `/.well-known/oauth-protected-resource`, then performs a browser login |
+| Interactive MCP client (for example MCP Inspector) | `authorization_code` + PKCE | Discovers Keycloak through `/.well-known/oauth-protected-resource` (`authorization_servers` advertises the Keycloak realm issuer), then performs a browser login |
 | — | implicit | **Not allowed**, so never configure it |
 
 ## Start, Verify, Stop

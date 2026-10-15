@@ -84,7 +84,7 @@ curl -fsS http://localhost:8084/.well-known/oauth-authorization-server | jq .
 Expected:
 
 - Keycloak issuer is `http://localhost:8086/realms/galaxium`
-- the MCP metadata endpoints return JSON
+- the MCP metadata endpoints return JSON (`oauth-protected-resource` lists `http://localhost:8086/realms/galaxium` in `authorization_servers`)
 
 ### 2. Optional: confirm the current Inspector CLI limitation
 

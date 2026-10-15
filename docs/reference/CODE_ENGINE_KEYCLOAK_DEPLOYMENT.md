@@ -40,7 +40,7 @@ Audience mapper on `web-app-proxy`:
 2. Included client audience: `booking-api`
 3. Add to access token: enabled
 
-You can use [`local-container/keycloak/realm/galaxium-realm.json`](../local-container/keycloak/realm/galaxium-realm.json) as the reference configuration.
+You can use [`local-container/keycloak/realm/galaxium-realm.json`](../../local-container/keycloak/realm/galaxium-realm.json) as the reference configuration.
 
 ## 3. Environment Variables Required Outside Compose
 
@@ -161,7 +161,7 @@ Expected: HTTP `302` redirect to `/login`.
 
 ### Automated check script (works without Docker Compose)
 
-Use [`local-container/verify-keycloak-auth-remote.sh`](../local-container/verify-keycloak-auth-remote.sh):
+Use [`local-container/verify-keycloak-auth-remote.sh`](../../local-container/verify-keycloak-auth-remote.sh):
 
 ```bash
 export BOOKING_API_BASE_URL=https://<booking-system-rest-url>

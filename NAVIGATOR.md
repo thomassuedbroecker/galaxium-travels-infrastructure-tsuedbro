@@ -45,8 +45,8 @@ flowchart TD
 | --- | --- |
 | MCP endpoint, tools, auth options — all in one place | [docs/AI_ENGINEER_GUIDE.md](./docs/AI_ENGINEER_GUIDE.md) |
 | Step-by-step CLI walkthrough (OAuth + Basic Auth) | [docs/manual_auth_check_using_the_commandline.md](./docs/manual_auth_check_using_the_commandline.md) |
-| Watson Orchestrate setup guide | [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md) |
-| Watson Orchestrate Basic Auth example | [docs/watsonx_orchestrate_basic_auth_example_integration.md](./docs/watsonx_orchestrate_basic_auth_example_integration.md) |
+| watsonx Orchestrate setup guide | [docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md](./docs/reference/WATSONX_ORCHESTRATE_BOOKING_MCP_SETUP_GUIDE.md) |
+| watsonx Orchestrate Basic Auth example | [docs/watsonx_orchestrate_basic_auth_example_integration.md](./docs/watsonx_orchestrate_basic_auth_example_integration.md) |
 | Machine-readable repo summary for LLM tools | [LLMS.txt](./LLMS.txt) |
 | Shared agent handoff context (Bob, Claude Code, Codex) | [HANDOFF.md](./HANDOFF.md) |
 
@@ -76,4 +76,4 @@ flowchart TD
 | `galaxium-booking-web-app-mcp/` | `8085` | `app/app.py` | Flask UI → MCP tools |
 | `hr_database_backend/` | `8081` | `app.py` | HR data API (backed by markdown file) |
 | `hr_database_backend_java/` | `8089` | `mvn quarkus:dev` | Alternative Quarkus HR API; [run with the HR portal](./hr_database_frontend_java/README.md) |
-| `hr_database_frontend_java/` | `8090` (container) / `8088` (local) | `start-hr-app.sh` / `mvn quarkus:dev` | Quarkus + React HR portal (proxies `/api/employees` → Python or Java HR backend) |
+| `hr_database_frontend_java/` | `8090` (container) / `8088` (local) | `start-hr-app.sh` / `mvn quarkus:dev` | Quarkus + React HR portal (proxies `/api/employees` and `/api/jobs` → Python or Java HR backend) |

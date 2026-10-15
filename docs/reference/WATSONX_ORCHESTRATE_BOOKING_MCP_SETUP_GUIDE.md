@@ -20,11 +20,11 @@ The Booking MCP server in this project runs as a remote MCP server over `streama
 
 Repository references:
 
-- MCP endpoint and auth variables: [`../booking_system_mcp/README.md`](../booking_system_mcp/README.md)
-- JWT validation logic: [`../booking_system_mcp/auth.py`](../booking_system_mcp/auth.py)
-- MCP transport and OAuth metadata endpoints: [`../booking_system_mcp/mcp_server.py`](../booking_system_mcp/mcp_server.py)
-- Public deployment example for IBM Code Engine: [`../deployment/ibm-code-engine/README.md`](../deployment/ibm-code-engine/README.md)
-- Local Keycloak realm example: [`../local-container/keycloak/realm/galaxium-realm.json`](../local-container/keycloak/realm/galaxium-realm.json)
+- MCP endpoint and auth variables: [`../booking_system_mcp/README.md`](../../booking_system_mcp/README.md)
+- JWT validation logic: [`../booking_system_mcp/auth.py`](../../booking_system_mcp/auth.py)
+- MCP transport and OAuth metadata endpoints: [`../booking_system_mcp/mcp_server.py`](../../booking_system_mcp/mcp_server.py)
+- Public deployment example for IBM Code Engine: [`../deployment/ibm-code-engine/README.md`](../../deployment/ibm-code-engine/README.md)
+- Local Keycloak realm example: [`../local-container/keycloak/realm/galaxium-realm.json`](../../local-container/keycloak/realm/galaxium-realm.json)
 
 Current behavior in this repo:
 
@@ -58,7 +58,7 @@ This repository already shows multiple OAuth-related patterns:
 - `password` exists only for local demo/testing flows
 - `client_credentials` is the best fit for service-to-service access from watsonx Orchestrate to the Booking MCP server
 
-The MCP server advertises several grant types in [`../booking_system_mcp/mcp_server.py`](../booking_system_mcp/mcp_server.py), but that does not mean every client should use every flow. Each client should use the flow that matches its runtime behavior.
+The MCP server advertises several grant types in [`../booking_system_mcp/mcp_server.py`](../../booking_system_mcp/mcp_server.py), but that does not mean every client should use every flow. Each client should use the flow that matches its runtime behavior.
 
 For watsonx Orchestrate:
 

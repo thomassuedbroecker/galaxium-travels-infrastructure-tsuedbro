@@ -496,6 +496,6 @@ Do not try to mix the browser login with the direct Inspector header model.
 
 ## Related Docs
 
-- Local compose guide: [local-container/README.md](./local-container/README.md)
-- Quickstart: [QUICKSTART.md](./QUICKSTART.md)
+- Local compose guide: [local-container/README.md](../local-container/README.md)
+- Quickstart: [QUICKSTART.md](../QUICKSTART.md)
 - Basic Auth example note: [watsonx_orchestrate_basic_auth_example_integration.md](./watsonx_orchestrate_basic_auth_example_integration.md)

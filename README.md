@@ -93,7 +93,7 @@ flowchart LR
 | `galaxium-booking-web-app/` | Flask UI that calls the REST backend | `8083` | `app/app.py` |
 | `galaxium-booking-web-app-mcp/` | Flask UI that calls MCP tools through a direct Python MCP client | `8085` | `app/app.py` |
 | `hr_database_backend/` | Small HR API backed by markdown data | `8081` | `app.py` |
-| `hr_database_backend_java/` | Alternative Quarkus HR API backed by `data/employees.md`; standalone HR stack | `8089` | `mvn quarkus:dev` |
+| `hr_database_backend_java/` | Alternative Quarkus HR API (employees + jobs) backed by `data/employees.md` and `data/jobs.md`; standalone HR stack | `8089` | `mvn quarkus:dev` |
 | `hr_database_frontend_java/` | Quarkus + React HR portal; proxies CRUD calls to the Python or Java HR backend | `8090` (container) / `8088` (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
 | `local-container/` | Docker Compose setup, OAuth and Basic Auth verifier scripts, env templates | n/a | `docker_compose.yaml` |
 
@@ -186,6 +186,7 @@ Current declared base images:
 | `galaxium-booking-web-app/` | `python:3.12-slim` |
 | `galaxium-booking-web-app-mcp/` | `python:3.12-slim` |
 | `hr_database_frontend_java/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
+| `hr_database_backend_java/` | build: `maven:3.9-eclipse-temurin-21`; runtime: `eclipse-temurin:21-jre-jammy` |
 
 Current declared main runtime libraries — Python services:
 

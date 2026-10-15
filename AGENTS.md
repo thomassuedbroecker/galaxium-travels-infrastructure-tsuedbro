@@ -2,9 +2,18 @@
 
 This file provides guidance to agents when working with code in this repository.
 
+**Source of truth.** This file owns the service map, non-obvious patterns, test commands, and code style. Other agent-context files point here instead of repeating it:
+
+| File | Role |
+|---|---|
+| `AGENTS.md` | Rules, patterns, commands (canonical) |
+| [`HANDOFF.md`](./HANDOFF.md) | Current branch state and session log only |
+| [`LLMS.txt`](./LLMS.txt) | Self-contained summary for external LLM tools; update it when this file changes |
+| `.bob/rules-*/AGENTS.md` | Bob mode-specific additions |
+
 ## Project Overview
 
-Python monorepo for a multi-service "Galaxium Travels" booking demo. Six services:
+Python monorepo for a multi-service "Galaxium Travels" booking demo. Seven services:
 
 | Directory | Stack | Port |
 |---|---|---|
@@ -12,8 +21,9 @@ Python monorepo for a multi-service "Galaxium Travels" booking demo. Six service
 | `booking_system_mcp/` | FastMCP (streamable-HTTP MCP server) | 8084 |
 | `galaxium-booking-web-app/` | Flask proxy → REST backend | 8083 |
 | `galaxium-booking-web-app-mcp/` | Flask proxy → MCP backend | 8085 |
-| `hr_database_backend/` | FastAPI + pandas (reads `data/employees.md`) | 8081 |
-| `hr_database_frontend_java/` | Quarkus 3 + React 18 HR portal (JAX-RS proxy → `hr_database_backend`) | 8090 (container) / 8088 (local) |
+| `hr_database_backend/` | FastAPI + pandas (reads `data/employees.md`, `data/jobs.md`) | 8081 |
+| `hr_database_backend_java/` | Quarkus 3 alternative HR API (same `/employees` + `/jobs` contract; standalone HR stack only) | 8089 |
+| `hr_database_frontend_java/` | Quarkus 3 + React 18 HR portal (JAX-RS proxy → Python or Java HR backend) | 8090 (container) / 8088 (local) |
 
 Full stack is orchestrated with `local-container/docker_compose.yaml` and Keycloak on port 8086.
 
@@ -43,6 +53,13 @@ bash testing/automation/run-mcp-integration-tests.sh
 bash testing/automation/run-all-tests.sh            # everything
 ```
 
+**WebUI matrix unit tests** (from repo root, no Docker required):
+```sh
+python3 -m unittest testing.webui_matrix.tests.unit.test_config -v
+```
+
+CI (`.github/workflows/tests.yml`) runs the three no-Docker suites (`rest-unit`, `contracts`, `webui-unit`). Run the smallest relevant check first.
+
 ## Architecture: Critical Non-Obvious Patterns
 
 ### Auth system
@@ -53,7 +70,9 @@ Both `booking_system_rest/auth.py` and `booking_system_mcp/auth.py` share the sa
 - **Conftest always disables auth for unit tests** via `monkeypatch.setenv("AUTH_ENABLED", "false")` — do not set auth env vars in test code.
 
 ### Error responses: HTTP 200 with structured error body
-`booking_system_rest/app.py` uses `create_error_response()` which returns **HTTP 200** (not 4xx) for business-logic errors (flight not found, seat unavailable, name mismatch). Route `response_model` is `Union[SuccessModel, ErrorResponse]`. Tests must check `response.json()["success"] == False`, not status codes.
+`booking_system_rest/app.py` uses `create_error_response()` which returns **HTTP 200** (not 4xx) for business-logic errors (flight not found, seat unavailable, name mismatch). Route `response_model` is `Union[SuccessModel, ErrorResponse]`. Tests must check `response.json()["success"] == False`, not status codes. **Never raise `HTTPException` for business errors.**
+
+The MCP server is different: tools raise exceptions, which FastMCP returns as a successful JSON-RPC result with `"isError": true` and the message text.
 
 ### MCP server entry point
 `booking_system_mcp/app.py` is a **legacy reference file**, not used. The active entry point is `booking_system_mcp/mcp_server.py`. Dockerfile runs `python mcp_server.py`.
@@ -64,13 +83,13 @@ Both `booking_system_rest/auth.py` and `booking_system_mcp/auth.py` share the sa
 ### Database
 - SQLite file `booking.db` in service directory (production); in-memory SQLite for tests
 - `seed()` is called at **every startup** and **wipes all data first** (`DELETE` before inserting)
-- `hr_database_backend` reads employees from a Markdown pipe-table (`data/employees.md`), not a SQL DB
+- `hr_database_backend` and `hr_database_backend_java` read employees and jobs from Markdown pipe-tables (`data/employees.md`, `data/jobs.md`), not a SQL DB
 
 ### Pydantic model naming
 In `booking_system_rest/app.py`, SQLAlchemy models are imported with an alias (`from models import Booking as BookingModel`) to avoid collision with Pydantic schema classes named identically (`Booking`, `Flight`, `User`). Follow this pattern when adding new models.
 
 ### Compose environment for OIDC
-In the default `docker_compose.yaml`, `OIDC_ISSUER` is the **container-internal** URL (`http://keycloak:8080/...`). The MCP server includes a hostname-replacement hack to expose the **host-reachable** URL (`localhost:8086`) in OAuth metadata endpoints — this is intentional.
+Keycloak listens on 8080 inside the network and is published on host port 8086 (`8086:8080`). In the default `docker_compose.yaml`, `OIDC_ISSUER` is the **container-internal** URL (`http://keycloak:8080/...`). The MCP server includes a hostname-replacement hack to expose the **host-reachable** URL (`localhost:8086`) in OAuth metadata endpoints — this is intentional.
 
 ## Code Style
 
@@ -78,7 +97,13 @@ In the default `docker_compose.yaml`, `OIDC_ISSUER` is the **container-internal*
 - Type hints on all function signatures; `|` union syntax (Python 3.10+), not `Optional`/`Union` where avoidable
 - `ConfigDict(from_attributes=True)` for Pydantic v2 ORM models (not `class Config: orm_mode = True`)
 - No linter configured (`run_tests.py lint` prints "not configured yet"); follow existing style
-- All routes include `operation_id`, `summary`, and `description` kwargs — keep these when adding endpoints
+- All FastAPI routes include `operation_id`, `summary`, and `description` kwargs — keep these when adding endpoints
+- MCP tools (`@mcp.tool()`) have no such kwargs: the function name, docstring, and typed parameters become the tool name, description, and input schema — write clear docstrings
+
+### OAuth flows
+- The OAuth **implicit flow is not allowed**. Every Keycloak client has `implicitFlowEnabled: false`, and `verify-keycloak-inspector-client.sh` asserts it.
+- Agents and services use `client_credentials` (client `web-app-proxy`); interactive browser login (MCP Inspector) uses `authorization_code`.
+- Do not introduce the password grant in new docs or code; some existing verify scripts still use it for the demo traveler.
 
 ## Deployment
 

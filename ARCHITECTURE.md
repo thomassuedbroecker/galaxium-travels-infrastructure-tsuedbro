@@ -31,7 +31,8 @@ current implementation.
 The default full Compose stack uses the Python HR backend. The standalone
 [HR portal stack](./hr_database_frontend_java/README.md) also supports
 `hr_database_backend_java/` on port 8089. Each backend uses its own Markdown
-data file; the variants do not synchronize employee data.
+data files (`employees.md`, `jobs.md`); the variants do not synchronize data.
+Both backends expose the same `/employees` and `/jobs` CRUD endpoints.
 
 ## Container View
 
@@ -58,11 +59,11 @@ flowchart LR
     subgraph hr["HR portal path"]
         hr_frontend["Quarkus + React<br/>:8090 Docker / :8088 local"]
         hr_api["FastAPI HR API<br/>:8081"]
-        hr_data[("Markdown file<br/>employees.md")]
+        hr_data[("Markdown files<br/>employees.md, jobs.md")]
         hr_frontend -->|"/api proxy (default Compose)"| hr_api --> hr_data
         hr_java["Alternative Quarkus HR API<br/>:8089"]
         hr_frontend -. "standalone Java variant" .-> hr_java
-        hr_java --> hr_java_data[("Java backend Markdown file<br/>employees.md")]
+        hr_java --> hr_java_data[("Java backend Markdown files<br/>employees.md, jobs.md")]
     end
 
     traveler --> rest_ui
@@ -88,8 +89,8 @@ decomposition or an event-driven synchronization design.
 | `booking_system_mcp/` | MCP tools for the equivalent booking operations | `mcp_server.py` is active; `app.py` is legacy reference only |
 | `galaxium-booking-web-app/` | Web journey backed by REST requests | Sends backend credentials according to mode |
 | `galaxium-booking-web-app-mcp/` | Same web journey backed by MCP tool calls | Uses direct Python MCP client; no autonomous agent; Streamable HTTP only |
-| `hr_database_backend/` | Separate employee-data demonstration API | Not on either booking request path; data backed by markdown file |
-| `hr_database_backend_java/` | Alternative Quarkus employee-data API | Markdown-backed; standalone HR stack, port 8089 |
+| `hr_database_backend/` | Separate employee and job data demonstration API | Not on either booking request path; data backed by markdown files |
+| `hr_database_backend_java/` | Alternative Quarkus employee and job data API | Markdown-backed; standalone HR stack, port 8089 |
 | `hr_database_frontend_java/` | Quarkus + React HR portal; JAX-RS proxy forwards CRUD calls to the Python or Java HR backend | Java 21 / Quarkus 3; React SPA built via frontend-maven-plugin; port 8090 (container) / 8088 (local) |
 | `local-container/` | Local runtime variants, Keycloak realm, verification scripts | Source of truth for Compose behavior |
 | `deployment/ibm-code-engine/` | IBM Code Engine deployment scripts | Deployment package; not live-cloud verified here |

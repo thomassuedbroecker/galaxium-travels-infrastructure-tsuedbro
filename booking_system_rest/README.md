@@ -73,6 +73,7 @@ Set these variables to require Basic Auth:
 - `AUTH_MODE=basic`
 - `BASIC_AUTH_USERNAME=demo-basic-user`
 - `BASIC_AUTH_PASSWORD=demo-basic-password`
+- `BASIC_AUTH_REALM` (optional; default `Galaxium Booking API`) — realm sent in the `WWW-Authenticate` challenge
 
 Compose injects the container-internal variants automatically.
 

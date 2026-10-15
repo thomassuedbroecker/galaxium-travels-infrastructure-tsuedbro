@@ -58,11 +58,32 @@ Set these variables to require Basic Auth:
 - `AUTH_MODE=basic`
 - `BASIC_AUTH_USERNAME=demo-basic-user`
 - `BASIC_AUTH_PASSWORD=demo-basic-password`
+- `BASIC_AUTH_REALM` (optional; default `Galaxium Booking MCP`) — realm sent in the `WWW-Authenticate` challenge
 
 Optional metadata overrides:
 
 - `OIDC_AUTHORIZATION_SERVER_URL=http://localhost:8086/realms/galaxium`
+- `OIDC_PUBLIC_ISSUER` — fallback for `OIDC_AUTHORIZATION_SERVER_URL` when that is unset
 - `MCP_PUBLIC_BASE_URL=http://localhost:8084`
+
+If neither authorization-server variable is set, the server derives it from `OIDC_ISSUER` and rewrites `keycloak:8080` to `localhost:8086`.
+
+MCP Inspector dynamic client registration (`/oauth/register`, OAuth mode only):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OIDC_INSPECTOR_CLIENT_ID` | `OIDC_CLIENT_ID`, else `web-app-proxy` | Client ID returned to the Inspector |
+| `OIDC_INSPECTOR_CLIENT_SECRET` | `OIDC_CLIENT_SECRET`, else `web-app-proxy-secret` | Client secret returned to the Inspector |
+| `OIDC_INSPECTOR_REDIRECT_URIS` | `http://localhost:6274/oauth/callback`, `.../callback/debug`, and the same on `127.0.0.1` | Comma-separated redirect URIs |
+
+CORS (applies to every auth mode):
+
+| Variable | Default |
+|---|---|
+| `MCP_CORS_ALLOW_ORIGIN` | `*` |
+| `MCP_CORS_ALLOW_HEADERS` | `Authorization, Content-Type, MCP-Protocol-Version, mcp-protocol-version` |
+| `MCP_CORS_ALLOW_METHODS` | `GET, POST, OPTIONS` |
+| `MCP_CORS_EXPOSE_HEADERS` | `WWW-Authenticate` |
 
 OAuth metadata endpoints are only exposed in `AUTH_MODE=oauth2`. In Basic Auth mode, keep the MCP transport on `Streamable HTTP` and send the `Authorization: Basic ...` header directly.
 

@@ -6,7 +6,7 @@ This file provides guidance to agents when working with code in this repository.
 
 - **`booking_system_mcp/app.py` is dead code**: The docstring says "Legacy FastAPI reference" and it is not used by the compose stack. The active MCP entry point is `mcp_server.py`.
 
-- **HR database is Markdown-backed**: `hr_database_backend/app.py` reads employee data from `data/employees.md`, a pipe-delimited Markdown table — not a SQL database.
+- **HR database is Markdown-backed**: `hr_database_backend/app.py` reads employee and job data from `data/employees.md` and `data/jobs.md`, pipe-delimited Markdown tables — not a SQL database. `hr_database_backend_java/` implements the same contract in Quarkus.
 
 - **Two separate web frontends**: `galaxium-booking-web-app/` proxies to the REST API; `galaxium-booking-web-app-mcp/` proxies to the MCP server. They are structurally identical but use different backend protocols.
 
@@ -16,4 +16,4 @@ This file provides guidance to agents when working with code in this repository.
 
 - **Keycloak port mapping**: Keycloak container runs on internal port 8080 but is exposed as 8086 on the host (to avoid conflict with other local services). `localhost:8086` is the host-accessible Keycloak URL.
 
-- **`/msp` is an alias**: The MCP server accepts `/msp` in addition to `/mcp` as a 307-redirect path for Watson Orchestrate compatibility; both paths are intentional and documented.
+- **`/msp` is an alias**: The MCP server accepts `/msp` in addition to `/mcp` as a 307-redirect path for watsonx Orchestrate compatibility; both paths are intentional and documented.

@@ -4,7 +4,8 @@ A **Quarkus 3 + React 18** frontend for the Galaxium Travels HR Database service
 
 The application:
 - Serves a **React SPA** (built with Vite) as static files
-- Exposes a **JAX-RS proxy** at `/api/employees/**` that forwards all CRUD calls to an HR backend
+- Exposes **JAX-RS proxies** at `/api/employees/**` and `/api/jobs/**` that forward all CRUD calls to an HR backend
+- Manages two domains: **Employees** and **Jobs** (list, detail, create/edit, delete pages)
 - Runs on **port 8090** (container) / **port 8088** (local)
 - Is documented at `/q/swagger-ui` (Swagger UI) and `/q/health` (SmallRye Health)
 
@@ -25,7 +26,12 @@ switching backends never requires a rebuild.
 Browser → :8090 (Quarkus container)
   ├── GET /           → React SPA (static)
   ├── GET /employees  → React SPA (client-side routing)
-  └── /api/employees  → JAX-RS proxy → backend (see below)
+  ├── GET /jobs       → React SPA (client-side routing)
+  ├── /api/employees  → JAX-RS proxy → backend /employees (see below)
+  └── /api/jobs       → JAX-RS proxy → backend /jobs
+
+Both backend variants implement /employees and /jobs.
+
 
 Variant A — Python backend (default)
   backend = hr_database container  :8081 (FastAPI, internal network only)
@@ -225,11 +231,14 @@ hr_database_frontend_java/
     ├── java/com/galaxium/hr/
     │   ├── Main.java                     # Quarkus entry point
     │   ├── client/
-    │   │   └── HrApiClient.java          # MicroProfile REST Client
+    │   │   ├── HrApiClient.java          # MicroProfile REST Client (/employees)
+    │   │   └── JobApiClient.java         # MicroProfile REST Client (/jobs)
     │   ├── model/
-    │   │   └── Employee.java             # DTO
+    │   │   ├── Employee.java             # DTO
+    │   │   └── Job.java                  # DTO
     │   └── resource/
-    │       └── EmployeeResource.java     # JAX-RS proxy resource
+    │       ├── EmployeeResource.java     # JAX-RS proxy resource (/api/employees)
+    │       └── JobResource.java          # JAX-RS proxy resource (/api/jobs)
     ├── resources/
     │   ├── application.properties        # Quarkus configuration
     │   └── META-INF/resources/           # Generated React static files
@@ -241,5 +250,6 @@ hr_database_frontend_java/
             ├── App.jsx
             ├── main.jsx
             ├── components/
-            └── pages/
+            ├── pages/                    # Employee* and Job* list/detail/form pages
+            └── services/                 # hrApiService.js, jobsApiService.js
 ```

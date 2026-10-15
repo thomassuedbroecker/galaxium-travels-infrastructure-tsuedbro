@@ -29,11 +29,12 @@ WORKDIR /app
 # Quarkus fast-jar layout: quarkus-run.jar + lib/ + app/ + quarkus/
 COPY --from=builder /build/target/quarkus-app/ ./
 
-# Seed data — used as fallback when no host volume is mounted.
+# Seed data (employees + jobs) — used as fallback when no host volume is mounted.
 # When docker-compose mounts ../hr_database_backend_java/data:/app/data,
 # the volume takes precedence and this baked-in file is not used.
 RUN mkdir -p data
 COPY data/employees.md data/employees.md
+COPY data/jobs.md data/jobs.md
 
 EXPOSE 8089
 

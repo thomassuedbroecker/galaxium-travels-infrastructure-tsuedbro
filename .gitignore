@@ -160,4 +160,6 @@ hr_database_backend_java/target/
 # Runtime artefacts
 *.log
 .claude/settings.json
+.claude/settings.local.json
 output/galaxium-travels-repository-overview.pptx
+

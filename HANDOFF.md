@@ -1,9 +1,12 @@
 # HANDOFF.md — Galaxium Travels Infrastructure
 
-This file is the shared context document for AI-assisted development across
-multiple agentic IDEs (Bob / Cursor, Claude Code, Codex, and similar tools).
-Keep it up to date whenever you complete a significant task so the next
-agent or session starts from accurate state.
+This file is the shared **state** document for AI-assisted development across
+agentic IDEs (IBM Bob, Claude Code, Codex, and similar tools). It records
+where work stands and what changed in each session.
+
+Rules, patterns, and commands are **not** repeated here — read
+[`AGENTS.md`](./AGENTS.md) first. It is the single source of truth for the
+service map, non-obvious patterns, test commands, OAuth rules, and code style.
 
 ---
 
@@ -14,23 +17,11 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 
 ---
 
-## Repo map (read this before touching anything)
+## Start of session
 
-| Directory | Stack | Port | Entry point |
-|---|---|---|---|
-| `booking_system_rest/` | FastAPI + SQLAlchemy + SQLite | 8082 | `app.py` |
-| `booking_system_mcp/` | FastMCP Streamable HTTP | 8084 | `mcp_server.py` ← active |
-| `galaxium-booking-web-app/` | Flask proxy → REST | 8083 | `app/app.py` |
-| `galaxium-booking-web-app-mcp/` | Flask proxy → MCP tools | 8085 | `app/app.py` |
-| `hr_database_backend/` | FastAPI + pandas + Markdown | 8081 | `app.py` |
-| `hr_database_frontend_java/` | Quarkus 3 + React 18 (JAX-RS proxy → hr_database_backend) | 8090 (container) / 8088 (local) | `start-hr-app.sh` / `mvn quarkus:dev` |
-| `hr_database_backend_java/` | Alternative Quarkus HR API + Markdown | 8089 | `mvn quarkus:dev` |
-| `local-container/` | Docker Compose variants + scripts | — | `docker_compose.yaml` |
-| `deployment/ibm-code-engine/` | Bash + ibmcloud CLI deploy | — | `deploy-stack.sh` |
-| `testing/` | Pytest, contract tests, smoke scripts | — | `README.md` |
-
-> `booking_system_mcp/app.py` is a **legacy reference file** — the Dockerfile
-> runs `mcp_server.py`. Never edit `app.py` thinking it will affect runtime.
+1. Read [`AGENTS.md`](./AGENTS.md).
+2. Read **Current branch and state** below and the latest **Session log** row.
+3. Run the smallest relevant test from `AGENTS.md` before changing code.
 
 ---
 
@@ -40,123 +31,22 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 |---|---|
 | Branch | `main` |
 | Base branch | `main` |
-| Last known clean commit | `0c9f27c` — fix(testing,docs): resolve empty array unbound errors and correct Watson Terminology |
-| Uncommitted changes | None — working tree is clean |
+| Last commit | `bf68ee7` — update handoff |
+| Uncommitted changes | 2026-10-15 Claude Code session (see log): Java HR backend `/jobs` endpoint, docs sync, AI engineer guide rewrite |
 
 Update this section at the end of every session.
 
 ---
 
-## Non-obvious patterns every agent must know
-
-### 1 — Business errors return HTTP 200
-`booking_system_rest/app.py` uses `create_error_response()` which returns
-`JSONResponse(status_code=200, ...)` for business-logic errors (flight not
-found, seat unavailable, name mismatch). **Never raise `HTTPException` for
-business errors.** Tests check `response.json()["success"] == False`, not
-status codes.
-
-### 2 — Auth modes are shared across both services
-Both `booking_system_rest/auth.py` and `booking_system_mcp/auth.py` read the
-same env vars:
-
-| `AUTH_MODE` | Behaviour |
-|---|---|
-| `none` (default) | No auth — dev only |
-| `basic` | HTTP Basic Auth; no Keycloak needed |
-| `oauth2` | Bearer token via Keycloak JWT |
-
-`AUTH_ENABLED=true` is a legacy alias for `AUTH_MODE=oauth2`.
-Unit-test `conftest.py` always monkeypatches `AUTH_ENABLED=false` — do not
-set auth env vars in individual test code.
-
-### 3 — Database is wiped on every startup
-`seed()` runs at startup in both booking services and issues `DELETE` before
-inserting seed rows. Do not rely on DB state persisting between restarts.
-Tests use in-memory SQLite.
-
-### 4 — Pydantic model alias pattern
-`booking_system_rest/app.py` imports SQLAlchemy models as
-`from models import Booking as BookingModel` to avoid collision with
-identically-named Pydantic schema classes. Follow this in all new code.
-
-### 5 — MCP `/msp` alias is intentional
-`mcp_server.py` registers `/msp` as a 307 redirect to `/mcp` for Watson
-Discovery compatibility. Do not remove it.
-
-### 6 — Keycloak dual-URL pattern
-`OIDC_ISSUER` inside containers uses `http://keycloak:8080/...`.
-The MCP server hostname-replacement hack rewrites this to `localhost:8086` in
-OAuth metadata responses for host-side clients. Both URLs point to the same
-instance; the mapping is `8086:8080`.
-
-### 7 — Route metadata is required
-Every FastAPI and MCP route must include `operation_id`, `summary`, and
-`description` kwargs. These are consumed by Watson Orchestrate and MCP
-Inspector.
-
-### 8 — Pydantic v2 ORM config
-Use `ConfigDict(from_attributes=True)`. Do **not** use the v1 pattern
-`class Config: orm_mode = True` in new code (the MCP server still has it;
-do not copy it).
-
----
-
-## Test commands (run these to validate work)
-
-```sh
-# Fast — REST unit tests; run from booking_system_rest/
-python3 -m pytest tests -q
-
-# Contract tests — no Docker required; run from repo root
-python3 -m unittest testing.test_local_container_contracts \
-                    testing.test_code_engine_deployment_contracts -v
-
-# WebUI matrix unit tests — no Docker required; run from repo root
-python3 -m unittest testing.webui_matrix.tests.unit.test_config -v
-
-# Full automated suite — requires Docker
-bash testing/automation/run-all-tests.sh
-
-# Single test
-python3 -m pytest tests/test_booking_system.py::TestClassName::test_method_name -v
-```
-
-> All three no-Docker suites above are also run automatically in CI via
-> `.github/workflows/tests.yml` (three parallel jobs: `rest-unit`,
-> `contracts`, `webui-unit`). Always run the smallest relevant check first.
-> See `testing/README.md` for the full scope.
-
----
-
-## Auth mode quickstart matrix
-
-| Option | Compose file(s) | Env file | Identity |
-|---|---|---|---|
-| 1 — Local OAuth | `local-container/docker_compose.yaml` | none | Keycloak traveler login |
-| 2 — VM/LAN OAuth | `docker_compose.yaml` + `docker_compose.vm-oauth.yaml` | `local-container/vm-oauth.env` | Keycloak over LAN |
-| 3 — Basic Auth | `local-container/docker_compose.basic-auth.yaml` | `local-container/basic-auth.env` | Shared Basic Auth |
-| 4 — Mixed | `docker_compose.yaml` + `docker_compose.mcp-ui-keycloak-basic.yaml` | `local-container/basic-auth.env` | Keycloak browser + MCP Basic Auth |
-
-Demo credentials (local only — not for production):
-
-| Account | Username | Password |
-|---|---|---|
-| Keycloak admin | `admin` | `admin` |
-| Traveler | `demo-user` | `demo-user-password` |
-| Basic Auth | `demo-basic-user` | `demo-basic-password` |
-
----
-
-## Key reference documents
+## Where to look
 
 | Need | File |
 |---|---|
+| Rules, patterns, test commands (canonical) | [`AGENTS.md`](./AGENTS.md) |
 | Decision-tree navigation hub | [`NAVIGATOR.md`](./NAVIGATOR.md) |
-| Step-by-step run commands | [`QUICKSTART.md`](./QUICKSTART.md) |
+| Run options, auth-mode matrix, demo credentials | [`QUICKSTART.md`](./QUICKSTART.md) |
 | Architecture decisions and component map | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
-| Agent and LLM coding rules | [`AGENTS.md`](./AGENTS.md) |
-| MCP endpoints, tools, auth for AI engineers | [`docs/AI_ENGINEER_GUIDE.md`](./docs/AI_ENGINEER_GUIDE.md) |
+| MCP endpoint, tools, session handshake, auth | [`docs/AI_ENGINEER_GUIDE.md`](./docs/AI_ENGINEER_GUIDE.md) |
 | Compose variants and verification scripts | [`local-container/README.md`](./local-container/README.md) |
 | Test scope and evidence | [`testing/README.md`](./testing/README.md) |
 | Machine-readable repo summary for LLM tools | [`LLMS.txt`](./LLMS.txt) |
@@ -165,39 +55,30 @@ Demo credentials (local only — not for production):
 
 ## Agentic IDE — per-tool notes
 
-### Bob (Cursor)
-- Project rules are loaded from `AGENTS.md` automatically.
-- `LLMS.txt` is registered in `NAVIGATOR.md` as the machine-readable summary.
+### IBM Bob
+- Project rules are loaded from `AGENTS.md` and `.bob/rules-*/AGENTS.md`.
 - Use `apply_diff` / `search_and_replace` for surgical edits; avoid full
   rewrites of large files.
 
 ### Claude Code
-- Read `AGENTS.md` at session start — it encodes the non-obvious patterns.
+- `AGENTS.md` is loaded at session start.
 - Run `python3 -m pytest tests -q` from `booking_system_rest/` before and
   after any change to the REST service.
-- Respect the HTTP-200 error contract; do not introduce `HTTPException` for
-  business errors.
 
 ### Codex (or any OpenAI-based agent)
-- This file (`HANDOFF.md`) plus `AGENTS.md` are the minimum required context.
-- Provide both files in the system prompt or `context_files` when starting a
-  new session.
-- Follow the Pydantic v2 `ConfigDict(from_attributes=True)` pattern for any
-  ORM model you add.
+- Provide `AGENTS.md` plus this file as context when starting a new session.
 
 ---
 
 ## How to update this file
 
-At the end of a work session update the two fields below, then commit:
+At the end of a work session:
 
-```
-## Session log
-```
-
-| Date | Agent / IDE | Branch | What changed | Next open task |
-|---|---|---|---|---|
-| 2026-06-20 | Bob (Cursor) | main | Created HANDOFF.md | — |
+1. Update **Current branch and state**.
+2. Append one row to **Session log** (newest last): date, agent/IDE, branch,
+   what changed, next open task.
+3. If you changed a rule, pattern, or command, update `AGENTS.md` (and mirror
+   it in `LLMS.txt`) — not this file.
 
 ---
 
@@ -205,10 +86,11 @@ At the end of a work session update the two fields below, then commit:
 
 | Date | Agent / IDE | Branch | What changed | Next open task |
 |---|---|---|---|---|
-| 2026-06-20 | Bob (Cursor) | main | Initial HANDOFF.md created | — |
-| 2026-06-25 | Bob (Cursor) | main | Added DCO git hook (`.githooks/commit-msg`), `setup-hooks.sh`, `.github/workflows/dco.yml` (pinned to `dcoapp/app@113757536` v1.0.0). Fixed: mutable tag → SHA pin, `chmod +x` now persisted via `git update-index`, dead `msg` variable removed, double blank-line before sign-off trailer fixed. Added `README.md` badges (Tests, DCO, License). Added `.github/workflows/tests.yml` with three parallel no-Docker jobs: `rest-unit` (5 pytest files), `contracts` (local-container + Code Engine), `webui-unit` (matrix config). | Commit and push open changes (`README.md`, `tests.yml`) |
-| 2026-06-27 | Bob (Cursor) | frontend_for_the_hr_database | Documentation sync for `hr_database_frontend` integration: added service to all navigation docs (`README.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `ARCHITECTURE.md`, `LLMS.txt`, `HANDOFF.md`, `AGENTS.md`); updated Mermaid diagrams; added Java/Maven/Node prerequisite note; updated base-image table; added `hr_database_frontend/*.log` to `.gitignore`. 31/31 contract tests passed. | Review and remove stale `docs/reference/` files |
-| 2026-07-10 | Bob (Cursor) | main | Renamed `hr_database_frontend/` → `hr_database_frontend_java/` (git mv). Container host port changed 8088→8090 to avoid overlap when running locally and in Docker simultaneously. Updated all references across `AGENTS.md`, `ARCHITECTURE.md`, `HANDOFF.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `README.md`, `LLMS.txt`, `local-container/docker_compose.yaml`, `.gitignore`, `run-hr-app.sh`, and both `docker-compose.yaml` files. | — |
+| 2026-06-20 | IBM Bob | main | Initial HANDOFF.md created | — |
+| 2026-06-25 | IBM Bob | main | Added DCO git hook (`.githooks/commit-msg`), `setup-hooks.sh`, `.github/workflows/dco.yml` (pinned to `dcoapp/app@113757536` v1.0.0). Fixed: mutable tag → SHA pin, `chmod +x` now persisted via `git update-index`, dead `msg` variable removed, double blank-line before sign-off trailer fixed. Added `README.md` badges (Tests, DCO, License). Added `.github/workflows/tests.yml` with three parallel no-Docker jobs: `rest-unit` (5 pytest files), `contracts` (local-container + Code Engine), `webui-unit` (matrix config). | Commit and push open changes (`README.md`, `tests.yml`) |
+| 2026-06-27 | IBM Bob | frontend_for_the_hr_database | Documentation sync for `hr_database_frontend` integration: added service to all navigation docs (`README.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `ARCHITECTURE.md`, `LLMS.txt`, `HANDOFF.md`, `AGENTS.md`); updated Mermaid diagrams; added Java/Maven/Node prerequisite note; updated base-image table; added `hr_database_frontend/*.log` to `.gitignore`. 31/31 contract tests passed. | Review and remove stale `docs/reference/` files |
+| 2026-07-10 | IBM Bob | main | Renamed `hr_database_frontend/` → `hr_database_frontend_java/` (git mv). Container host port changed 8088→8090 to avoid overlap when running locally and in Docker simultaneously. Updated all references across `AGENTS.md`, `ARCHITECTURE.md`, `HANDOFF.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `README.md`, `LLMS.txt`, `local-container/docker_compose.yaml`, `.gitignore`, `run-hr-app.sh`, and both `docker-compose.yaml` files. | — |
 | 2026-09-07 | Manual commit | main | Added PowerPoint overview (`galaxium-travels-repository-overview-with-diagrams.pptx`). Updated `.gitignore`. | — |
 | 2026-09-07/08 | Manual commits | main | Added `hr_database_backend_java/` (alternative Quarkus HR API). Added Jobs domain to `hr_database_frontend_java/` (JAX-RS `JobResource`, `JobApiClient`, React pages `JobListPage`, `JobDetailPage`, `JobFormPage`, `jobsApiService`). Configured HR frontend backend URL at runtime (env var) instead of build time. Updated `hr_database_backend/` with `Dockerfile`, `README.md`, `app.py`, and data files (`employees.md`, `jobs.md`). `.gitignore` updated to exclude compiled Java/Maven artifacts. Contract tests realigned to current HR frontend. | — |
-| 2026-10-15 | Bob (Cursor) | main | Fixed Bash "unbound variable" errors on macOS (`set -u`) in three verify scripts by replacing empty-array expansion with robust `${arr[@]+"${arr[@]}"}` syntax. Updated `testing/test_local_container_contracts.py` to match. Corrected `/msp` endpoint alias description from "Watson Discovery" → "watsonx Orchestrate" in `docs/AI_ENGINEER_GUIDE.md`, `AGENTS.md`, `LLMS.txt`. Removed stale `docs/reference/suggestions-for-better-developer-navigation.md`. Minor doc/Bob config cleanup (`.bob/mcp.json`, `.bob/rules-ask/AGENTS.md`, `.bob/settings.json`). | — |
+| 2026-10-15 | IBM Bob | main | Fixed Bash "unbound variable" errors on macOS (`set -u`) in three verify scripts by replacing empty-array expansion with robust `${arr[@]+"${arr[@]}"}` syntax. Updated `testing/test_local_container_contracts.py` to match. Corrected `/msp` endpoint alias description from "Watson Discovery" → "watsonx Orchestrate" in `docs/AI_ENGINEER_GUIDE.md`, `AGENTS.md`, `LLMS.txt`. Removed stale `docs/reference/suggestions-for-better-developer-navigation.md`. Minor doc/Bob config cleanup (`.bob/mcp.json`, `.bob/rules-ask/AGENTS.md`, `.bob/settings.json`). | — |
+| 2026-10-15 | Claude Code | main | Added `/jobs` CRUD to `hr_database_backend_java/` (`Job`, `JobRepository`, `JobResource`, `JobResourceTest`, `data/jobs.md`; 12/12 Maven tests pass) so the HR portal's Jobs pages work with either backend. Docs sync: Jobs + Java backend across README/ARCHITECTURE/NAVIGATOR/LLMS/AGENTS, documented 9 missing MCP/REST env vars, fixed 11 broken links in `docs/`, refreshed `testing/README.md` status. Rewrote `docs/AI_ENGINEER_GUIDE.md`: correct MCP session handshake (verified against a local server), `client_credentials` token instead of password grant, tool argument/return table, booking flow, error shape. Made `AGENTS.md` canonical for rules (added OAuth rule: implicit flow not allowed); slimmed this file to state + log. | Commit the session's changes; add a Maven job for `hr_database_backend_java` to CI |

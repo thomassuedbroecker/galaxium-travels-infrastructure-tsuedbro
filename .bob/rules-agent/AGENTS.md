@@ -16,6 +16,6 @@ This file provides guidance to agents when working with code in this repository.
 
 - **MCP server entry point**: Always edit `booking_system_mcp/mcp_server.py`, not `booking_system_mcp/app.py` (legacy reference only).
 
-- **Route metadata required**: Every FastAPI/MCP route must include `operation_id`, `summary`, and `description` kwargs. This is consumed by Watson Orchestrate and MCP Inspector.
+- **Route metadata required**: Every FastAPI route must include `operation_id`, `summary`, and `description` kwargs. MCP tools have no such kwargs — their docstring and typed parameters become the description and input schema consumed by watsonx Orchestrate and MCP Inspector.
 
 - **Single-test run**: `python3 -m pytest tests/test_booking_system.py::TestClassName::test_method_name -v` from `booking_system_rest/`.

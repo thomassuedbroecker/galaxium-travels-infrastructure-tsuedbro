@@ -1,6 +1,7 @@
 # Galaxium Travels Infrastructure — Machine-Readable Summary
 # Format follows llmstxt.org conventions.
 # Use this file to orient an LLM tool or AI agent about this codebase.
+# Canonical rules and commands live in AGENTS.md; this file mirrors them.
 
 ## Purpose
 
@@ -19,7 +20,7 @@ AI-readiness trade-offs on the same domain.
 | galaxium-booking-web-app-mcp | 8085 | galaxium-booking-web-app-mcp/app/app.py | Flask → MCP tools |
 | hr_database_backend       | 8081 | hr_database_backend/app.py   | FastAPI + pandas + Markdown file |
 | hr_database_frontend_java | 8090 (container) / 8088 (local) | hr_database_frontend_java/start-hr-app.sh | Quarkus 3 + React 18; JAX-RS proxy → hr_database_backend |
-| hr_database_backend_java | 8089 | mvn quarkus:dev (service directory) | Alternative Quarkus HR API + Markdown file; standalone HR stack |
+| hr_database_backend_java | 8089 | mvn quarkus:dev (service directory) | Alternative Quarkus HR API (employees + jobs) + Markdown files; standalone HR stack |
 | keycloak          | 8086 | docker image         | OAuth2 / OIDC identity provider |
 
 ## MCP Tools (booking_system_mcp)
@@ -86,6 +87,14 @@ AUTH_ENABLED=true is a legacy alias for AUTH_MODE=oauth2.
 
 - MCP /msp alias: mcp_server.py registers /msp as 307 redirect to /mcp
   for watsonx Orchestrate compatibility. Both paths are intentional.
+
+- MCP Streamable HTTP is session-based: send `initialize` first, then the
+  returned Mcp-Session-Id header on every call, with
+  Accept: application/json, text/event-stream. Tool business errors come back
+  as a successful result with "isError": true.
+
+- OAuth: implicit flow is not allowed. Agents use client_credentials
+  (client web-app-proxy); browser login (MCP Inspector) uses authorization_code.
 
 ## Test Commands
 

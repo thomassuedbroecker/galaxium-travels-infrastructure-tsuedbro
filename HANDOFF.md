@@ -38,10 +38,10 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 
 | Field | Value |
 |---|---|
-| Branch | `frontend_for_the_hr_database` |
+| Branch | `main` |
 | Base branch | `main` |
-| Last known clean commit | see `git log --oneline -1` |
-| Uncommitted changes | See `git status` — folder renamed to `hr_database_frontend_java`, container port changed to 8090 |
+| Last known clean commit | `0c9f27c` — fix(testing,docs): resolve empty array unbound errors and correct Watson Terminology |
+| Uncommitted changes | None — working tree is clean |
 
 Update this section at the end of every session.
 
@@ -209,3 +209,6 @@ At the end of a work session update the two fields below, then commit:
 | 2026-06-25 | Bob (Cursor) | main | Added DCO git hook (`.githooks/commit-msg`), `setup-hooks.sh`, `.github/workflows/dco.yml` (pinned to `dcoapp/app@113757536` v1.0.0). Fixed: mutable tag → SHA pin, `chmod +x` now persisted via `git update-index`, dead `msg` variable removed, double blank-line before sign-off trailer fixed. Added `README.md` badges (Tests, DCO, License). Added `.github/workflows/tests.yml` with three parallel no-Docker jobs: `rest-unit` (5 pytest files), `contracts` (local-container + Code Engine), `webui-unit` (matrix config). | Commit and push open changes (`README.md`, `tests.yml`) |
 | 2026-06-27 | Bob (Cursor) | frontend_for_the_hr_database | Documentation sync for `hr_database_frontend` integration: added service to all navigation docs (`README.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `ARCHITECTURE.md`, `LLMS.txt`, `HANDOFF.md`, `AGENTS.md`); updated Mermaid diagrams; added Java/Maven/Node prerequisite note; updated base-image table; added `hr_database_frontend/*.log` to `.gitignore`. 31/31 contract tests passed. | Review and remove stale `docs/reference/` files |
 | 2026-07-10 | Bob (Cursor) | main | Renamed `hr_database_frontend/` → `hr_database_frontend_java/` (git mv). Container host port changed 8088→8090 to avoid overlap when running locally and in Docker simultaneously. Updated all references across `AGENTS.md`, `ARCHITECTURE.md`, `HANDOFF.md`, `NAVIGATOR.md`, `QUICKSTART.md`, `README.md`, `LLMS.txt`, `local-container/docker_compose.yaml`, `.gitignore`, `run-hr-app.sh`, and both `docker-compose.yaml` files. | — |
+| 2026-09-07 | Manual commit | main | Added PowerPoint overview (`galaxium-travels-repository-overview-with-diagrams.pptx`). Updated `.gitignore`. | — |
+| 2026-09-07/08 | Manual commits | main | Added `hr_database_backend_java/` (alternative Quarkus HR API). Added Jobs domain to `hr_database_frontend_java/` (JAX-RS `JobResource`, `JobApiClient`, React pages `JobListPage`, `JobDetailPage`, `JobFormPage`, `jobsApiService`). Configured HR frontend backend URL at runtime (env var) instead of build time. Updated `hr_database_backend/` with `Dockerfile`, `README.md`, `app.py`, and data files (`employees.md`, `jobs.md`). `.gitignore` updated to exclude compiled Java/Maven artifacts. Contract tests realigned to current HR frontend. | — |
+| 2026-10-15 | Bob (Cursor) | main | Fixed Bash "unbound variable" errors on macOS (`set -u`) in three verify scripts by replacing empty-array expansion with robust `${arr[@]+"${arr[@]}"}` syntax. Updated `testing/test_local_container_contracts.py` to match. Corrected `/msp` endpoint alias description from "Watson Discovery" → "watsonx Orchestrate" in `docs/AI_ENGINEER_GUIDE.md`, `AGENTS.md`, `LLMS.txt`. Removed stale `docs/reference/suggestions-for-better-developer-navigation.md`. Minor doc/Bob config cleanup (`.bob/mcp.json`, `.bob/rules-ask/AGENTS.md`, `.bob/settings.json`). | — |

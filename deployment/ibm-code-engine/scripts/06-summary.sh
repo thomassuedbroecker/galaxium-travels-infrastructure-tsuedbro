@@ -182,6 +182,10 @@ ensure_ibmcloud_session() {
   require_command ibmcloud
   require_code_engine_plugin
 
+  if run_maybe_quiet "ibmcloud target" ibmcloud target; then
+    return
+  fi
+
   if [[ -n "${IBM_CLOUD_API_KEY_RESOLVED}" ]]; then
     require_var IBM_CLOUD_REGION
     require_var IBM_CLOUD_RESOURCE_GROUP
@@ -194,11 +198,9 @@ ensure_ibmcloud_session() {
     return
   fi
 
-  if ! run_maybe_quiet "ibmcloud target" ibmcloud target; then
-    echo "ERROR: IBM Cloud login required."
-    echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
-    exit 1
-  fi
+  echo "ERROR: IBM Cloud login required."
+  echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
+  exit 1
 }
 
 select_project() {

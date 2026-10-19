@@ -107,7 +107,10 @@ Keycloak listens on 8080 inside the network and is published on host port 8086 (
 
 ## Deployment
 
-- IBM Code Engine via `deployment/ibm-code-engine/deploy-stack.sh` (bash + ibmcloud CLI, not Terraform)
-- Default Code Engine auth mode is `basic` (see `deploy.env.template`)
+- IBM Code Engine via bash scripts and `ibmcloud` CLI (not Terraform):
+  - Path A (Basic Auth default): `deployment/ibm-code-engine/deploy-stack.sh` (`deploy.env`)
+  - Path B (OAuth2 with in-project Keycloak): `deployment/ibm-code-engine/deploy-stack-oauth2.sh` (`deploy.env.oauth2`)
+  - Teardown: `teardown-stack.sh` and `teardown-stack-oauth2.sh` (cleans apps/configmaps/secrets without deleting the CE project)
+  - Root `.ceignore` excludes virtualenvs, `.git`, target folders, and assets to optimize Code Engine source packaging.
 - Multiple compose overlays exist for different auth combinations: `docker_compose.basic-auth.yaml`, `docker_compose.basic-auth-vm.yaml`, `docker_compose.mcp-ui-keycloak-basic.yaml`, `docker_compose.vm-oauth.yaml`
 - MCP-server-only configurations, one per auth mode, live in `local-container/booking_system_mcp_no_auth/`, `booking_system_mcp_basic_auth/` and `booking_system_mcp_oauth2_no_implicit_flow/`. Each has `start.sh`, `verify.sh` (helpers in `local-container/booking_system_mcp_lib.sh`) and `mcp.env.template`; the overview is `docs/mcp_access_options.md`. The external repo `galaxium-travels-watsonx-orchestrate-mcp-bob-guide` consumes them. In the OAuth folder, Keycloak runs with `--hostname=KEYCLOAK_PUBLIC_BASE_URL`, so the token issuer must match the URL clients use (the LAN IP for watsonx Orchestrate Developer Edition). Realm, clients, and adjustment recipes are documented in `local-container/keycloak/README.md`; the realm import folder can be overridden with `KEYCLOAK_REALM_DIR`. `booking_system_mcp` is the only service provided as MCP.

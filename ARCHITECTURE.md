@@ -154,7 +154,8 @@ for the runtime configuration.
 | 2 | VM / LAN OAuth | `docker_compose.yaml` + `docker_compose.vm-oauth.yaml` | `local-container/vm-oauth.env` | Advertises host-reachable OAuth and MCP URLs to LAN clients |
 | 3 | Local Basic Auth | `local-container/docker_compose.basic-auth.yaml` | `local-container/basic-auth.env` | Both paths without Keycloak; VM/LAN variant uses `docker_compose.basic-auth-vm.yaml` |
 | 4 | Mixed MCP auth | `docker_compose.yaml` + `docker_compose.mcp-ui-keycloak-basic.yaml` | `local-container/basic-auth.env` | MCP path only; Keycloak browser login + Basic Auth to MCP backend |
-| — | IBM Code Engine | `deployment/ibm-code-engine/deploy-stack.sh` | `deployment/ibm-code-engine/deploy.env` | Scripted cloud deployment; Basic Auth mode by default |
+| — | IBM Code Engine (Path A) | `deployment/ibm-code-engine/deploy-stack.sh` | `deployment/ibm-code-engine/deploy.env` | Scripted cloud deployment; Basic Auth mode |
+| — | IBM Code Engine (Path B) | `deployment/ibm-code-engine/deploy-stack-oauth2.sh` | `deployment/ibm-code-engine/deploy.env.oauth2` | Scripted cloud deployment; OAuth2 mode with in-project Keycloak |
 
 For step-by-step commands for each option see [QUICKSTART.md](./QUICKSTART.md).
 For the full compose file reference and verification scripts see [local-container/README.md](./local-container/README.md).

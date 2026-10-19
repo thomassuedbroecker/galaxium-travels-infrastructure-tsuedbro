@@ -1,0 +1,51 @@
+# Version control and tooling
+.git/
+.github/
+.bob/
+.githooks/
+.vscode/
+.idea/
+.claude/
+
+# Virtual environments
+**/.venv/
+**/venv/
+**/ENV/
+**/.tmp-fastmcp-venv/
+
+# Python bytecode and caches
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.coverage
+**/.coverage.*
+**/htmlcov/
+
+# Java and Node build artifacts
+**/target/
+**/node_modules/
+**/dist/
+**/.gradle/
+
+# Media and documentation binaries
+images/
+output/
+test-results/
+architecture/
+docs/
+
+# Local containers and deployments
+local-container/
+deployment/
+testing/
+
+# SQLite databases and logs
+*.db
+*.sqlite3
+*.log
+
+# OS metadata
+.DS_Store
+**/.DS_Store
+Thumbs.db

@@ -51,6 +51,15 @@ AUTH_ENABLED=true is a legacy alias for AUTH_MODE=oauth2.
 | 3      | local-container/docker_compose.basic-auth.yaml        | local-container/basic-auth.env | Basic Auth      |
 | 4      | docker_compose.yaml + docker_compose.mcp-ui-keycloak-basic.yaml | basic-auth.env | Mixed: Keycloak UI + MCP Basic Auth |
 
+## Deployment Options (IBM Code Engine)
+
+| Path | Entrypoint | Env file | Description |
+|------|------------|----------|-------------|
+| A (Basic Auth) | deployment/ibm-code-engine/deploy-stack.sh | deploy.env | Shared Basic Auth; skips Keycloak |
+| B (OAuth2)     | deployment/ibm-code-engine/deploy-stack-oauth2.sh | deploy.env.oauth2 | OAuth2 Bearer validation; deploys in-project Keycloak |
+
+Source packaging uses `.ceignore` to exclude virtualenvs, VCS, build artifacts, and binaries.
+
 MCP server only (one folder per auth mode, each with start.sh, verify.sh, mcp.env.template):
 
 | folder                                          | AUTH_MODE | auth                                                         |

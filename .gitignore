@@ -165,3 +165,4 @@ hr_database_backend_java/target/
 .claude/settings.local.json
 output/galaxium-travels-repository-overview.pptx
 
+deployment/ibm-code-engine/deploy.env.oauth2

@@ -270,6 +270,10 @@ ensure_ibmcloud_session() {
   require_command ibmcloud
   require_code_engine_plugin
 
+  if run_maybe_quiet "ibmcloud target" ibmcloud target; then
+    return
+  fi
+
   if [[ -n "${IBM_CLOUD_API_KEY_RESOLVED}" ]]; then
     require_var IBM_CLOUD_REGION
     require_var IBM_CLOUD_RESOURCE_GROUP
@@ -282,11 +286,9 @@ ensure_ibmcloud_session() {
     return
   fi
 
-  if ! run_maybe_quiet "ibmcloud target" ibmcloud target; then
-    echo "ERROR: IBM Cloud login required."
-    echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
-    exit 1
-  fi
+  echo "ERROR: IBM Cloud login required."
+  echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
+  exit 1
 }
 
 ensure_container_registry_session() {
@@ -403,10 +405,15 @@ ce_remove_application_env_keys() {
     return
   fi
 
+  local existing_env
+  existing_env="$(ibmcloud ce application get --name "${app_name}" --output json 2>/dev/null | jq -r '(.spec.template.containers[0].env[]? | select(.name != null) | .name) // empty' 2>/dev/null || true)"
+
   local update_args=()
   local env_key
   for env_key in "$@"; do
-    update_args+=(--env-rm "${env_key}")
+    if printf '%s\n' "${existing_env}" | grep -qx "${env_key}"; then
+      update_args+=(--env-rm "${env_key}")
+    fi
   done
 
   if [[ "${#update_args[@]}" -eq 0 ]]; then

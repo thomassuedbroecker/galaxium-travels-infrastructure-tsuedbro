@@ -32,7 +32,7 @@ This repository is not meant to claim that MCP always replaces REST. It is meant
 
 The comparison idea also matches the blog post [Should MCP replace REST for AI-ready applications?](https://suedbroecker.net/2026/03/10/should-mcp-replace-rest-for-ai-ready-applications/).
 
-For deployment, the repository now keeps a single supported IBM Code Engine package in `deployment/ibm-code-engine/`.
+For deployment, the repository provides supported IBM Code Engine deployment packages in `deployment/ibm-code-engine/` supporting both Path A (Basic Auth via `deploy-stack.sh`) and Path B (OAuth2 via `deploy-stack-oauth2.sh`).
 
 Editable source diagram: [architecture/galaxim-travel-infrastructure.drawio](./architecture/galaxim-travel-infrastructure.drawio)
 
@@ -85,7 +85,7 @@ flowchart LR
 - Manual MCP auth walkthrough with Inspector CLI: [docs/manual_auth_check_using_the_commandline.md](./docs/manual_auth_check_using_the_commandline.md)
 - WebUI auth matrix details: [testing/webui_matrix/README.md](./testing/webui_matrix/README.md)
 - Project quality review: [docs/QUALITY-CHECK.md](./docs/QUALITY-CHECK.md)
-- IBM Code Engine deployment package: [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md)
+- IBM Code Engine deployment guides: [Overview](./deployment/ibm-code-engine/README.md) | [Path A (Basic Auth)](./deployment/ibm-code-engine/DEPLOY-PATH-A-BASIC-AUTH.md) | [Path B (OAuth2)](./deployment/ibm-code-engine/DEPLOY-PATH-B-OAUTH2.md) | Source packaging: [`.ceignore`](./.ceignore)
 
 ## Main Services
 

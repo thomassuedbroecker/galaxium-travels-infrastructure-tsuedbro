@@ -139,6 +139,10 @@ ensure_ibmcloud_session() {
   require_command ibmcloud
   require_code_engine_plugin
 
+  if run_maybe_quiet "ibmcloud target" ibmcloud target; then
+    return
+  fi
+
   if [[ -n "${IBM_CLOUD_API_KEY_RESOLVED}" ]]; then
     require_var IBM_CLOUD_REGION
     require_var IBM_CLOUD_RESOURCE_GROUP
@@ -151,11 +155,9 @@ ensure_ibmcloud_session() {
     return
   fi
 
-  if ! run_maybe_quiet "ibmcloud target" ibmcloud target; then
-    echo "ERROR: IBM Cloud login required."
-    echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
-    exit 1
-  fi
+  echo "ERROR: IBM Cloud login required."
+  echo "Run 'ibmcloud login' first or set IBM_CLOUD_API_KEY in ${ENV_FILE}."
+  exit 1
 }
 
 select_project() {
@@ -188,9 +190,34 @@ ce_upsert_application() {
 
   log_info "Checking whether application '${app_name}' already exists."
   if ce_application_exists "${app_name}"; then
+    local existing_mounts
+    existing_mounts="$(ibmcloud ce application get --name "${app_name}" --output json 2>/dev/null | jq -r '(.spec.template.containers[0].volumeMounts[]? | .mountPath) // empty' 2>/dev/null || true)"
+    local update_args=()
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --mount-configmap)
+          local mount_target="${2%%=*}"
+          if ! printf '%s\n' "${existing_mounts}" | grep -qx "${mount_target}"; then
+            update_args+=("$1" "$2")
+          fi
+          shift 2
+          ;;
+        --mount-data-store)
+          local mount_target="${2%%=*}"
+          if ! printf '%s\n' "${existing_mounts}" | grep -qx "${mount_target}"; then
+            update_args+=("$1" "$2")
+          fi
+          shift 2
+          ;;
+        *)
+          update_args+=("$1")
+          shift
+          ;;
+      esac
+    done
     run_maybe_quiet \
       "ibmcloud ce application update ${app_name}" \
-      ibmcloud ce application update --name "${app_name}" "$@"
+      ibmcloud ce application update --name "${app_name}" "${update_args[@]}"
   else
     run_maybe_quiet \
       "ibmcloud ce application create ${app_name}" \
@@ -238,7 +265,6 @@ args=(
   --min-scale "${KEYCLOAK_MIN_SCALE}"
   --max-scale "${KEYCLOAK_MAX_SCALE}"
   --visibility public
-  --command kc.sh
   --argument start-dev
   --argument --http-port=8080
   --argument --import-realm

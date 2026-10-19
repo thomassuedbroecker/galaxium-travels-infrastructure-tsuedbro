@@ -57,7 +57,9 @@ flowchart TD
 
 | Goal | Start here |
 | --- | --- |
-| IBM Code Engine deployment scripts | [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md) |
+| IBM Code Engine deployment overview | [deployment/ibm-code-engine/README.md](./deployment/ibm-code-engine/README.md) |
+| Path A: Basic Auth deployment | [deployment/ibm-code-engine/DEPLOY-PATH-A-BASIC-AUTH.md](./deployment/ibm-code-engine/DEPLOY-PATH-A-BASIC-AUTH.md) |
+| Path B: OAuth2 + Keycloak deployment | [deployment/ibm-code-engine/DEPLOY-PATH-B-OAUTH2.md](./deployment/ibm-code-engine/DEPLOY-PATH-B-OAUTH2.md) |
 | Code Engine + Keycloak deployment notes | [docs/reference/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md](./docs/reference/CODE_ENGINE_KEYCLOAK_DEPLOYMENT.md) |
 
 ## Test

@@ -218,6 +218,7 @@ commands, and debug tips are in the dedicated path guides above.
 |---|---|
 | [`deploy-stack.sh`](./deploy-stack.sh) | Basic Auth deployment entrypoint; runs all scripts in order |
 | [`deploy-stack-oauth2.sh`](./deploy-stack-oauth2.sh) | OAuth2 deployment entrypoint; locks `STACK_AUTH_MODE=oauth2`; reads `deploy.env.oauth2` first |
+| [`export-deployment.sh`](./export-deployment.sh) | Exports the live deployment links and configuration (links as `.md`/`.env`, configmaps and applications as JSON) to `generated/exports/`. Without arguments it exports every existing env file (`deploy.env` and `deploy.env.oauth2`), one folder each; `--basic` / `--oauth2` select one; `ENV_FILE=...` selects a custom file. Secret values are never exported |
 | [`teardown-stack.sh`](./teardown-stack.sh) | Basic Auth teardown; removes all apps, configmaps, and secrets from the project without deleting it |
 | [`teardown-stack-oauth2.sh`](./teardown-stack-oauth2.sh) | OAuth2 teardown; removes all apps, configmaps, and secrets from the project without deleting it |
 | [`deploy.env.template`](./deploy.env.template) | Template for Basic Auth env file; copy to `deploy.env` |

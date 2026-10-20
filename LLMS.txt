@@ -60,6 +60,8 @@ AUTH_ENABLED=true is a legacy alias for AUTH_MODE=oauth2.
 
 Source packaging uses `.ceignore` to exclude virtualenvs, VCS, build artifacts, and binaries.
 
+Export live links and config: deployment/ibm-code-engine/export-deployment.sh [--basic|--oauth2] (default: every existing env file). Writes deployment-links.env/.md, configmaps/*.json, applications/*.json to deployment/ibm-code-engine/generated/exports/<project>-<auth mode>-<timestamp>/ (git-ignored). Read-only; secret values are never exported.
+
 MCP server only (one folder per auth mode, each with start.sh, verify.sh, mcp.env.template):
 
 | folder                                          | AUTH_MODE | auth                                                         |

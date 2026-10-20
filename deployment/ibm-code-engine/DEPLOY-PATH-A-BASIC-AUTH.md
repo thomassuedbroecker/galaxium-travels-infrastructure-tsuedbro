@@ -282,6 +282,9 @@ CE_DEBUG=1 bash scripts/04-deploy-services.sh
 # Re-print the summary without redeploying
 bash scripts/06-summary.sh
 
+# Export the live links and configuration to generated/exports/ (read-only, no secret values)
+bash export-deployment.sh --basic
+
 # Point at a non-default env file
 ENV_FILE=/path/to/other.env bash scripts/04-deploy-services.sh
 ```

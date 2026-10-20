@@ -218,13 +218,13 @@ commands, and debug tips are in the dedicated path guides above.
 |---|---|
 | [`deploy-stack.sh`](./deploy-stack.sh) | Basic Auth deployment entrypoint; runs all scripts in order |
 | [`deploy-stack-oauth2.sh`](./deploy-stack-oauth2.sh) | OAuth2 deployment entrypoint; locks `STACK_AUTH_MODE=oauth2`; reads `deploy.env.oauth2` first |
-| [`export-deployment.sh`](./export-deployment.sh) | Exports the live deployment links and configuration (links as `.md`/`.env`, configmaps and applications as JSON) to `generated/exports/`. Without arguments it exports every existing env file (`deploy.env` and `deploy.env.oauth2`), one folder each; `--basic` / `--oauth2` select one; `ENV_FILE=...` selects a custom file. Secret values are never exported |
+| [`export-deployment.sh`](./export-deployment.sh) | Exports the live deployment links and configuration of a deployed stack to `generated/exports/`; see [Export Deployment Links and Configuration](#export-deployment-links-and-configuration) |
 | [`teardown-stack.sh`](./teardown-stack.sh) | Basic Auth teardown; removes all apps, configmaps, and secrets from the project without deleting it |
 | [`teardown-stack-oauth2.sh`](./teardown-stack-oauth2.sh) | OAuth2 teardown; removes all apps, configmaps, and secrets from the project without deleting it |
 | [`deploy.env.template`](./deploy.env.template) | Template for Basic Auth env file; copy to `deploy.env` |
 | [`deploy.env.oauth2.template`](./deploy.env.oauth2.template) | Template for OAuth2 env file; copy to `deploy.env.oauth2` |
 | [`../../.ceignore`](../../.ceignore) | Workspace ignore file at repo root; excludes virtualenvs, `.git`, target folders, and assets from Code Engine source build uploads |
-| [`generated/`](./generated/) | Rendered per-service env files (git-ignored); kept for local inspection after deploy |
+| [`generated/`](./generated/) | Rendered per-service env files and `exports/` from `export-deployment.sh` (git-ignored); kept for local inspection |
 | [`scripts/00-prereqs.sh`](./scripts/00-prereqs.sh) | Checks CLI tools, plugin versions, and env mode summary |
 | [`scripts/01-project.sh`](./scripts/01-project.sh) | Creates or selects the Code Engine project |
 | [`scripts/02-config-and-secrets.sh`](./scripts/02-config-and-secrets.sh) | Creates secrets and static configmaps (Keycloak realm import, registry secret) |
@@ -326,6 +326,50 @@ Both orchestrators enforce this order automatically. Do not reorder the numbered
 
 ---
 
+## Export Deployment Links and Configuration
+
+[`export-deployment.sh`](./export-deployment.sh) reads the **live** state of a deployed stack from
+IBM Cloud Code Engine and writes the public links and the runtime configuration to disk.
+It is read-only: it never creates, updates, or deletes Code Engine resources.
+
+```sh
+cd deployment/ibm-code-engine
+
+# Every existing env file (deploy.env and deploy.env.oauth2), one export each
+bash export-deployment.sh
+
+# Only one stack
+bash export-deployment.sh --basic     # deploy.env
+bash export-deployment.sh --oauth2    # deploy.env.oauth2 (falls back to deploy.env, forced to oauth2)
+
+# Custom env file
+ENV_FILE=/path/to/my.env bash export-deployment.sh
+```
+
+Each env file is exported in its own process, so the variables of one stack never leak into the other.
+Without arguments, env files that do not exist are skipped; the script fails only if none exists.
+It reuses the current `ibmcloud` session, or logs in with `IBM_CLOUD_API_KEY` from the env file.
+
+Output is written to `generated/exports/<project>-<auth mode>-<YYYYMMDD-HHMMSS>/`
+(the auth mode is only appended if the project name does not already contain it):
+
+| Path | Content |
+|---|---|
+| `deployment-links.env` | `KEY=VALUE` links (Keycloak, HR API, Booking API, MCP base URL, MCP endpoint, REST Web UI, MCP Web UI), auth mode, artifact mode, and `EXPORTED_AT` |
+| `deployment-links.md` | Same links as a readable table, plus configmap and secret **names** |
+| `configmaps/*.json` | The four service configmaps as they currently exist in Code Engine |
+| `applications/*.json` | Definitions of all deployed applications (including Keycloak in `oauth2` mode) |
+| `rendered-env/*.env` | Copies of the env files rendered by the last deploy (`generated/*.env`), if present |
+
+Notes:
+
+- **No secret values are exported.** Secrets are attached to applications by reference
+  (`--env-from-secret`), so only their names appear in the output.
+- A resource that no longer exists is skipped with a `WARN` line instead of failing the export.
+- `generated/` is git-ignored, so exports are never committed.
+
+---
+
 ## Teardown and Cleanup
 
 Two teardown scripts are provided — one per auth path. Both work identically:
@@ -421,6 +465,7 @@ ibmcloud ce project delete --name galaxium-travels-oauth2 --hard -f
 
 - Basic Auth: [`deploy-stack.sh`](./deploy-stack.sh)
 - OAuth2: [`deploy-stack-oauth2.sh`](./deploy-stack-oauth2.sh)
+- Export links and configuration (both): [`export-deployment.sh`](./export-deployment.sh), see [Export Deployment Links and Configuration](#export-deployment-links-and-configuration)
 
 ### External references
 

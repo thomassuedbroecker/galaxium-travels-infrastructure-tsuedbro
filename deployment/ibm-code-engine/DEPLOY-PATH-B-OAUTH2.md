@@ -345,6 +345,9 @@ ENV_FILE=deploy.env.oauth2 STACK_AUTH_MODE=oauth2 bash scripts/05-sync-keycloak-
 
 # Re-print the summary without redeploying
 ENV_FILE=deploy.env.oauth2 STACK_AUTH_MODE=oauth2 bash scripts/06-summary.sh
+
+# Export the live links and configuration to generated/exports/ (read-only, no secret values)
+bash export-deployment.sh --oauth2
 ```
 
 Inspect the rendered service config files written by step 6:

@@ -13,6 +13,7 @@ set -euo pipefail
 # Output (git-ignored): generated/exports/<project>-<auth mode>-<timestamp>/ (one per env file)
 #   deployment-links.md    human-readable links and settings
 #   deployment-links.env   machine-readable KEY=VALUE links
+#                          (includes EXPORTED_AT; the timestamp is also part of the folder name)
 #   configmaps/*.json      live Code Engine configmaps (non-secret runtime settings)
 #   applications/*.json    live Code Engine application definitions
 #   rendered-env/*.env     env files rendered by the last deploy (if present)
@@ -204,6 +205,7 @@ mkdir -p "${EXPORT_DIR}/configmaps" "${EXPORT_DIR}/applications" "${EXPORT_DIR}/
 
 # Links (machine-readable)
 cat >"${EXPORT_DIR}/deployment-links.env" <<EOF
+EXPORTED_AT=$(date '+%Y-%m-%dT%H:%M:%S%z')
 CE_PROJECT_NAME=${CE_PROJECT_NAME}
 IBM_CLOUD_REGION=${IBM_CLOUD_REGION}
 STACK_AUTH_MODE=${STACK_AUTH_MODE}

@@ -201,6 +201,17 @@ gh secret set BOBSHELL_API_KEY  --body "<your Bob Shell API key>"
 gh secret set BOB_GITHUB_TOKEN  --body "ghp_xxxxxxxxxxxxxxxxxxxx"
 ```
 
+### Local `.env` file
+
+For local use of the same two values, copy the root template and fill in your own values:
+
+```sh
+cp .env.template .env
+source .env
+```
+
+[`.env.template`](./.env.template) is tracked; `.env` is git-ignored and must never be committed.
+
 ---
 
 ## Pull Request Checklist

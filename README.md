@@ -279,6 +279,7 @@ and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 ├── NAVIGATOR.md
 ├── QUICKSTART.md
 ├── LLMS.txt
+├── .env.template           ← template for the local root .env (copy to .env, git-ignored)
 ├── setup-hooks.sh          ← run once after cloning to auto-sign commits (DCO)
 ├── .githooks/
 │   └── commit-msg          ← appends Signed-off-by to every commit automatically

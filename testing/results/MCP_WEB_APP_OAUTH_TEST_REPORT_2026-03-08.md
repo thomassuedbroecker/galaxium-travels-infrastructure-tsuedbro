@@ -100,8 +100,8 @@ The full suite executed these checks in the final run:
   - Keycloak login itself succeeded, but traveler registration inside `web_app_mcp` failed after the MCP `get_user_id` call returned `USER_NOT_FOUND`.
   - The root cause was that the MCP client exception was wrapped in nested `ExceptionGroup` objects during `anyio` task-group shutdown, so the Flask app received a generic error instead of the mapped `BookingServiceError`.
 - Changes caused by this run:
-  - Added nested exception unwrapping in [booking_mcp_service.py](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L107)
-  - Added synchronous wrapper rethrow of mapped domain errors in [booking_mcp_service.py](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L199)
+  - Added nested exception unwrapping in [booking_mcp_service.py](../../galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L107)
+  - Added synchronous wrapper rethrow of mapped domain errors in [booking_mcp_service.py](../../galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L199)
 - Artifacts:
   - `local-container/test-results/oauth-e2e-all-20260308T143825Z.md`
   - `local-container/test-results/oauth-e2e-all-20260308T143825Z.json`
@@ -121,8 +121,8 @@ The full suite executed these checks in the final run:
   - The login and traveler registration path was fixed.
   - The remaining problem was MCP tool result normalization: `list_flights` returned data shaped as `{"result": [...]}` and the web app wrapper expected a bare list, so the UI endpoint returned `[]`.
 - Changes caused by this run:
-  - Added result-wrapper unwrapping in [booking_mcp_service.py](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L121)
-  - Applied the same normalization path to dict and structured MCP outputs in [booking_mcp_service.py](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L262)
+  - Added result-wrapper unwrapping in [booking_mcp_service.py](../../galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L121)
+  - Applied the same normalization path to dict and structured MCP outputs in [booking_mcp_service.py](../../galaxium-booking-web-app-mcp/app/booking_mcp_service.py#L262)
 - Artifacts:
   - `local-container/test-results/oauth-e2e-all-20260308T144055Z.md`
   - `local-container/test-results/oauth-e2e-all-20260308T144055Z.json`
@@ -157,11 +157,11 @@ The full suite executed these checks in the final run:
 - Purpose:
   - Regression run after hardening `web-app-mcp` to be OAuth-only with no insecure mode
 - Changes caused before this run:
-  - Enforced OAuth-only startup validation in [app.py](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/app/app.py#L49)
-  - Removed non-OAuth branches from MCP web app request handling in [app.py](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/app/app.py#L182)
-  - Updated secure defaults in [.env-template](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/.env-template#L1)
-  - Updated runtime/security docs in [README.md](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/galaxium-booking-web-app-mcp/README.md#L1)
-  - Updated verifier to wait for the MCP web app health endpoint in [verify-keycloak-auth-e2e.sh](/Users/thomassuedbroecker/Documents/dev/gpt_codex/optimize_existing_github_projects/galaxium-travels-infrastructure-tsuedbro/local-container/verify-keycloak-auth-e2e.sh#L669)
+  - Enforced OAuth-only startup validation in [app.py](../../galaxium-booking-web-app-mcp/app/app.py#L49)
+  - Removed non-OAuth branches from MCP web app request handling in [app.py](../../galaxium-booking-web-app-mcp/app/app.py#L182)
+  - Updated secure defaults in [.env-template](../../galaxium-booking-web-app-mcp/.env-template#L1)
+  - Updated runtime/security docs in [README.md](../../galaxium-booking-web-app-mcp/README.md#L1)
+  - Updated verifier to wait for the MCP web app health endpoint in [verify-keycloak-auth-e2e.sh](../../local-container/verify-keycloak-auth-e2e.sh#L669)
 - Outcome:
   - The hardened OAuth-only app still passed the full suite without regressions
 - Artifacts:

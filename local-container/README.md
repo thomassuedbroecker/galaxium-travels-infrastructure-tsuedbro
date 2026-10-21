@@ -9,6 +9,8 @@ You can run the full stack in four ways (or run only the MCP server; see [MCP Se
 - run the REST path, MCP path, and inspector tooling in a small Basic Auth variant without Keycloak
 - run the MCP UI with Keycloak browser login while the MCP backend itself uses shared Basic Auth
 
+[../LABS.md](../LABS.md) maps every option here to a lab ID and a learning path. To start, stop, verify or check a lab with one command, use `bash lab.sh list|up|down|verify|status|down-all` from this folder; it wraps the commands below without changing them.
+
 Run commands in this guide from the `local-container/` directory:
 
 ```sh

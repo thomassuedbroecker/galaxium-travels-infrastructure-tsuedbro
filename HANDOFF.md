@@ -31,8 +31,8 @@ domain — same business flow, two separate runtimes, swappable auth modes.
 |---|---|
 | Branch | `main` |
 | Base branch | `main` |
-| Last commit | `3160985` — docs(code-engine): document export-deployment.sh and add EXPORTED_AT to links export |
-| Uncommitted changes | Root `.env.template` (+ `CONTRIBUTING.md` and `README.md` references); repaired 9 broken absolute links in `testing/results/MCP_WEB_APP_OAUTH_TEST_REPORT_2026-03-08.md` |
+| Last commit | `5691b0e` — docs: fix broken links, add root .env.template, sync HANDOFF |
+| Uncommitted changes | New `LABS.md` and `local-container/lab.sh`; `LabsCatalogContractTests` in `testing/test_local_container_contracts.py`; LABS.md links in README, NAVIGATOR, QUICKSTART, ARCHITECTURE, local-container/README, AGENTS, LLMS.txt, HANDOFF |
 
 Update this section at the end of every session.
 
@@ -45,6 +45,7 @@ Update this section at the end of every session.
 | Rules, patterns, test commands (canonical) | [`AGENTS.md`](./AGENTS.md) |
 | Decision-tree navigation hub | [`NAVIGATOR.md`](./NAVIGATOR.md) |
 | Run options, auth-mode matrix, demo credentials | [`QUICKSTART.md`](./QUICKSTART.md) |
+| Lab catalog L01–L10, learning path, `lab.sh` | [`LABS.md`](./LABS.md) |
 | Architecture decisions and component map | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | MCP endpoint, tools, session handshake, auth | [`docs/AI_ENGINEER_GUIDE.md`](./docs/AI_ENGINEER_GUIDE.md) |
 | Compose variants and verification scripts | [`local-container/README.md`](./local-container/README.md) |
@@ -100,3 +101,4 @@ At the end of a work session:
 | 2026-10-19 | IBM Bob | main | Automated & verified IBM Code Engine OAuth2 stack (`deploy-stack-oauth2.sh`, `deploy.env.oauth2`, `DEPLOY-PATH-B-OAUTH2.md`, `teardown-stack-oauth2.sh`). Added `.ceignore` to resolve package upload limits. Added active-session caching across all 7 deployment scripts to eliminate redundant `ibmcloud login` calls. Made Keycloak volume mounts and env var removals idempotent. Live verified all 5 services, Keycloak OIDC, Bearer auth, and Streamable HTTP MCP tools end-to-end. Updated repo documentation. | — |
 | 2026-10-20 | IBM Bob | main | Added `deployment/ibm-code-engine/export-deployment.sh` (exports live Code Engine links as `deployment-links.env`/`.md` with `EXPORTED_AT`, plus configmaps, application definitions and rendered env files to `generated/exports/<project>-<auth mode>-<timestamp>/`; works with `deploy.env` and `deploy.env.oauth2`, read-only, no secret values). Documented in `deployment/ibm-code-engine/README.md` (new section), both path guides, `AGENTS.md`, `LLMS.txt`. |
 | 2026-10-20 | IBM Bob | main | Added root `.env.template` (`BOBSHELL_API_KEY`, `BOB_GITHUB_TOKEN`, quoted placeholders, safe to `source`) and documented it in `CONTRIBUTING.md` and the root `README.md` layout. Ran a repo-wide Markdown link/anchor check (47 files): fixed 9 machine-specific absolute links in `testing/results/MCP_WEB_APP_OAUTH_TEST_REPORT_2026-03-08.md` (now relative); 0 broken links remain. |
+| 2026-10-21 | Claude Code | main | Added `LABS.md` as a logical layer over all runnable setups: lab IDs L01–L10 mapped to the MCP-only folders, QUICKSTART Options 1–4, the HR stack and Code Engine Paths A/B, with a learning path, credentials table, per-lab goal/uses/start/verify/explore/stop, and troubleshooting. No files moved. Added `local-container/lab.sh` (`list/up/down/verify/status/down-all` for L01–L08; wraps the existing compose files and scripts; `status` maps containers to labs through the compose `config_files` label). Added 7 `LabsCatalogContractTests` (links and paths exist, lab IDs match `lab.sh`, entry docs link LABS.md); 37/37 local-container and 9/9 Code Engine contract tests pass. `lab.sh` was checked for syntax, `list`/error paths and the label mapping under bash 3.2. Not run against live Docker. | Run `lab.sh up/verify/down` for each lab on a Docker host; optional: shrink QUICKSTART/local-container README duplication now that LABS.md exists (update the string assertions in the contract tests together) |

@@ -2,6 +2,8 @@
 
 Use this file to find the right starting point. Pick your goal and follow one link.
 
+To learn the infrastructure step by step, follow the labs in [LABS.md](./LABS.md). It gives every runnable setup a lab ID (L01–L10) and a suggested order.
+
 ```mermaid
 flowchart TD
     Start["What do you want to do?"]
@@ -24,6 +26,7 @@ flowchart TD
 
 | Goal | Start here |
 | --- | --- |
+| All setups as labs, with a learning path and `lab.sh` wrapper | [LABS.md](./LABS.md) |
 | Everything on one laptop | [QUICKSTART.md — Option 1](./QUICKSTART.md#option-1-local-machine) |
 | Stack on host, agent or VM on LAN | [QUICKSTART.md — Option 2](./QUICKSTART.md#option-2-host-machine-with-vm--lan-oauth) |
 | No Keycloak, Basic Auth only | [QUICKSTART.md — Option 3](./QUICKSTART.md#option-3-local-basic-auth) |

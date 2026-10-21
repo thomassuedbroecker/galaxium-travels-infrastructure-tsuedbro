@@ -279,5 +279,70 @@ class McpAccessOptionContractTests(unittest.TestCase):
         self.assertIn("aud-booking-api", keycloak_readme)
 
 
+class LabsCatalogContractTests(unittest.TestCase):
+    """LABS.md is a logical layer: every lab must point to files that exist, and lab.sh must match it."""
+
+    LOCAL_LABS = ["01", "02", "03", "04", "04-vm", "05", "06", "07", "08"]
+    ALL_LABS = ["L01", "L02", "L03", "L04", "L05", "L06", "L07", "L08", "L09", "L10"]
+    # Files that users create from a *.template; LABS.md names them but they are not committed.
+    USER_CREATED_SUFFIXES = (".env",)
+
+    def _labs(self) -> str:
+        return _read("LABS.md")
+
+    def test_every_lab_has_a_catalog_row_and_a_section(self) -> None:
+        content = self._labs()
+        for lab in self.ALL_LABS:
+            with self.subTest(lab=lab):
+                self.assertRegex(content, rf"\| \[{lab}\]\(#{lab.lower()}-")
+                self.assertRegex(content, rf"\n## {lab}: ")
+
+    def test_quickstart_options_and_code_engine_paths_are_mapped(self) -> None:
+        content = self._labs()
+        for option in ("QUICKSTART Option 1", "QUICKSTART Option 2", "QUICKSTART Option 3", "QUICKSTART Option 4"):
+            self.assertIn(option, content)
+        self.assertIn("Code Engine Path A", content)
+        self.assertIn("Code Engine Path B", content)
+
+    def test_relative_links_point_to_existing_files(self) -> None:
+        for target in re.findall(r"\]\(\./([^)#\s]+)", self._labs()):
+            with self.subTest(target=target):
+                self.assertTrue((REPO_ROOT / target).exists(), target)
+
+    def test_backticked_repo_paths_exist(self) -> None:
+        pattern = r"`((?:local-container|deployment|hr_database_frontend_java|hr_database_backend|docs)/[^`\s<*]+)`"
+        for path in re.findall(pattern, self._labs()):
+            if path.endswith(self.USER_CREATED_SUFFIXES):
+                continue
+            with self.subTest(path=path):
+                self.assertTrue((REPO_ROOT / path).exists(), path)
+
+    def test_lab_wrapper_lists_the_same_local_labs(self) -> None:
+        wrapper = _read("local-container/lab.sh")
+        match = re.search(r'^LABS="([^"]+)"', wrapper, re.MULTILINE)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1).split(), self.LOCAL_LABS)
+        for lab in self.LOCAL_LABS:
+            with self.subTest(lab=lab):
+                self.assertIn(f"    {lab}) echo ", wrapper)
+
+    def test_lab_wrapper_references_existing_files_only(self) -> None:
+        wrapper = _read("local-container/lab.sh")
+        for name in re.findall(r'"\$\{SCRIPT_DIR\}/([A-Za-z0-9_.\-/]+)"', wrapper):
+            if name.endswith(self.USER_CREATED_SUFFIXES):
+                continue
+            with self.subTest(name=name):
+                self.assertTrue((LOCAL_CONTAINER_DIR / name).exists(), name)
+        for name in re.findall(r'"\$\{HR_DIR\}/([A-Za-z0-9_.\-]+)"', wrapper):
+            with self.subTest(name=name):
+                self.assertTrue((REPO_ROOT / "hr_database_frontend_java" / name).exists(), name)
+
+    def test_entry_docs_link_to_labs(self) -> None:
+        for doc in ("README.md", "NAVIGATOR.md", "QUICKSTART.md", "ARCHITECTURE.md"):
+            with self.subTest(doc=doc):
+                self.assertIn("(./LABS.md)", _read(doc))
+        self.assertIn("(../LABS.md)", _read("local-container/README.md"))
+
+
 if __name__ == "__main__":
     unittest.main()

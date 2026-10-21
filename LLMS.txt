@@ -79,6 +79,8 @@ galaxium-travels-watsonx-orchestrate-mcp-bob-guide (watsonx Orchestrate integrat
 |-----------------------------------------------|-----------------------------------------------|
 | NAVIGATOR.md                                  | Single decision-tree hub for all entry paths  |
 | QUICKSTART.md                                 | Step-by-step commands for all 4 options       |
+| LABS.md                                       | Lab catalog L01–L10 (maps Options 1–4, MCP-only folders, HR stack, Code Engine paths) and learning path |
+| local-container/lab.sh                        | list/up/down/verify/status/down-all wrapper for labs L01–L08 |
 | docs/mcp_access_options.md                    | MCP-only options: no auth / Basic / OAuth 2.0 |
 | local-container/keycloak/README.md            | Keycloak realm, clients, how to adjust them   |
 | testing/results/LATEST-VALIDATION.md          | Latest per-combination validation results     |

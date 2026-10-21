@@ -73,6 +73,7 @@ flowchart LR
 
 ## Start Here
 
+- All runnable setups as labs L01–L10, with a learning path: [LABS.md](./LABS.md)
 - Navigation hub (all paths at a glance): [NAVIGATOR.md](./NAVIGATOR.md)
 - New user path: [QUICKSTART.md](./QUICKSTART.md)
 - Contributing and DCO sign-off: [CONTRIBUTING.md](./CONTRIBUTING.md)
@@ -276,6 +277,7 @@ and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 ├── ARCHITECTURE.md
 ├── CONTRIBUTING.md
 ├── HANDOFF.md              ← current branch state and session log
+├── LABS.md                 ← lab catalog L01–L10 and learning path
 ├── NAVIGATOR.md
 ├── QUICKSTART.md
 ├── LLMS.txt
@@ -306,6 +308,7 @@ and [third-party notices](THIRD_PARTY_NOTICES.md) for coverage and limitations.
 ├── galaxium-booking-web-app-mcp/
 ├── local-container/
 │   ├── docker_compose*.yaml          ← full stacks (Options 1–4)
+│   ├── lab.sh                        ← up/down/verify/status wrapper for labs L01–L08
 │   ├── keycloak/                     ← realm import + Keycloak guide
 │   ├── booking_system_mcp_no_auth/   ← MCP only, AUTH_MODE=none
 │   ├── booking_system_mcp_basic_auth/ ← MCP only, AUTH_MODE=basic

@@ -48,6 +48,8 @@ To run only the MCP server (`booking_system_mcp`, the only service provided as M
 
 All options publish fixed host ports, so run only one at a time. If you used the standalone HR stack (`hr_database_frontend_java/start-hr-app.sh`), stop it with `stop-hr-app.sh` first. Its containers use the same names as the full stack's HR services.
 
+In [LABS.md](./LABS.md) these options are labs L05 (Option 1), L07 (Option 2), L04 (Option 3) and L06 (Option 4). LABS.md also adds a learning path, explore exercises, and the `local-container/lab.sh` wrapper.
+
 For the full auth and compose-file breakdown see [ARCHITECTURE.md — Authentication Variants](./ARCHITECTURE.md#authentication-variants).
 For architecture boundaries and the reason the two paths keep independent booking state see [ARCHITECTURE.md](./ARCHITECTURE.md).
 

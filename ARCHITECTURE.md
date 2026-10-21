@@ -188,6 +188,7 @@ production deployment.
 | Need | Read this |
 | --- | --- |
 | Run the demo quickly | [QUICKSTART.md](./QUICKSTART.md) |
+| Learn the setups step by step (labs L01–L10) | [LABS.md](./LABS.md) |
 | Understand architecture and trade-offs | This document |
 | Configure local or LAN runtime variants | [local-container/README.md](./local-container/README.md) |
 | Run only the MCP server in a chosen access mode | [docs/mcp_access_options.md](./docs/mcp_access_options.md) |

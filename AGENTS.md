@@ -27,6 +27,9 @@ Python monorepo for a multi-service "Galaxium Travels" booking demo. Seven servi
 
 Full stack is orchestrated with `local-container/docker_compose.yaml` and Keycloak on port 8086.
 
+### Labs
+[`LABS.md`](./LABS.md) is a logical layer over the runnable setups: lab IDs L01–L10, a learning path, and per-lab start/verify/explore/stop steps. It maps QUICKSTART Options 1–4 (L05, L07, L04, L06), the MCP-only folders (L01–L03), the HR stack (L08) and Code Engine Paths A/B (L09, L10). `local-container/lab.sh` wraps the existing compose files and scripts for L01–L08. **Do not move compose files or the `booking_system_mcp_*` folders to restructure labs**: scripts, contract tests and the external watsonx Orchestrate guide repo reference those paths. When you add or rename a lab, update `LABS.md` and the `LABS`/`lab_title` lists in `lab.sh` together (contract-tested).
+
 ## Test Commands
 
 **REST API unit tests** (run from `booking_system_rest/`):
